@@ -1,9 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { CommandPalette, type Visivel } from "./CommandPalette";
+import { PaletaDeAtletas } from "./PaletaDeAtletas";
 import { iniciais, itensDeNavegacao, ROTULO_PAPEL } from "@/lib/auth/navegacao";
-
-const SEM_ITENS = (): Visivel[] => [];
 
 interface ShellProps {
   me: {
@@ -27,7 +25,7 @@ export function Shell({ me, onSair, children }: ShellProps) {
           <span className="brand-name">Scout Vela</span>
           <span className="side-badge">IBVAR</span>
         </div>
-        <CommandPalette getItems={SEM_ITENS} />
+        <PaletaDeAtletas me={me} />
         <nav className="tabs" aria-label="Telas">
           {itens.map((i) => (
             <Link

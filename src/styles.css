@@ -684,3 +684,7 @@ footer { margin-top: 32px; font-size: 0.8rem; color: var(--ink-2); }
 .auth-field input:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
 .auth-primary:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
 .auth-primary:disabled { opacity: 0.6; cursor: progress; }
+
+/* Diálogo modal (componente Dialogo) */
+.dialogo-overlay { position: fixed; inset: 0; z-index: 60; background: oklch(0.208 0.042 265.755 / 35%); backdrop-filter: blur(2px); display: grid; place-items: start center; padding: 10vh 16px 16px; overflow-y: auto; }
+.dialogo { width: min(520px, 100%); box-shadow: 0 24px 48px -12px oklch(0 0 0 / 18%); }
