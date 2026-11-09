@@ -6,7 +6,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Scout Vela · Talent ID da vela olímpica" },
-      { name: "description", content: "Talent ID da vela olímpica: ranking, fichas, avaliações e painel de investimento." },
+      {
+        name: "description",
+        content:
+          "Talent ID da vela olímpica: ranking, fichas, avaliações e painel de investimento.",
+      },
     ],
   }),
   component: Index,

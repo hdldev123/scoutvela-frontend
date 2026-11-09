@@ -6,7 +6,11 @@ import loginVideo from "@/assets/login-bg-v2.mp4.asset.json";
 const HERO_MEDIA_URL = heroPhoto;
 
 /** Tela de login. As contas são criadas pela CBVela: não há autocadastro nem escolha de perfil. */
-export function EntryScreen({ onEntrar }: { onEntrar: (email: string, senha: string) => Promise<void> }) {
+export function EntryScreen({
+  onEntrar,
+}: {
+  onEntrar: (email: string, senha: string) => Promise<void>;
+}) {
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
 

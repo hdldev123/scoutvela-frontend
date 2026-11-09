@@ -85,7 +85,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Scout Vela" },
       { name: "description", content: "Talent ID da vela olímpica (protótipo, dados fictícios)." },
       { property: "og:title", content: "Scout Vela" },
-      { property: "og:description", content: "Talent ID da vela olímpica (protótipo, dados fictícios)." },
+      {
+        property: "og:description",
+        content: "Talent ID da vela olímpica (protótipo, dados fictícios).",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

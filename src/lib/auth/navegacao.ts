@@ -24,8 +24,12 @@ const ITENS: Record<string, { rotulo: string; icone: string; to: string }> = {
   ranking: { rotulo: "Ranking", icone: "trophy", to: "/ranking" },
   avaliar: { rotulo: "Lançar avaliação", icone: "clipboard-text", to: "/avaliar" },
   cadastro: { rotulo: "Cadastrar atleta", icone: "user-plus", to: "/cadastro" },
+  ciclos: { rotulo: "Ciclos", icone: "calendar-check", to: "/ciclos" },
+  revisoes: { rotulo: "Revisões", icone: "chat-circle-text", to: "/revisoes" },
   investimento: { rotulo: "Investimento", icone: "chart-line-up", to: "/investimento" },
+  usuarios: { rotulo: "Contas", icone: "users-three", to: "/usuarios" },
   parametros: { rotulo: "Parâmetros", icone: "sliders-horizontal", to: "/parametros" },
+  auditoria: { rotulo: "Auditoria", icone: "list-magnifying-glass", to: "/auditoria" },
   painel: { rotulo: "Meu painel", icone: "gauge", to: "/painel" },
   ficha: { rotulo: "Minha ficha", icone: "identification-card", to: "/atletas/$id" },
 };
@@ -41,7 +45,8 @@ export function itensDeNavegacao(me: Me): ItemNav[] {
       itens.push({ tela, ...base, params: { id: me.atleta.id } });
       continue;
     }
-    const rotulo = tela === "ranking" && me.usuario.papel === "treinador" ? "Meus atletas" : base.rotulo;
+    const rotulo =
+      tela === "ranking" && me.usuario.papel === "treinador" ? "Meus atletas" : base.rotulo;
     itens.push({ tela, ...base, rotulo });
   }
   return itens;
@@ -59,4 +64,3 @@ export function iniciais(nome: string): string {
 export function rotaDaTelaInicial(telaInicial: string): string {
   return ITENS[telaInicial] && telaInicial !== "ficha" ? ITENS[telaInicial]!.to : "/ranking";
 }
-

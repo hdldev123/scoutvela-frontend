@@ -12,12 +12,18 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
+import { Route as VerificacaoRouteImport } from './routes/verificacao'
+import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppAvaliarRouteImport } from './routes/_app/avaliar'
 import { Route as AppCadastroRouteImport } from './routes/_app/cadastro'
+import { Route as AppCiclosRouteImport } from './routes/_app/ciclos'
 import { Route as AppInvestimentoRouteImport } from './routes/_app/investimento'
 import { Route as AppPainelRouteImport } from './routes/_app/painel'
 import { Route as AppParametrosRouteImport } from './routes/_app/parametros'
 import { Route as AppRankingRouteImport } from './routes/_app/ranking'
+import { Route as AppRevisoesRouteImport } from './routes/_app/revisoes'
+import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 import { Route as AppAtletasIdRouteImport } from './routes/_app/atletas.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -34,6 +40,21 @@ const EntrarRoute = EntrarRouteImport.update({
   path: '/entrar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
+  id: '/redefinir-senha',
+  path: '/redefinir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerificacaoRoute = VerificacaoRouteImport.update({
+  id: '/verificacao',
+  path: '/verificacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAvaliarRoute = AppAvaliarRouteImport.update({
   id: '/avaliar',
   path: '/avaliar',
@@ -42,6 +63,11 @@ const AppAvaliarRoute = AppAvaliarRouteImport.update({
 const AppCadastroRoute = AppCadastroRouteImport.update({
   id: '/cadastro',
   path: '/cadastro',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCiclosRoute = AppCiclosRouteImport.update({
+  id: '/ciclos',
+  path: '/ciclos',
   getParentRoute: () => AppRoute,
 } as any)
 const AppInvestimentoRoute = AppInvestimentoRouteImport.update({
@@ -64,6 +90,16 @@ const AppRankingRoute = AppRankingRouteImport.update({
   path: '/ranking',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRevisoesRoute = AppRevisoesRouteImport.update({
+  id: '/revisoes',
+  path: '/revisoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsuariosRoute = AppUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAtletasIdRoute = AppAtletasIdRouteImport.update({
   id: '/atletas/$id',
   path: '/atletas/$id',
@@ -73,23 +109,35 @@ const AppAtletasIdRoute = AppAtletasIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/entrar': typeof EntrarRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/verificacao': typeof VerificacaoRoute
+  '/auditoria': typeof AppAuditoriaRoute
   '/avaliar': typeof AppAvaliarRoute
   '/cadastro': typeof AppCadastroRoute
+  '/ciclos': typeof AppCiclosRoute
   '/investimento': typeof AppInvestimentoRoute
   '/painel': typeof AppPainelRoute
   '/parametros': typeof AppParametrosRoute
   '/ranking': typeof AppRankingRoute
+  '/revisoes': typeof AppRevisoesRoute
+  '/usuarios': typeof AppUsuariosRoute
   '/atletas/$id': typeof AppAtletasIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/entrar': typeof EntrarRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/verificacao': typeof VerificacaoRoute
+  '/auditoria': typeof AppAuditoriaRoute
   '/avaliar': typeof AppAvaliarRoute
   '/cadastro': typeof AppCadastroRoute
+  '/ciclos': typeof AppCiclosRoute
   '/investimento': typeof AppInvestimentoRoute
   '/painel': typeof AppPainelRoute
   '/parametros': typeof AppParametrosRoute
   '/ranking': typeof AppRankingRoute
+  '/revisoes': typeof AppRevisoesRoute
+  '/usuarios': typeof AppUsuariosRoute
   '/atletas/$id': typeof AppAtletasIdRoute
 }
 export interface FileRoutesById {
@@ -97,12 +145,18 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/entrar': typeof EntrarRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/verificacao': typeof VerificacaoRoute
+  '/_app/auditoria': typeof AppAuditoriaRoute
   '/_app/avaliar': typeof AppAvaliarRoute
   '/_app/cadastro': typeof AppCadastroRoute
+  '/_app/ciclos': typeof AppCiclosRoute
   '/_app/investimento': typeof AppInvestimentoRoute
   '/_app/painel': typeof AppPainelRoute
   '/_app/parametros': typeof AppParametrosRoute
   '/_app/ranking': typeof AppRankingRoute
+  '/_app/revisoes': typeof AppRevisoesRoute
+  '/_app/usuarios': typeof AppUsuariosRoute
   '/_app/atletas/$id': typeof AppAtletasIdRoute
 }
 export interface FileRouteTypes {
@@ -110,35 +164,53 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/entrar'
+    | '/redefinir-senha'
+    | '/verificacao'
+    | '/auditoria'
     | '/avaliar'
     | '/cadastro'
+    | '/ciclos'
     | '/investimento'
     | '/painel'
     | '/parametros'
     | '/ranking'
+    | '/revisoes'
+    | '/usuarios'
     | '/atletas/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/entrar'
+    | '/redefinir-senha'
+    | '/verificacao'
+    | '/auditoria'
     | '/avaliar'
     | '/cadastro'
+    | '/ciclos'
     | '/investimento'
     | '/painel'
     | '/parametros'
     | '/ranking'
+    | '/revisoes'
+    | '/usuarios'
     | '/atletas/$id'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/entrar'
+    | '/redefinir-senha'
+    | '/verificacao'
+    | '/_app/auditoria'
     | '/_app/avaliar'
     | '/_app/cadastro'
+    | '/_app/ciclos'
     | '/_app/investimento'
     | '/_app/painel'
     | '/_app/parametros'
     | '/_app/ranking'
+    | '/_app/revisoes'
+    | '/_app/usuarios'
     | '/_app/atletas/$id'
   fileRoutesById: FileRoutesById
 }
@@ -146,6 +218,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   EntrarRoute: typeof EntrarRoute
+  RedefinirSenhaRoute: typeof RedefinirSenhaRoute
+  VerificacaoRoute: typeof VerificacaoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -171,6 +245,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EntrarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/redefinir-senha': {
+      id: '/redefinir-senha'
+      path: '/redefinir-senha'
+      fullPath: '/redefinir-senha'
+      preLoaderRoute: typeof RedefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verificacao': {
+      id: '/verificacao'
+      path: '/verificacao'
+      fullPath: '/verificacao'
+      preLoaderRoute: typeof VerificacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/auditoria': {
+      id: '/_app/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AppAuditoriaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/avaliar': {
       id: '/_app/avaliar'
       path: '/avaliar'
@@ -183,6 +278,13 @@ declare module '@tanstack/react-router' {
       path: '/cadastro'
       fullPath: '/cadastro'
       preLoaderRoute: typeof AppCadastroRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/ciclos': {
+      id: '/_app/ciclos'
+      path: '/ciclos'
+      fullPath: '/ciclos'
+      preLoaderRoute: typeof AppCiclosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/investimento': {
@@ -213,6 +315,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRankingRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/revisoes': {
+      id: '/_app/revisoes'
+      path: '/revisoes'
+      fullPath: '/revisoes'
+      preLoaderRoute: typeof AppRevisoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/usuarios': {
+      id: '/_app/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AppUsuariosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/atletas/$id': {
       id: '/_app/atletas/$id'
       path: '/atletas/$id'
@@ -224,22 +340,30 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAuditoriaRoute: typeof AppAuditoriaRoute
   AppAvaliarRoute: typeof AppAvaliarRoute
   AppCadastroRoute: typeof AppCadastroRoute
+  AppCiclosRoute: typeof AppCiclosRoute
   AppInvestimentoRoute: typeof AppInvestimentoRoute
   AppPainelRoute: typeof AppPainelRoute
   AppParametrosRoute: typeof AppParametrosRoute
   AppRankingRoute: typeof AppRankingRoute
+  AppRevisoesRoute: typeof AppRevisoesRoute
+  AppUsuariosRoute: typeof AppUsuariosRoute
   AppAtletasIdRoute: typeof AppAtletasIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAuditoriaRoute: AppAuditoriaRoute,
   AppAvaliarRoute: AppAvaliarRoute,
   AppCadastroRoute: AppCadastroRoute,
+  AppCiclosRoute: AppCiclosRoute,
   AppInvestimentoRoute: AppInvestimentoRoute,
   AppPainelRoute: AppPainelRoute,
   AppParametrosRoute: AppParametrosRoute,
   AppRankingRoute: AppRankingRoute,
+  AppRevisoesRoute: AppRevisoesRoute,
+  AppUsuariosRoute: AppUsuariosRoute,
   AppAtletasIdRoute: AppAtletasIdRoute,
 }
 
@@ -249,6 +373,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   EntrarRoute: EntrarRoute,
+  RedefinirSenhaRoute: RedefinirSenhaRoute,
+  VerificacaoRoute: VerificacaoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

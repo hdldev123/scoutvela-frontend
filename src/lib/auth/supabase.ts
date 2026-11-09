@@ -7,8 +7,12 @@ export function getSupabase(): SupabaseClient {
   if (typeof window === "undefined") {
     throw new Error("O cliente Supabase só pode ser usado no navegador.");
   }
-  cliente ??= createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true },
-  });
+  cliente ??= createClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY,
+    {
+      auth: { persistSession: true, autoRefreshToken: true },
+    },
+  );
   return cliente;
 }
