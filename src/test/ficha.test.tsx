@@ -237,6 +237,17 @@ describe("TelaFicha", () => {
     expect(within(plano).getByText("Fechar os gates em aberto")).toBeInTheDocument();
   });
 
+  it("meta de 12 meses usa Top 10 quando há resultado de nível mundial (valor em minúsculas)", async () => {
+    const base = ficha();
+    montar(
+      "gestor",
+      ficha({
+        resultados: [{ ...base.resultados![0]!, nivel: "mundial", evento: "Mundial ILCA 6" }],
+      }),
+    );
+    expect(await screen.findByText("Top 10 no Mundial da classe")).toBeInTheDocument();
+  });
+
   it("pilar abre como acordeão e marca a maior perda de pontos", async () => {
     montar("gestor", ficha());
     const botao = await screen.findByRole("button", { name: /^Class Fit/ });
