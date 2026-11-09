@@ -74,6 +74,7 @@ function pilar(
         lancadoEm: nota == null ? null : "2026-11-05T12:00:00.000Z",
         resposta: null,
         sugestaoPendente: null,
+        anexo: null,
       },
     ],
     ...extra,
@@ -104,6 +105,8 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
     preenchidos: 2,
     total: 3,
     pontosCbvela: 900,
+    plano: null,
+    sugestaoPlano: null,
     historicoScore: [
       { ciclo: "Setembro de 2026", score: 60 },
       { ciclo: "Outubro de 2026", score: 66 },

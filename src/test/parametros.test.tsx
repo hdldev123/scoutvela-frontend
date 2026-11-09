@@ -43,6 +43,7 @@ const params: Parametros = {
       pesoMinKg: 82.8,
       pesoMedioKg: 85,
       pesoMaxKg: 87.2,
+      ativa: true,
     },
     {
       id: "c2",
@@ -52,6 +53,7 @@ const params: Parametros = {
       pesoMinKg: 70,
       pesoMedioKg: 75,
       pesoMaxKg: 80,
+      ativa: true,
     },
   ],
   rubricas: [
@@ -59,7 +61,12 @@ const params: Parametros = {
     { pilarId: "perf", nota: 5, descricao: "Pódio mundial" },
   ],
   regras: [
-    { codigo: "P2", descricao: "Nota do pilar = média", valor: { modo: "media", ativo: true } },
+    {
+      codigo: "P2",
+      descricao: "Nota do pilar = média",
+      valor: { modo: "media", ativo: true },
+      atualizadoEm: "2026-11-01T12:00:00.000Z",
+    },
   ],
   componentesCusto: [{ id: "treinador", nome: "Treinador" }],
 };

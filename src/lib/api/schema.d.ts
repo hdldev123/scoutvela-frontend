@@ -354,6 +354,10 @@ export interface paths {
                                         valor: number;
                                         lancadoEm: string;
                                     } | null;
+                                    anexo: {
+                                        id: string;
+                                        nomeArquivo: string;
+                                    } | null;
                                 }[] | null;
                             }[];
                             gates: {
@@ -407,6 +411,28 @@ export interface paths {
                                 /** @enum {string} */
                                 perfilSuporte: "A" | "B" | "C" | "D";
                             }) | null;
+                            /** @description Plano registrado por uma pessoa. Nulo para o IBVAR ou sem plano. */
+                            plano: {
+                                forcas: string;
+                                lacunas: string;
+                                meta12m: string;
+                                meta24m: string;
+                                recomendacao: string;
+                                registradoPor: {
+                                    id: string;
+                                    nome: string;
+                                };
+                                /** @description Instante ISO */
+                                registradoEm: string;
+                            } | null;
+                            /** @description Sugestão calculada pelo sistema. Nula para o IBVAR. */
+                            sugestaoPlano: {
+                                forcas: string;
+                                lacunas: string;
+                                meta12m: string;
+                                meta24m: string;
+                                recomendacao: string;
+                            } | null;
                         };
                     };
                 };
@@ -499,6 +525,8 @@ export interface paths {
                             indicadorId: string;
                             valor: number;
                             evidencia: string;
+                            /** Format: uuid */
+                            anexoId?: string;
                         }[];
                         medida?: {
                             pesoKg?: number;
@@ -635,6 +663,8 @@ export interface paths {
                             indicadorId: string;
                             valor: number;
                             evidencia: string;
+                            /** Format: uuid */
+                            anexoId?: string;
                         }[];
                         medida?: {
                             pesoKg?: number;
@@ -1772,10 +1802,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lista pedidos de revisão (gestor: todos, abertos primeiro; atleta: os seus) */
+        /** Lista pedidos de revisão (gestor: todos, abertos primeiro; treinador: dos próprios atletas; atleta: os seus) */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    status?: "aberto" | "respondido";
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -2229,6 +2261,7 @@ export interface paths {
                             }[];
                             classes: {
                                 id: string;
+                                ativa: boolean;
                                 nome: string;
                                 evento: string;
                                 /** @enum {string} */
@@ -2247,6 +2280,8 @@ export interface paths {
                                 codigo: string;
                                 descricao: string;
                                 valor: unknown;
+                                /** @description Instante ISO */
+                                atualizadoEm: string;
                             }[];
                             componentesCusto: {
                                 id: string;
@@ -2284,7 +2319,7 @@ export interface paths {
             };
         };
         /**
-         * Atualiza pesos dos pilares e faixas de peso das classes
+         * Atualiza pesos, faixas de score, rubricas, regras e classes
          * @description O ranking recalcula sozinho (o cálculo é feito na leitura). Grava auditoria com antes e depois.
          */
         put: {
@@ -2301,11 +2336,29 @@ export interface paths {
                         pesos?: {
                             [key: string]: number;
                         };
+                        /** @description As 4 faixas; scoreMin estritamente decrescente na ordem das faixas e a última com 0 */
+                        faixas?: {
+                            id: string;
+                            scoreMin: number;
+                        }[];
+                        /** @description Upsert por (pilarId, nota) */
+                        rubricas?: {
+                            /** @description Nulo = escala geral de 0 a 5 */
+                            pilarId: string | null;
+                            nota: number;
+                            descricao: string;
+                        }[];
+                        /** @description {codigo: valor}; códigos aceitos: P3, G1, G2, G3, G4, RANKING_CBVELA. O valor segue o formato lido em GET /parametros */
+                        regras?: {
+                            [key: string]: unknown;
+                        };
                         classes?: {
                             id: string;
-                            pesoMinKg: number;
-                            pesoMedioKg: number;
-                            pesoMaxKg: number;
+                            pesoMinKg?: number;
+                            pesoMedioKg?: number;
+                            pesoMaxKg?: number;
+                            /** @description Não dá para desativar classe com atleta ativo */
+                            ativa?: boolean;
                         }[];
                     };
                 };
@@ -2341,6 +2394,7 @@ export interface paths {
                             }[];
                             classes: {
                                 id: string;
+                                ativa: boolean;
                                 nome: string;
                                 evento: string;
                                 /** @enum {string} */
@@ -2359,6 +2413,8 @@ export interface paths {
                                 codigo: string;
                                 descricao: string;
                                 valor: unknown;
+                                /** @description Instante ISO */
+                                atualizadoEm: string;
                             }[];
                             componentesCusto: {
                                 id: string;
@@ -2408,6 +2464,1655 @@ export interface paths {
                 };
             };
         };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ciclos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista os ciclos de avaliação, do mais recente ao mais antigo */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                /** Format: uuid */
+                                id: string;
+                                nome: string;
+                                /** @description AAAA-MM-DD */
+                                inicio: string;
+                                /** @description AAAA-MM-DD */
+                                prazo: string;
+                                /** @enum {string} */
+                                status: "aberto" | "fechado";
+                                /** @description Atletas com score congelado neste ciclo */
+                                atletasComScore: number;
+                                /** @description Instante ISO do fechamento; nulo se aberto */
+                                fechadoEm: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Abre um ciclo de avaliação (só um aberto por vez) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        nome: string;
+                        /**
+                         * Format: date
+                         * @description AAAA-MM-DD
+                         */
+                        inicio: string;
+                        /**
+                         * Format: date
+                         * @description AAAA-MM-DD
+                         */
+                        prazo: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            nome: string;
+                            /** @description AAAA-MM-DD */
+                            inicio: string;
+                            /** @description AAAA-MM-DD */
+                            prazo: string;
+                            /** @enum {string} */
+                            status: "aberto" | "fechado";
+                            /** @description Atletas com score congelado neste ciclo */
+                            atletasComScore: number;
+                            /** @description Instante ISO do fechamento; nulo se aberto */
+                            fechadoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ciclos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Prorroga ou ajusta o prazo de um ciclo aberto */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: date
+                         * @description AAAA-MM-DD
+                         */
+                        prazo: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            nome: string;
+                            /** @description AAAA-MM-DD */
+                            inicio: string;
+                            /** @description AAAA-MM-DD */
+                            prazo: string;
+                            /** @enum {string} */
+                            status: "aberto" | "fechado";
+                            /** @description Atletas com score congelado neste ciclo */
+                            atletasComScore: number;
+                            /** @description Instante ISO do fechamento; nulo se aberto */
+                            fechadoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ciclos/{id}/fechar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fecha o ciclo e congela o score e a faixa dos atletas do piloto
+         * @description Calcula score e faixa de todos os atletas ativos com o termo do piloto aceito, grava em scores_ciclo e marca o ciclo como fechado, numa transação. Alimenta o histórico de score da ficha.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ciclo: {
+                                /** Format: uuid */
+                                id: string;
+                                nome: string;
+                                /** @description AAAA-MM-DD */
+                                inicio: string;
+                                /** @description AAAA-MM-DD */
+                                prazo: string;
+                                /** @enum {string} */
+                                status: "aberto" | "fechado";
+                                /** @description Atletas com score congelado neste ciclo */
+                                atletasComScore: number;
+                                /** @description Instante ISO do fechamento; nulo se aberto */
+                                fechadoEm: string | null;
+                            };
+                            atletas: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/financeiro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Informa o financeiro da campanha e o perfil de suporte (série histórica: só insere)
+         * @description Regra provisória P8: o perfil de suporte A a D é informado pelo gestor. Não entra no score; alimenta o gate G4 e o painel de investimento.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        perfilSuporte: "A" | "B" | "C" | "D";
+                        mesesAssegurados: number | null;
+                        /** @enum {string|null} */
+                        patrocinioPrivado: "sim" | "em_negociacao" | "nao" | null;
+                        componentes: {
+                            componenteId: string;
+                            /** @enum {string} */
+                            autonomia: "alta" | "parcial" | "baixa";
+                            /** @enum {string} */
+                            apoioCbvela: "baixa" | "media" | "alta";
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            perfilSuporte: "A" | "B" | "C" | "D";
+                            mesesAssegurados: number | null;
+                            /** @enum {string|null} */
+                            patrocinioPrivado: "sim" | "em_negociacao" | "nao" | null;
+                            componentes: {
+                                id: string;
+                                nome: string;
+                                autonomia: string;
+                                apoioCbvela: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/resultados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lança à mão um resultado internacional, com o link do resultado oficial
+         * @description Grava como internacional, fonte manual e sem pontos do Ranking CBVela. Os gates G2 e G3 são recalculados na leitura. Treinador só lança para os próprios atletas.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        nivel: "mundial" | "sul_americano" | "continental" | "internacional_aberto";
+                        evento: string;
+                        /**
+                         * Format: date
+                         * @description AAAA-MM-DD, não futura
+                         */
+                        data: string;
+                        posicao: number;
+                        tamanhoFrota: number;
+                        /** Format: uri */
+                        linkOficial: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: string;
+                            nivel: string;
+                            evento: string;
+                            posicao: number;
+                            tamanhoFrota: number;
+                            internacional: boolean;
+                            pontosCbvela: number | null;
+                            /** @enum {string} */
+                            fonte: "ranking_cbvela" | "manual";
+                            linkOficial: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auditoria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Trilha de auditoria (só gestor), do mais novo para o mais antigo
+         * @description Filtros opcionais combinados com E. Paginação por cursor: use `proximo` em `antesDe`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    entidade?: string;
+                    acao?: string;
+                    usuarioId?: string;
+                    /** @description Identificador da entidade afetada (entidade_id), em geral o atleta */
+                    atletaId?: string;
+                    /** @description AAAA-MM-DD, a partir das 00:00 de Brasília */
+                    desde?: string;
+                    /** @description AAAA-MM-DD, até o fim do dia em Brasília */
+                    ate?: string;
+                    limite?: number;
+                    /** @description id do último item da página anterior */
+                    antesDe?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                id: string;
+                                /** @description Instante ISO */
+                                em: string;
+                                usuario: {
+                                    id: string;
+                                    nome: string;
+                                    papel: string;
+                                } | null;
+                                acao: string;
+                                entidade: string;
+                                entidadeId: string | null;
+                                detalhes: unknown;
+                            }[];
+                            /** @description Passe em antesDe para a página seguinte; nulo = fim */
+                            proximo: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/meus-dados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Exporta em JSON tudo o que o sistema guarda sobre o atleta (LGPD)
+         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados, decisões de gate, financeiro, pedidos de revisão e pedidos do titular. Só o atleta logado, só os próprios dados.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            geradoEm: string;
+                            conta: {
+                                nome: string;
+                                email: string;
+                                papel: string;
+                            };
+                            atleta: {
+                                [key: string]: unknown;
+                            };
+                            /** @description Histórico de decisões (termo do piloto e compartilhamento com o IBVAR) */
+                            consentimentos: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Série histórica: valor, evidência, data e avaliador de cada lançamento */
+                            notas: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Respostas do questionário (série histórica) */
+                            respostas: {
+                                [key: string]: unknown;
+                            }[];
+                            medidas: {
+                                [key: string]: unknown;
+                            }[];
+                            resultados: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Decisões do gestor sobre os gates */
+                            gates: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Histórico do financeiro da campanha, com os componentes de cada lançamento */
+                            financeiro: {
+                                [key: string]: unknown;
+                            }[];
+                            pedidosRevisao: {
+                                [key: string]: unknown;
+                            }[];
+                            pedidosTitular: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pedidos-titular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista pedidos do titular (gestor: todos, abertos primeiro; atleta: os seus) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            atleta: {
+                                id: string;
+                                nome: string;
+                            };
+                            /** @enum {string} */
+                            tipo: "acesso" | "correcao" | "exclusao" | "revogacao";
+                            descricao: string;
+                            /** @enum {string} */
+                            status: "aberto" | "respondido";
+                            criadoEm: string;
+                            resposta: string | null;
+                            respondidoEm: string | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Registra um pedido do titular (acesso, correção, exclusão ou revogação)
+         * @description O pedido fica aberto até o gestor responder. Exclusão e revogação são tratadas manualmente pelo gestor, fora da API.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        tipo: "acesso" | "correcao" | "exclusao" | "revogacao";
+                        descricao: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @enum {string} */
+                            status: "aberto";
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pedidos-titular/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Responde um pedido do titular
+         * @description Registra a resposta e fecha o pedido. A exclusão de dados NÃO é feita por esta rota: é procedimento manual do gestor, porque a série histórica (notas, respostas, medidas, gates, financeiro) só aceita inserção. Pedido já respondido devolve 409 (código requisicao_invalida).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        resposta: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            atleta: {
+                                id: string;
+                                nome: string;
+                            };
+                            /** @enum {string} */
+                            tipo: "acesso" | "correcao" | "exclusao" | "revogacao";
+                            descricao: string;
+                            /** @enum {string} */
+                            status: "aberto" | "respondido";
+                            criadoEm: string;
+                            resposta: string | null;
+                            respondidoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/plano": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registra uma nova versão do plano individual (série histórica: só insere)
+         * @description Gestor, ou treinador dos próprios atletas. A ficha traz a sugestão calculada; quem registra é uma pessoa. 201 no primeiro plano do atleta, 200 nas versões seguintes.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        forcas: string;
+                        lacunas: string;
+                        meta12m: string;
+                        meta24m: string;
+                        recomendacao: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            forcas: string;
+                            lacunas: string;
+                            meta12m: string;
+                            meta24m: string;
+                            recomendacao: string;
+                            registradoPor: {
+                                id: string;
+                                nome: string;
+                            };
+                            /** @description Instante ISO */
+                            registradoEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            forcas: string;
+                            lacunas: string;
+                            meta12m: string;
+                            meta24m: string;
+                            recomendacao: string;
+                            registradoPor: {
+                                id: string;
+                                nome: string;
+                            };
+                            /** @description Instante ISO */
+                            registradoEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/evidencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista as evidências anexadas ao atleta (mais recentes primeiro)
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta. IBVAR não tem acesso.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            anexos: {
+                                /** Format: uuid */
+                                id: string;
+                                nomeArquivo: string;
+                                tipoMime: string;
+                                tamanhoBytes: number;
+                                indicadorId: string | null;
+                                /** @description Instante ISO */
+                                enviadoEm: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Anexa uma evidência (PDF, JPEG ou PNG de até 5 MB) ao atleta
+         * @description Gestor, ou treinador dos próprios atletas. O arquivo vai em base64, é conferido pelo tamanho e pela assinatura e fica no Storage privado. Use o `id` retornado como `anexoId` ao lançar a nota.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        nomeArquivo: string;
+                        /** @enum {string} */
+                        tipoMime: "application/pdf" | "image/jpeg" | "image/png";
+                        conteudoBase64: string;
+                        indicadorId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            nomeArquivo: string;
+                            tipoMime: string;
+                            tamanhoBytes: number;
+                            indicadorId: string | null;
+                            /** @description Instante ISO */
+                            enviadoEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evidencias/{id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Link temporário (5 minutos) para abrir a evidência
+         * @description Mesmo acesso da listagem, pelo atleta do anexo. Cada geração de link fica na auditoria.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            url: string;
+                            /** @description Instante ISO */
+                            expiraEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
