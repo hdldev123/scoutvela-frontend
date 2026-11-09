@@ -5,6 +5,7 @@ import { FaixaPill } from "./FaixaPill";
 import { textoDoStatus } from "./StatusPill";
 import { fmt1, fmtData } from "./formato";
 import "@/styles/avaliar.css";
+import "@/styles/ficha.css";
 import {
   lancarAvaliacao,
   preverAvaliacao,
@@ -13,6 +14,7 @@ import {
   type Parametros,
 } from "@/lib/api/avaliacao";
 import { mensagemDeErro } from "@/lib/api/cliente";
+import { ACEITA_ARQUIVO, enviarEvidencia, validarArquivo } from "@/lib/api/evidencias";
 import { useFicha, useRanking, type FichaAtleta } from "@/lib/api/consultas";
 
 type Pilar = FichaAtleta["pilares"][number];
@@ -25,6 +27,8 @@ const ATRASO_PREVIA_MS = 400;
 interface Rascunho {
   valor?: number;
   evidencia: string;
+  anexoId?: string | undefined;
+  anexoNome?: string | undefined;
 }
 
 const indicadoresDe = (p: Pilar): Indicador[] => p.indicadores ?? [];
@@ -177,6 +181,14 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
   if (pesoMudou || alturaMudou) alterados.add("cf");
 
   const corpo: CorpoAvaliacao = { notas, ...(temMedida ? { medida } : {}) };
+  // O anexo só vai na gravação; a prévia não precisa dele.
+  const corpoEnvio: CorpoAvaliacao = {
+    ...corpo,
+    notas: notas.map((n) => {
+      const anexoId = rasc[n.indicadorId]?.anexoId;
+      return anexoId ? { ...n, anexoId } : n;
+    }),
+  };
   const mudou = notas.length > 0 || temMedida || invalidos.size > 0;
   const pronto = invalidos.size === 0 && (notas.length > 0 || temMedida);
   const chave = JSON.stringify(corpo);
@@ -191,11 +203,13 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
   });
 
   const salvar = useMutation({
-    mutationFn: () => lancarAvaliacao(id, corpo),
+    mutationFn: () => lancarAvaliacao(id, corpoEnvio),
     onSuccess: (r) => {
       toast.success(`Avaliação lançada. Novo score: ${fmt1(r.depois.score)}.`);
       void qc.invalidateQueries({ queryKey: ["atleta", id] });
       void qc.invalidateQueries({ queryKey: ["ranking"] });
+      void qc.invalidateQueries({ queryKey: ["investimento"] });
+      void qc.invalidateQueries({ queryKey: ["evidencias", id] });
       limpar();
     },
   });
@@ -266,6 +280,7 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
                 evidenciaPadrao={meta?.evidenciaPadrao ?? ""}
                 rascunho={rasc[ind.id]}
                 invalido={invalidos.has(ind.id)}
+                atletaId={id}
                 aoMudar={(parte) => mudarRasc(ind.id, parte)}
                 medida={{
                   peso,
@@ -382,6 +397,7 @@ interface LinhaProps {
   evidenciaPadrao: string;
   rascunho: Rascunho | undefined;
   invalido: boolean;
+  atletaId: string;
   aoMudar: (p: Partial<Rascunho>) => void;
   medida: CamposMedida;
 }
@@ -392,6 +408,7 @@ function LinhaIndicador({
   evidenciaPadrao,
   rascunho,
   invalido,
+  atletaId,
   aoMudar,
   medida,
 }: LinhaProps) {
@@ -525,6 +542,12 @@ function LinhaIndicador({
           onChange={(e) => aoMudar({ evidencia: e.target.value })}
         />
       </label>
+      <AnexoDaNota
+        atletaId={atletaId}
+        indicador={ind}
+        anexoNome={rascunho?.anexoNome}
+        aoAnexar={(anexoId, anexoNome) => aoMudar({ anexoId, anexoNome })}
+      />
       {invalido && (
         <span
           id={`ev-erro-${ind.id}`}
@@ -532,6 +555,77 @@ function LinhaIndicador({
           style={{ gridColumn: "1 / -1" }}
         >
           Informe a evidência, de {EVID_MIN} a {EVID_MAX} caracteres.
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** "Anexar evidência": envia o arquivo na hora e guarda o id para seguir junto da nota. */
+function AnexoDaNota({
+  atletaId,
+  indicador,
+  anexoNome,
+  aoAnexar,
+}: {
+  atletaId: string;
+  indicador: Indicador;
+  anexoNome: string | undefined;
+  aoAnexar: (anexoId: string | undefined, anexoNome: string | undefined) => void;
+}) {
+  const qc = useQueryClient();
+  const [erro, setErro] = useState("");
+  const enviar = useMutation({
+    mutationFn: (arquivo: File) => enviarEvidencia(atletaId, arquivo, indicador.id),
+    onSuccess: (r) => {
+      setErro("");
+      aoAnexar(r.id, r.nomeArquivo);
+      void qc.invalidateQueries({ queryKey: ["evidencias", atletaId] });
+    },
+    onError: (e) => setErro(mensagemDeErro(e, "Não foi possível anexar o arquivo.")),
+  });
+
+  function escolher(arquivo: File | undefined) {
+    if (!arquivo) return;
+    const recusa = validarArquivo(arquivo);
+    if (recusa) return setErro(recusa);
+    setErro("");
+    enviar.mutate(arquivo);
+  }
+
+  return (
+    <div className="ficha-anexo">
+      <label className="field" htmlFor={`anexo-${indicador.id}`}>
+        Anexar evidência (PDF, JPG ou PNG, até 5 MB)
+        <input
+          id={`anexo-${indicador.id}`}
+          type="file"
+          accept={ACEITA_ARQUIVO}
+          aria-label={`Anexar evidência de ${indicador.nome}`}
+          disabled={enviar.isPending}
+          onChange={(e) => {
+            escolher(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      {enviar.isPending && <span className="muted">Enviando…</span>}
+      {anexoNome && !enviar.isPending && (
+        <span>
+          <i className="ph ph-paperclip" aria-hidden="true" /> {anexoNome} · segue junto da nota
+          <button
+            type="button"
+            className="btn"
+            onClick={() => aoAnexar(undefined, undefined)}
+            aria-label={`Remover anexo de ${indicador.nome}`}
+          >
+            Remover
+          </button>
+        </span>
+      )}
+      {erro && (
+        <span className="avaliar-erro-campo" role="alert">
+          {erro}
         </span>
       )}
     </div>
