@@ -59,6 +59,14 @@ beforeEach(() => {
     if (caminho === "/parametros") {
       return ok({ classes: [{ id: "ilca7", nome: "ILCA 7" }] });
     }
+    if (caminho === "/termo") {
+      return ok({
+        versao: "Piloto 18+ · v2",
+        titulo: "Termo",
+        texto: "t",
+        vigenteDesde: "2026-11-01",
+      });
+    }
     if (caminho === "/treinadores") return ok([{ id: TREINADOR_ID, nome: "Ana Ribeiro" }]);
     if (caminho === "/atletas/pendentes") return ok(pendentes);
     return falha(404, "nao_encontrado", "?");
@@ -87,7 +95,12 @@ describe("TelaCadastro", () => {
       if (caminho === "/velaid/busca") return ok(velaid());
       if (caminho === "/atletas") {
         return ok(
-          { id: "a1", nome: "Bruno Lima", termo: { status: "aguardando_aceite", versao: "v1" } },
+          {
+            id: "a1",
+            nome: "Bruno Lima",
+            termo: { status: "aguardando_aceite", versao: "v1" },
+            conta: "convite_enviado",
+          },
           201,
         );
       }
@@ -115,9 +128,80 @@ describe("TelaCadastro", () => {
 
     expect(await screen.findByText(/O atleta entra no ranking depois do aceite/)).toBeTruthy();
     expect(POST).toHaveBeenCalledWith("/atletas", {
-      body: { velaidCodigo: "MG-T15", classeId: "ilca7", treinadorId: TREINADOR_ID },
+      body: {
+        velaidCodigo: "MG-T15",
+        classeId: "ilca7",
+        treinadorId: TREINADOR_ID,
+        criarConta: true,
+      },
     });
+    expect(screen.getByText(/Conta criada e convite enviado/)).toBeTruthy();
     expect(toastFn.success).toHaveBeenCalled();
+  });
+
+  it("desmarcar a criação de conta envia criarConta false e explica a resposta", async () => {
+    POST.mockImplementation(async (caminho: string) => {
+      if (caminho === "/velaid/busca") return ok(velaid());
+      return ok(
+        {
+          id: "a1",
+          nome: "Bruno Lima",
+          termo: { status: "aguardando_aceite", versao: "v2" },
+          conta: "sem_email",
+        },
+        201,
+      );
+    });
+    montar();
+    buscar("MG-T15");
+    await screen.findByRole("option", { name: "ILCA 7" });
+    await screen.findByRole("option", { name: "Ana Ribeiro" });
+    const caixa = screen.getByRole("checkbox", { name: "Criar conta e enviar convite ao atleta" });
+    expect((caixa as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(caixa);
+    fireEvent.change(screen.getByLabelText("Classe e função projetadas"), {
+      target: { value: "ilca7" },
+    });
+    fireEvent.change(screen.getByLabelText("Treinador(a) responsável"), {
+      target: { value: TREINADOR_ID },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Enviar termo de consentimento" }));
+    expect(await screen.findByText(/Nenhuma conta foi criada/)).toBeTruthy();
+    expect(POST).toHaveBeenCalledWith("/atletas", {
+      body: {
+        velaidCodigo: "MG-T15",
+        classeId: "ilca7",
+        treinadorId: TREINADOR_ID,
+        criarConta: false,
+      },
+    });
+  });
+
+  it("conta indisponível orienta a reenviar o convite", async () => {
+    POST.mockImplementation(async (caminho: string) => {
+      if (caminho === "/velaid/busca") return ok(velaid());
+      return ok(
+        {
+          id: "a1",
+          nome: "Bruno Lima",
+          termo: { status: "aguardando_aceite", versao: "v2" },
+          conta: "indisponivel",
+        },
+        201,
+      );
+    });
+    montar();
+    buscar("MG-T15");
+    await screen.findByRole("option", { name: "ILCA 7" });
+    await screen.findByRole("option", { name: "Ana Ribeiro" });
+    fireEvent.change(screen.getByLabelText("Classe e função projetadas"), {
+      target: { value: "ilca7" },
+    });
+    fireEvent.change(screen.getByLabelText("Treinador(a) responsável"), {
+      target: { value: TREINADOR_ID },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Enviar termo de consentimento" }));
+    expect(await screen.findByText(/convite não pôde ser enviado neste ambiente/)).toBeTruthy();
   });
 
   it("não elegível mostra o motivo e bloqueia o cadastro", async () => {
@@ -166,7 +250,7 @@ describe("TelaCadastro", () => {
     await waitFor(() =>
       expect(POST).toHaveBeenCalledWith("/atletas/{id}/termo", {
         params: { path: { id: "a9" } },
-        body: { versao: "Piloto 18+ · v1" },
+        body: { versao: "Piloto 18+ · v2" },
       }),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());

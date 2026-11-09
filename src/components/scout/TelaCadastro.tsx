@@ -18,6 +18,7 @@ import {
   type TipoImportacao,
 } from "@/lib/api/cadastro";
 import { ErroApi, mensagemDeErro } from "@/lib/api/cliente";
+import { useTermo } from "@/lib/api/titular";
 import "@/styles/cadastro.css";
 
 const FORMATOS: Record<TipoImportacao, { nome: string; colunas: string; nota: string }> = {
@@ -31,6 +32,14 @@ const FORMATOS: Record<TipoImportacao, { nome: string; colunas: string; nota: st
     colunas: "velaid;nivel;evento;data;posicao;tamanho_frota;pontos",
     nota: "Nível: brasileiro, estadual ou regional.",
   },
+};
+
+const MENSAGEM_CONTA: Record<AtletaCadastrado["conta"], string> = {
+  convite_enviado: "Conta criada e convite enviado ao e-mail do VelaID.",
+  sem_email:
+    "Nenhuma conta foi criada: o atleta não tem e-mail no VelaID, o e-mail já está em uso ou a opção estava desmarcada. Crie a conta em Contas de acesso.",
+  indisponivel:
+    "Conta criada, mas o convite não pôde ser enviado neste ambiente. Reenvie em Contas de acesso.",
 };
 
 function lerTexto(arquivo: File): Promise<string> {
@@ -73,6 +82,7 @@ function NovoAtleta() {
   const [treinadorId, setTreinadorId] = useState("");
   const [erroCadastro, setErroCadastro] = useState("");
   const [criado, setCriado] = useState<AtletaCadastrado | null>(null);
+  const [criarConta, setCriarConta] = useState(true);
   const busca = useBuscarVelaId();
   const cadastro = useCadastrarAtleta();
   const classes = useClasses();
@@ -107,7 +117,7 @@ function NovoAtleta() {
     if (!dados) return;
     setErroCadastro("");
     cadastro.mutate(
-      { velaidCodigo: dados.codigo, classeId, treinadorId },
+      { velaidCodigo: dados.codigo, classeId, treinadorId, criarConta },
       {
         onSuccess: (r) => {
           setCriado(r);
@@ -155,7 +165,7 @@ function NovoAtleta() {
         {criado && (
           <div className="note" role="status">
             Termo enviado a {criado.nome} ({criado.termo.versao}). O atleta entra no ranking depois
-            do aceite.
+            do aceite. {MENSAGEM_CONTA[criado.conta]}
           </div>
         )}
 
@@ -224,6 +234,14 @@ function NovoAtleta() {
                     {erroCadastro}
                   </div>
                 )}
+                <label className="painel-opcao">
+                  <input
+                    type="checkbox"
+                    checked={criarConta}
+                    onChange={(e) => setCriarConta(e.target.checked)}
+                  />
+                  Criar conta e enviar convite ao atleta
+                </label>
                 <div className="btn-row">
                   <button
                     type="submit"
@@ -252,6 +270,7 @@ function NovoAtleta() {
 function TermosPendentes() {
   const pendentes = usePendentes();
   const registrar = useRegistrarTermo();
+  const termo = useTermo();
   const [alvo, setAlvo] = useState<AtletaPendente | null>(null);
   const [erro, setErro] = useState("");
 
@@ -259,13 +278,17 @@ function TermosPendentes() {
     if (!alvo) return;
     const atleta = alvo;
     setErro("");
-    registrar.mutate(atleta.id, {
-      onSuccess: () => {
-        setAlvo(null);
-        toast.success(`Aceite de ${atleta.nome} registrado. O atleta entra no ranking.`);
+    if (!termo.data) return;
+    registrar.mutate(
+      { id: atleta.id, versao: termo.data.versao },
+      {
+        onSuccess: () => {
+          setAlvo(null);
+          toast.success(`Aceite de ${atleta.nome} registrado. O atleta entra no ranking.`);
+        },
+        onError: (err) => setErro(mensagemDeErro(err)),
       },
-      onError: (err) => setErro(mensagemDeErro(err)),
-    });
+    );
   };
 
   return (
@@ -327,13 +350,13 @@ function TermosPendentes() {
         <Dialogo titulo="Registrar aceite do termo" aoFechar={() => setAlvo(null)}>
           <div className="stack" style={{ gap: 12 }}>
             <p>
-              Confirme que {alvo.nome} ({alvo.velaid}) devolveu o termo do piloto aceito. Depois
-              disso o atleta entra no ranking. O compartilhamento com o IBVAR continua sendo decisão
-              do atleta.
+              Confirme que {alvo.nome} ({alvo.velaid}) devolveu aceito o termo vigente
+              {termo.data ? ` (${termo.data.versao})` : ""}. Depois disso o atleta entra no ranking.
+              O compartilhamento com o IBVAR continua sendo decisão do atleta.
             </p>
-            {erro && (
+            {(erro || termo.isError) && (
               <div className="note" role="alert">
-                {erro}
+                {erro || "Não foi possível carregar o termo vigente."}
               </div>
             )}
             <div className="btn-row">
@@ -341,7 +364,7 @@ function TermosPendentes() {
                 type="button"
                 className="btn primary"
                 onClick={confirmar}
-                disabled={registrar.isPending}
+                disabled={registrar.isPending || !termo.data}
               >
                 {registrar.isPending ? "Registrando…" : "Confirmar aceite"}
               </button>

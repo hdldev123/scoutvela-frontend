@@ -7,7 +7,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    // Gerados (contrato e rotas) e o protótipo legado, que sai quando as telas forem portadas.
+    // Gerados (contrato e rotas).
     ignores: [
       "dist",
       ".output",
@@ -16,7 +16,6 @@ export default tseslint.config(
       ".vercel",
       "src/lib/api/schema.d.ts",
       "src/routeTree.gen.ts",
-      "src/lib/scout/engine.js",
     ],
   },
   {

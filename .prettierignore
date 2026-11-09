@@ -7,6 +7,5 @@ package-lock.json
 bun.lock
 routeTree.gen.ts
 src/lib/api/schema.d.ts
-src/lib/scout/engine.js
 .wrangler
 .vercel

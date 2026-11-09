@@ -34,6 +34,7 @@ export function useSalvarParametros() {
       void qc.invalidateQueries({ queryKey: ["parametros"] });
       void qc.invalidateQueries({ queryKey: ["ranking"] });
       void qc.invalidateQueries({ queryKey: ["atleta"] });
+      void qc.invalidateQueries({ queryKey: ["investimento"] });
     },
   });
 }

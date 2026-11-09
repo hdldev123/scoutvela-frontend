@@ -6,15 +6,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const GET = vi.fn();
 const atualizarGate = vi.fn();
 const criarRevisao = vi.fn();
+const registrarPlano = vi.fn();
+const atualizarFinanceiro = vi.fn();
+const lancarResultado = vi.fn();
+const POST = vi.fn();
+const linkEvidencia = vi.hoisted(() => ({ url: "https://storage.exemplo.com/a.pdf?assinatura=1" }));
 const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
 
 vi.mock("@/lib/api/cliente", async (importar) => ({
   ...(await importar<typeof import("@/lib/api/cliente")>()),
-  api: { GET: (...args: unknown[]) => GET(...args) },
+  api: {
+    GET: (...args: unknown[]) => GET(...args),
+    POST: (...args: unknown[]) => POST(...args),
+  },
 }));
 vi.mock("@/lib/api/mutacoes-ficha", () => ({
   atualizarGate: (...a: unknown[]) => atualizarGate(...a),
   criarRevisao: (...a: unknown[]) => criarRevisao(...a),
+  registrarPlano: (...a: unknown[]) => registrarPlano(...a),
+  atualizarFinanceiro: (...a: unknown[]) => atualizarFinanceiro(...a),
+  lancarResultado: (...a: unknown[]) => lancarResultado(...a),
 }));
 vi.mock("sonner", () => ({ toast: toastFn }));
 vi.mock("@tanstack/react-router", () => ({
@@ -42,6 +53,7 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 import { TelaFicha } from "@/components/scout/TelaFicha";
+import { ErroApi } from "@/lib/api/cliente";
 import type { FichaAtleta } from "@/lib/api/consultas";
 
 function pilar(
@@ -198,15 +210,49 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
   };
 }
 
+const PARAMETROS = {
+  componentesCusto: [
+    { id: "treinador", nome: "Treinador" },
+    { id: "viagens", nome: "Viagens" },
+  ],
+};
+
+const ANEXOS = {
+  anexos: [
+    {
+      id: "e1",
+      nomeArquivo: "teste-de-campo.pdf",
+      tipoMime: "application/pdf",
+      tamanhoBytes: 1000,
+      indicadorId: "perf_1",
+      enviadoEm: "2026-11-05T12:00:00.000Z",
+    },
+  ],
+};
+
 function montar(papel: string, dados: FichaAtleta | { erro: number }) {
-  GET.mockResolvedValue(
-    "erro" in dados
-      ? {
-          error: { erro: "nao_encontrado", mensagem: "Atleta não encontrado." },
-          response: { status: dados.erro },
-        }
-      : { data: dados, response: { status: 200 } },
-  );
+  GET.mockImplementation((caminho: string) => {
+    if (caminho === "/parametros") {
+      return Promise.resolve({ data: PARAMETROS, response: { status: 200 } });
+    }
+    if (caminho === "/atletas/{id}/evidencias") {
+      return Promise.resolve({ data: ANEXOS, response: { status: 200 } });
+    }
+    if (caminho === "/evidencias/{id}/link") {
+      return Promise.resolve({
+        data: { url: linkEvidencia.url, expiraEm: "2026-11-09T12:05:00.000Z" },
+        response: { status: 200 },
+      });
+    }
+    return Promise.resolve(
+      "erro" in dados
+        ? {
+            error: { erro: "nao_encontrado", mensagem: "Atleta não encontrado." },
+            response: { status: dados.erro },
+          }
+        : { data: dados, response: { status: 200 } },
+    );
+  });
   render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
@@ -216,16 +262,37 @@ function montar(papel: string, dados: FichaAtleta | { erro: number }) {
   );
 }
 
+const SUGESTAO = {
+  forcas: "Performance e Técnica",
+  lacunas: "Carreira",
+  meta12m: "Primeiro Mundial da classe",
+  meta24m: "Fechar os gates em aberto",
+  recomendacao: "Em desenvolvimento, com apoio para viagens",
+};
+const PLANO = {
+  forcas: "Regata de vento forte",
+  lacunas: "Largada",
+  meta12m: "Top 20 no Mundial",
+  meta24m: "Top 10 no Mundial",
+  recomendacao: "Manter o ciclo atual",
+  registradoPor: { id: "u1", nome: "Ana Ribeiro" },
+  registradoEm: "2026-11-02T12:00:00.000Z",
+};
+
 describe("TelaFicha", () => {
   beforeEach(() => {
     GET.mockReset();
     atualizarGate.mockReset();
     criarRevisao.mockReset();
+    registrarPlano.mockReset();
+    atualizarFinanceiro.mockReset();
+    lancarResultado.mockReset();
+    POST.mockReset();
     toastFn.mockReset();
     toastFn.error.mockReset();
   });
 
-  it("mostra cabeçalho, score, pill Parcial e plano individual", async () => {
+  it("mostra cabeçalho, score e pill Parcial", async () => {
     montar("gestor", ficha());
     expect(await screen.findByRole("heading", { name: "Helena Vasques" })).toBeInTheDocument();
     expect(screen.getByText("71,5")).toBeInTheDocument();
@@ -234,21 +301,251 @@ describe("TelaFicha", () => {
     expect(
       screen.getByRole("img", { name: /Score nos últimos ciclos: 60,0, 66,0, 71,5/ }),
     ).toBeInTheDocument();
-    const plano = screen.getByRole("heading", { name: "Plano individual" }).closest("section")!;
-    // Só 2 pilares com nota: forças (2 maiores) e lacunas (2 menores) coincidem, como no protótipo.
-    expect(within(plano).getAllByText("Performance e Class Fit")).toHaveLength(2);
-    expect(within(plano).getByText("Fechar os gates em aberto")).toBeInTheDocument();
   });
 
-  it("meta de 12 meses usa Top 10 quando há resultado de nível mundial (valor em minúsculas)", async () => {
-    const base = ficha();
-    montar(
-      "gestor",
-      ficha({
-        resultados: [{ ...base.resultados![0]!, nivel: "mundial", evento: "Mundial ILCA 6" }],
+  it("plano registrado mostra autor e data, sem usar a sugestão", async () => {
+    montar("gestor", ficha({ plano: PLANO, sugestaoPlano: SUGESTAO }));
+    const secao = (await screen.findByRole("heading", { name: "Plano individual" })).closest(
+      "section",
+    )!;
+    expect(within(secao).getByText("Registrado por Ana Ribeiro em 02/11/2026")).toBeInTheDocument();
+    expect(within(secao).getByText("Regata de vento forte")).toBeInTheDocument();
+    expect(within(secao).queryByText(SUGESTAO.forcas)).not.toBeInTheDocument();
+    expect(within(secao).queryByText(/Sugestão da API/)).not.toBeInTheDocument();
+  });
+
+  it("sem plano registrado mostra a sugestão da API, marcada", async () => {
+    montar("treinador", ficha({ sugestaoPlano: SUGESTAO }));
+    const secao = (await screen.findByRole("heading", { name: "Plano individual" })).closest(
+      "section",
+    )!;
+    expect(within(secao).getByText("Sugestão da API, ainda não registrada")).toBeInTheDocument();
+    expect(within(secao).getByText(SUGESTAO.recomendacao)).toBeInTheDocument();
+  });
+
+  it("gestor registra o plano a partir da sugestão e envia o corpo certo", async () => {
+    registrarPlano.mockResolvedValue({ ...PLANO });
+    montar("gestor", ficha({ sugestaoPlano: SUGESTAO }));
+    fireEvent.click(await screen.findByRole("button", { name: "Registrar plano" }));
+    const dialogo = screen.getByRole("dialog");
+    expect(within(dialogo).getByLabelText("Forças")).toHaveValue(SUGESTAO.forcas);
+    fireEvent.change(within(dialogo).getByLabelText("Lacunas"), { target: { value: "  " } });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Salvar plano" }));
+    expect(within(dialogo).getByRole("alert")).toHaveTextContent("Preencha o campo “Lacunas”");
+    expect(registrarPlano).not.toHaveBeenCalled();
+    fireEvent.change(within(dialogo).getByLabelText("Lacunas"), { target: { value: "Largada" } });
+    fireEvent.change(within(dialogo).getByLabelText("Meta 12 meses"), {
+      target: { value: "Top 20" },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Salvar plano" }));
+    await waitFor(() =>
+      expect(registrarPlano).toHaveBeenCalledWith("a07", {
+        forcas: SUGESTAO.forcas,
+        lacunas: "Largada",
+        meta12m: "Top 20",
+        meta24m: SUGESTAO.meta24m,
+        recomendacao: SUGESTAO.recomendacao,
       }),
     );
-    expect(await screen.findByText("Top 10 no Mundial da classe")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("IBVAR não vê plano nem evidências quando a API não devolve plano", async () => {
+    montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Plano individual" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Evidências anexadas" })).not.toBeInTheDocument();
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/evidencias", expect.anything());
+  });
+
+  it("atleta vê o plano sem botão de registrar", async () => {
+    montar("atleta", ficha({ plano: PLANO }));
+    await screen.findByText(/Registrado por Ana Ribeiro/);
+    expect(screen.queryByRole("button", { name: "Registrar plano" })).not.toBeInTheDocument();
+  });
+
+  it("financeiro: o gestor abre o diálogo e o PUT leva o corpo preenchido", async () => {
+    atualizarFinanceiro.mockResolvedValue({});
+    montar("gestor", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: "Atualizar financeiro" }));
+    const dialogo = await screen.findByRole("dialog");
+    expect(await within(dialogo).findByText(/não entra no score/)).toBeInTheDocument();
+    expect(within(dialogo).getByText(/gate G4/)).toBeInTheDocument();
+    expect(within(dialogo).getByLabelText("Perfil de suporte")).toHaveValue("C");
+    expect(within(dialogo).getByLabelText("Meses assegurados")).toHaveValue(12);
+    expect(
+      within(dialogo).getByRole("option", { name: "D · Estrutura insuficiente" }),
+    ).toBeTruthy();
+    fireEvent.change(within(dialogo).getByLabelText("Perfil de suporte"), {
+      target: { value: "B" },
+    });
+    fireEvent.change(within(dialogo).getByLabelText("Meses assegurados"), {
+      target: { value: "24" },
+    });
+    fireEvent.change(within(dialogo).getByLabelText("Patrocínio privado"), {
+      target: { value: "em_negociacao" },
+    });
+    fireEvent.change(document.getElementById("fin-apoio-viagens")!, { target: { value: "alta" } });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Salvar financeiro" }));
+    await waitFor(() =>
+      expect(atualizarFinanceiro).toHaveBeenCalledWith("a07", {
+        perfilSuporte: "B",
+        mesesAssegurados: 24,
+        patrocinioPrivado: "em_negociacao",
+        componentes: [
+          { componenteId: "treinador", autonomia: "baixa", apoioCbvela: "alta" },
+          { componenteId: "viagens", autonomia: "parcial", apoioCbvela: "alta" },
+        ],
+      }),
+    );
+  });
+
+  it("treinador não vê o botão de atualizar financeiro", async () => {
+    montar("treinador", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("button", { name: "Atualizar financeiro" })).not.toBeInTheDocument();
+  });
+
+  it("resultado internacional: exige https, mostra erro 409 e envia o corpo certo", async () => {
+    lancarResultado.mockRejectedValueOnce(
+      new ErroApi(409, "requisicao_invalida", "Resultado já lançado para este evento."),
+    );
+    lancarResultado.mockResolvedValueOnce({});
+    montar("treinador", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: "Lançar resultado internacional" }));
+    const dialogo = screen.getByRole("dialog");
+    fireEvent.change(within(dialogo).getByLabelText("Nível"), { target: { value: "continental" } });
+    fireEvent.change(within(dialogo).getByLabelText("Evento"), {
+      target: { value: "Pan-Americano ILCA 6" },
+    });
+    fireEvent.change(within(dialogo).getByLabelText("Data"), { target: { value: "2026-08-10" } });
+    fireEvent.change(within(dialogo).getByLabelText("Posição"), { target: { value: "5" } });
+    fireEvent.change(within(dialogo).getByLabelText("Tamanho da frota"), {
+      target: { value: "60" },
+    });
+    fireEvent.change(within(dialogo).getByLabelText(/Link do resultado oficial/), {
+      target: { value: "http://inseguro.exemplo.com/r" },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Lançar resultado" }));
+    expect(within(dialogo).getByRole("alert")).toHaveTextContent("começar com https://");
+    expect(lancarResultado).not.toHaveBeenCalled();
+
+    fireEvent.change(within(dialogo).getByLabelText(/Link do resultado oficial/), {
+      target: { value: "https://oficial.exemplo.com/pan" },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Lançar resultado" }));
+    expect(await within(dialogo).findByText("Resultado já lançado para este evento.")).toBeTruthy();
+    expect(lancarResultado).toHaveBeenCalledWith("a07", {
+      nivel: "continental",
+      evento: "Pan-Americano ILCA 6",
+      data: "2026-08-10",
+      posicao: 5,
+      tamanhoFrota: 60,
+      linkOficial: "https://oficial.exemplo.com/pan",
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Lançar resultado" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("atleta não lança resultado; a tabela mostra o nível legível", async () => {
+    const f = ficha();
+    f.resultados[1] = { ...f.resultados[1]!, nivel: "internacional_aberto", evento: "Aberto X" };
+    montar("atleta", f);
+    expect(await screen.findByRole("cell", { name: "Internacional aberto" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lançar resultado internacional" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("evidências: lista, abre o link https em nova aba e baixa data:", async () => {
+    const cliques: { href: string; target: string; rel: string; download: string }[] = [];
+    const clique = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      cliques.push({
+        href: this.href,
+        target: this.target,
+        rel: this.rel,
+        download: this.download,
+      });
+    });
+    montar("atleta", ficha());
+    const secao = (await screen.findByRole("heading", { name: "Evidências anexadas" })).closest(
+      "section",
+    )!;
+    expect(await within(secao).findByText("teste-de-campo.pdf")).toBeInTheDocument();
+    expect(within(secao).getByText(/Indicador de Performance · 05\/11\/2026/)).toBeInTheDocument();
+    expect(within(secao).queryByRole("button", { name: "Anexar arquivo" })).not.toBeInTheDocument();
+
+    fireEvent.click(within(secao).getByRole("button", { name: "Abrir teste-de-campo.pdf" }));
+    await waitFor(() => expect(cliques).toHaveLength(1));
+    expect(cliques[0]).toMatchObject({ target: "_blank", rel: "noopener noreferrer" });
+    expect(cliques[0]!.href).toContain("https://storage.exemplo.com/a.pdf");
+
+    linkEvidencia.url = "data:application/pdf;base64,AAAA";
+    fireEvent.click(within(secao).getByRole("button", { name: "Abrir teste-de-campo.pdf" }));
+    await waitFor(() => expect(cliques).toHaveLength(2));
+    expect(cliques[1]).toMatchObject({ download: "teste-de-campo.pdf", target: "" });
+    linkEvidencia.url = "https://storage.exemplo.com/a.pdf?assinatura=1";
+    clique.mockRestore();
+  });
+
+  it("evidências: recusa arquivo grande ou de formato errado antes de enviar", async () => {
+    montar("treinador", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: "Anexar arquivo" }));
+    const dialogo = screen.getByRole("dialog");
+    const campo = within(dialogo).getByLabelText("Arquivo");
+    const grande = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "grande.pdf", {
+      type: "application/pdf",
+    });
+    fireEvent.change(campo, { target: { files: [grande] } });
+    expect(within(dialogo).getByRole("alert")).toHaveTextContent("passa de 5 MB");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar arquivo" }));
+    const texto = new File(["oi"], "nota.txt", { type: "text/plain" });
+    fireEvent.change(campo, { target: { files: [texto] } });
+    expect(within(dialogo).getByRole("alert")).toHaveTextContent("Formato não aceito");
+    expect(POST).not.toHaveBeenCalled();
+  });
+
+  it("evidências: envia o arquivo em base64 com o indicador", async () => {
+    POST.mockResolvedValue({
+      data: { ...ANEXOS.anexos[0], id: "e2" },
+      response: { status: 201 },
+    });
+    montar("gestor", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: "Anexar arquivo" }));
+    const dialogo = screen.getByRole("dialog");
+    const arquivo = new File(["abc"], "foto.png", { type: "image/png" });
+    fireEvent.change(within(dialogo).getByLabelText("Arquivo"), { target: { files: [arquivo] } });
+    fireEvent.change(within(dialogo).getByLabelText("Indicador (opcional)"), {
+      target: { value: "perf_1" },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar arquivo" }));
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith("/atletas/{id}/evidencias", {
+        params: { path: { id: "a07" } },
+        body: {
+          nomeArquivo: "foto.png",
+          tipoMime: "image/png",
+          conteudoBase64: "YWJj",
+          indicadorId: "perf_1",
+        },
+      }),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("indicador com anexo mostra o clipe com o nome do arquivo", async () => {
+    const f = ficha();
+    f.pilares[0] = {
+      ...f.pilares[0]!,
+      indicadores: [
+        { ...f.pilares[0]!.indicadores![0]!, anexo: { id: "e1", nomeArquivo: "video-teste.pdf" } },
+      ],
+    };
+    montar("gestor", f);
+    fireEvent.click(await screen.findByRole("button", { name: /^Performance/ }));
+    expect(screen.getByRole("button", { name: "video-teste.pdf" })).toBeInTheDocument();
   });
 
   it("pilar abre como acordeão e marca a maior perda de pontos", async () => {
