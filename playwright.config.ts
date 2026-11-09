@@ -34,7 +34,11 @@ export default defineConfig({
     {
       command: "node ./node_modules/vite/bin/vite.js dev --port 8080 --strictPort --host localhost",
       url: "http://localhost:8080/entrar",
-      env: { VITE_API_URL: API, VITE_SUPABASE_URL: AUTH, VITE_SUPABASE_ANON_KEY: "chave-local-dev" },
+      env: {
+        VITE_API_URL: API,
+        VITE_SUPABASE_URL: AUTH,
+        VITE_SUPABASE_ANON_KEY: "chave-local-dev",
+      },
       reuseExistingServer: false,
       timeout: 180_000,
     },

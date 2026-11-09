@@ -1,6 +1,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { api, paraErroApi } from "@/lib/api/cliente";
 import { getSupabase } from "./supabase";
 
@@ -47,7 +55,10 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     queryClient.clear();
   }, [queryClient]);
 
-  const valor = useMemo(() => ({ carregando, sessao, entrar, sair }), [carregando, sessao, entrar, sair]);
+  const valor = useMemo(
+    () => ({ carregando, sessao, entrar, sair }),
+    [carregando, sessao, entrar, sair],
+  );
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
 }
 

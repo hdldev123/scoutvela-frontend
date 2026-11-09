@@ -35,7 +35,12 @@ describe("pills e strip", () => {
   });
 
   it("FaixaPill usa a classe da faixa e o nome curto", () => {
-    render(<FaixaPill faixa={{ id: "f1", nome: "Prioridade de programa", nomeCurto: "Prioridade" }} curto />);
+    render(
+      <FaixaPill
+        faixa={{ id: "f1", nome: "Prioridade de programa", nomeCurto: "Prioridade" }}
+        curto
+      />,
+    );
     expect(screen.getByText("Prioridade")).toHaveClass("pill", "f1");
   });
 

@@ -6,9 +6,11 @@ import type { paths } from "./schema";
 /** Bloco `gates` da ficha (mesmo formato que o PUT devolve). */
 export type GatesFicha =
   paths["/atletas/{id}/gates"]["put"]["responses"][200]["content"]["application/json"];
-export type CorpoGate = paths["/atletas/{id}/gates"]["put"]["requestBody"]["content"]["application/json"];
+export type CorpoGate =
+  paths["/atletas/{id}/gates"]["put"]["requestBody"]["content"]["application/json"];
 export type CorpoRevisao = paths["/revisoes"]["post"]["requestBody"]["content"]["application/json"];
-export type RespostaRevisao = paths["/revisoes"]["post"]["responses"][201]["content"]["application/json"];
+export type RespostaRevisao =
+  paths["/revisoes"]["post"]["responses"][201]["content"]["application/json"];
 
 /** Gestor ajusta o status de um gate (igual à sugestão automática volta ao automático). */
 export async function atualizarGate(atletaId: string, corpo: CorpoGate): Promise<GatesFicha> {

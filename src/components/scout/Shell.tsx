@@ -42,7 +42,9 @@ export function Shell({ me, onSair, children }: ShellProps) {
         <div className="side-foot">
           {me && (
             <div className="side-user">
-              <span className="avatar" aria-hidden="true">{iniciais(me.usuario.nome)}</span>
+              <span className="avatar" aria-hidden="true">
+                {iniciais(me.usuario.nome)}
+              </span>
               <span className="side-user-txt">
                 <b>{me.usuario.nome}</b>
                 <small>{ROTULO_PAPEL[me.usuario.papel] ?? me.usuario.papel}</small>
@@ -58,7 +60,8 @@ export function Shell({ me, onSair, children }: ShellProps) {
       <main className="wrap" id="app">
         {children}
         <footer>
-          Protótipo navegável com dados fictícios · metodologia do Word “Sistema de Talent Identification & Scouting” (29/09/2026) · VelaID e Ranking CBVela simulados.
+          Protótipo navegável com dados fictícios · metodologia do Word “Sistema de Talent
+          Identification & Scouting” (29/09/2026) · VelaID e Ranking CBVela simulados.
         </footer>
       </main>
     </div>

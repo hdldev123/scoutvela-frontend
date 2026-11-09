@@ -32,7 +32,8 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
 
   const titulo = papel === "treinador" ? "Meus atletas" : "Ranking de talento";
   const ciclo = lista.data?.ciclo;
-  const mudar = (parcial: ParcialFiltros) => aoMudarFiltros(filtrosLimpos({ ...filtros, ...parcial } as FiltrosRanking));
+  const mudar = (parcial: ParcialFiltros) =>
+    aoMudarFiltros(filtrosLimpos({ ...filtros, ...parcial } as FiltrosRanking));
 
   return (
     <>
@@ -45,8 +46,8 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
           )}
           <h1>{titulo}</h1>
           <p>
-            Ordem de priorização pelo score de 100 pontos, recalculado a cada lançamento. O sistema sugere; gates e
-            decisões ficam com o gestor.
+            Ordem de priorização pelo score de 100 pontos, recalculado a cada lançamento. O sistema
+            sugere; gates e decisões ficam com o gestor.
           </p>
         </div>
       </div>
@@ -71,7 +72,9 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
           <select
             id="f-categoria"
             value={filtros.categoria ?? ""}
-            onChange={(e) => mudar({ categoria: (e.target.value || undefined) as FiltrosRanking["categoria"] })}
+            onChange={(e) =>
+              mudar({ categoria: (e.target.value || undefined) as FiltrosRanking["categoria"] })
+            }
           >
             <option value="">Todas</option>
             <option value="F">Feminino</option>
@@ -83,7 +86,9 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
           <select
             id="f-faixa"
             value={filtros.faixa ?? ""}
-            onChange={(e) => mudar({ faixa: (e.target.value || undefined) as FiltrosRanking["faixa"] })}
+            onChange={(e) =>
+              mudar({ faixa: (e.target.value || undefined) as FiltrosRanking["faixa"] })
+            }
           >
             <option value="">Todas</option>
             {FAIXAS.map((f) => (
@@ -108,8 +113,8 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
         </label>
       </div>
       <p className="rank-legend">
-        Barras: os 9 pilares, de Performance a Carreira. Tracejado = pilar ainda sem nota. Pontos CBVela vêm do
-        ranking oficial (simulado), últimas 52 semanas.
+        Barras: os 9 pilares, de Performance a Carreira. Tracejado = pilar ainda sem nota. Pontos
+        CBVela vêm do ranking oficial (simulado), últimas 52 semanas.
       </p>
       <div className="rank-headrow" aria-hidden="true">
         <span>#</span>
@@ -134,7 +139,12 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
               <div className="panel empty-state">Nenhum atleta com esses filtros.</div>
             ) : (
               lista.data.itens.map((i) => (
-                <Link key={i.atleta.id} to="/atletas/$id" params={{ id: i.atleta.id }} className="rank-row">
+                <Link
+                  key={i.atleta.id}
+                  to="/atletas/$id"
+                  params={{ id: i.atleta.id }}
+                  className="rank-row"
+                >
                   <span className="pos">{i.posicao}</span>
                   <span className="who">
                     <span className="avatar" aria-hidden="true">
@@ -146,7 +156,8 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
                         {!i.completo && <span className="pill st-parcial">Parcial</span>}
                       </strong>
                       <span className="meta">
-                        <code>{i.atleta.velaid}</code> · {i.atleta.classe.nome} · {i.atleta.idade} anos
+                        <code>{i.atleta.velaid}</code> · {i.atleta.classe.nome} · {i.atleta.idade}{" "}
+                        anos
                         {i.atleta.uf ? ` · ${i.atleta.uf}` : ""}
                       </span>
                     </span>
@@ -170,7 +181,9 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
           {papel === "ibvar" && (lista.data.ocultosSemConsentimento ?? 0) > 0 && (
             <p className="muted" style={{ fontSize: "0.85rem", marginTop: 10 }}>
               {lista.data.ocultosSemConsentimento}{" "}
-              {lista.data.ocultosSemConsentimento === 1 ? "atleta sem consentimento entra" : "atletas sem consentimento entram"}{" "}
+              {lista.data.ocultosSemConsentimento === 1
+                ? "atleta sem consentimento entra"
+                : "atletas sem consentimento entram"}{" "}
               só nos números agregados.
             </p>
           )}

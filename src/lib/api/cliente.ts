@@ -15,7 +15,10 @@ export class ErroApi extends Error {
 }
 
 /** Extrai `{ erro, mensagem }` do corpo de erro da API (ou usa um texto padrão). */
-export function mensagemDeErro(erro: unknown, padrao = "Não foi possível concluir a operação."): string {
+export function mensagemDeErro(
+  erro: unknown,
+  padrao = "Não foi possível concluir a operação.",
+): string {
   if (erro instanceof Error && erro.message) return erro.message;
   if (erro && typeof erro === "object" && "mensagem" in erro && typeof erro.mensagem === "string") {
     return erro.mensagem;
@@ -25,7 +28,10 @@ export function mensagemDeErro(erro: unknown, padrao = "Não foi possível concl
 
 /** Converte o corpo de erro de uma resposta em `ErroApi`. */
 export function paraErroApi(status: number, corpo: unknown): ErroApi {
-  const c = (corpo && typeof corpo === "object" ? corpo : {}) as { erro?: unknown; mensagem?: unknown };
+  const c = (corpo && typeof corpo === "object" ? corpo : {}) as {
+    erro?: unknown;
+    mensagem?: unknown;
+  };
   return new ErroApi(
     status,
     typeof c.erro === "string" ? c.erro : "erro_interno",
@@ -41,7 +47,10 @@ export interface OpcoesMiddleware {
 }
 
 /** Põe o Bearer da sessão em cada requisição; 401 encerra a sessão. */
-export function criarMiddlewareAuth({ obterToken, aoNaoAutenticado }: OpcoesMiddleware): Middleware {
+export function criarMiddlewareAuth({
+  obterToken,
+  aoNaoAutenticado,
+}: OpcoesMiddleware): Middleware {
   return {
     async onRequest({ request }) {
       const token = await obterToken();

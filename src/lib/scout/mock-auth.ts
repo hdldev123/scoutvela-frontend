@@ -4,7 +4,12 @@ export type Conta = { email: string; senha: string; nome: string; perfil: Perfil
 
 export const CONTAS_DEMO: Conta[] = [
   { email: "gestor@scoutvela.dev", senha: "gestor123", nome: "Gestor CBVela", perfil: "gestor" },
-  { email: "treinadora@scoutvela.dev", senha: "treino123", nome: "Ana Ribeiro", perfil: "treinador" },
+  {
+    email: "treinadora@scoutvela.dev",
+    senha: "treino123",
+    nome: "Ana Ribeiro",
+    perfil: "treinador",
+  },
   { email: "atleta@scoutvela.dev", senha: "atleta123", nome: "Helena Vasques", perfil: "atleta" },
   { email: "ibvar@scoutvela.dev", senha: "ibvar123", nome: "IBVAR", perfil: "ibvar" },
 ];

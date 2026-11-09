@@ -46,7 +46,10 @@ describe("login", () => {
     montar();
     preencher("gestor@exemplo.com", "segredo");
     await waitFor(() =>
-      expect(signInWithPassword).toHaveBeenCalledWith({ email: "gestor@exemplo.com", password: "segredo" }),
+      expect(signInWithPassword).toHaveBeenCalledWith({
+        email: "gestor@exemplo.com",
+        password: "segredo",
+      }),
     );
   });
 
