@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import "@/styles/contas.css";
 import "@/styles/painel.css";
 import { BigScore } from "./BigScore";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
@@ -18,6 +19,15 @@ import {
   type PainelAtleta,
   type PerguntaPainel,
 } from "@/lib/api/painel";
+import {
+  baixarJson,
+  buscarMeusDados,
+  useAceitarTermo,
+  useCriarPedidoTitular,
+  usePedidosTitular,
+  useTermo,
+  type TipoPedidoTitular,
+} from "@/lib/api/titular";
 
 const SITUACAO = {
   sua_vez: { rotulo: "Sua vez", classe: "st-parcial" },
@@ -216,6 +226,189 @@ function Consentimento({ c }: { c: ConsentimentoPainel }) {
         </span>
         <span className="pill st-lock">Restrito</span>
       </div>
+      <MeusDados />
+    </section>
+  );
+}
+
+const TIPOS_PEDIDO: Record<TipoPedidoTitular, string> = {
+  acesso: "Acesso aos meus dados",
+  correcao: "Correção de dados",
+  exclusao: "Exclusão de dados",
+  revogacao: "Revogação de consentimento",
+};
+
+/** Termo vigente e botão de aceite; some quando o atleta já aceitou. */
+function TermoAceite() {
+  const termo = useTermo();
+  const aceitar = useAceitarTermo();
+  return (
+    <section className="panel" aria-labelledby="painel-termo">
+      <div className="panel-head">
+        <h2 id="painel-termo">{termo.data?.titulo ?? "Termo de consentimento"}</h2>
+        {termo.data && <span className="muted">Versão {termo.data.versao}</span>}
+      </div>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Leia e aceite o termo para entrar no ranking do piloto.
+      </p>
+      {termo.isPending && (
+        <p role="status" className="muted">
+          Carregando termo…
+        </p>
+      )}
+      {termo.error && (
+        <p className="note" role="alert">
+          {mensagemDeErro(termo.error, "Não foi possível carregar o termo.")}
+        </p>
+      )}
+      {termo.data && (
+        <>
+          <div className="ped-termo" tabIndex={0} role="region" aria-label="Texto do termo">
+            {termo.data.texto}
+          </div>
+          {aceitar.error && (
+            <p className="note" role="alert">
+              {mensagemDeErro(aceitar.error, "Não foi possível registrar o aceite.")}
+            </p>
+          )}
+          <div className="btn-row">
+            <button
+              type="button"
+              className="btn primary"
+              disabled={aceitar.isPending}
+              onClick={() =>
+                aceitar.mutate(termo.data.versao, { onSuccess: () => toast("Termo aceito") })
+              }
+            >
+              {aceitar.isPending ? "Registrando…" : "Li e aceito"}
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function MeusDados() {
+  const [baixando, setBaixando] = useState(false);
+  async function baixar() {
+    setBaixando(true);
+    try {
+      baixarJson("meus-dados-scout-vela.json", await buscarMeusDados());
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "Não foi possível baixar seus dados."));
+    } finally {
+      setBaixando(false);
+    }
+  }
+  return (
+    <div className="btn-row" style={{ marginTop: 12 }}>
+      <button type="button" className="btn" disabled={baixando} onClick={() => void baixar()}>
+        {baixando ? "Gerando arquivo…" : "Baixar meus dados"}
+      </button>
+    </div>
+  );
+}
+
+function PedidosTitular() {
+  const pedidos = usePedidosTitular();
+  const criar = useCriarPedidoTitular();
+  const [tipo, setTipo] = useState<TipoPedidoTitular>("acesso");
+  const [descricao, setDescricao] = useState("");
+  const [erro, setErro] = useState("");
+  const tamanho = descricao.trim().length;
+  const valido = tamanho >= 10 && tamanho <= 2000;
+
+  return (
+    <section className="panel" aria-labelledby="painel-lgpd">
+      <div className="panel-head">
+        <h2 id="painel-lgpd">Pedidos sobre meus dados (LGPD)</h2>
+      </div>
+      <form
+        className="stack"
+        style={{ gap: 10 }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          setErro("");
+          criar.mutate(
+            { tipo, descricao: descricao.trim() },
+            {
+              onSuccess: () => {
+                setDescricao("");
+                toast("Pedido enviado");
+              },
+              onError: (err) => setErro(mensagemDeErro(err, "Não foi possível enviar o pedido.")),
+            },
+          );
+        }}
+      >
+        <label className="field">
+          Tipo de pedido
+          <select value={tipo} onChange={(e) => setTipo(e.target.value as TipoPedidoTitular)}>
+            {(Object.keys(TIPOS_PEDIDO) as TipoPedidoTitular[]).map((t) => (
+              <option key={t} value={t}>
+                {TIPOS_PEDIDO[t]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          Descrição (10 a 2000 caracteres)
+          <textarea
+            rows={3}
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            maxLength={2000}
+          />
+        </label>
+        <p className="muted" style={{ fontSize: ".82rem", margin: 0 }}>
+          A exclusão é analisada pela CBVela: dados que sustentam a série histórica e a trilha de
+          auditoria podem precisar ser mantidos. Você recebe a resposta aqui.
+        </p>
+        {erro && (
+          <p className="note" role="alert">
+            {erro}
+          </p>
+        )}
+        <div className="btn-row">
+          <button type="submit" className="btn primary" disabled={!valido || criar.isPending}>
+            {criar.isPending ? "Enviando…" : "Enviar pedido"}
+          </button>
+        </div>
+      </form>
+      {pedidos.isPending && (
+        <p role="status" className="muted">
+          Carregando pedidos…
+        </p>
+      )}
+      {pedidos.error && (
+        <p className="note" role="alert">
+          {mensagemDeErro(pedidos.error, "Não foi possível carregar os pedidos.")}
+        </p>
+      )}
+      {pedidos.data && pedidos.data.length === 0 && (
+        <p className="muted">Você ainda não fez nenhum pedido sobre seus dados.</p>
+      )}
+      {pedidos.data?.map((p) => (
+        <div key={p.id} className="ped-pedido">
+          <span className="mh">
+            <b>{TIPOS_PEDIDO[p.tipo]}</b>{" "}
+            <span className={`pill ${p.status === "aberto" ? "st-parcial" : "st-apto"}`}>
+              {p.status === "aberto" ? "Aberto" : "Respondido"}
+            </span>
+          </span>
+          <p>{p.descricao}</p>
+          <span className="muted" style={{ fontSize: ".82rem" }}>
+            Pedido em {fmtData(p.criadoEm)}
+          </span>
+          {p.resposta && (
+            <p>
+              <b>Resposta:</b> {p.resposta}
+              {p.respondidoEm ? ` (${fmtData(p.respondidoEm)})` : ""}
+            </p>
+          )}
+        </div>
+      ))}
     </section>
   );
 }
@@ -321,6 +514,7 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
         <BigScore score={painel.score} faixa={painel.faixa} parcial={!painel.completo} />
       </div>
       <div className="stack">
+        {!painel.consentimento.termoAceitoEm && <TermoAceite />}
         {painel.pendencias.length > 0 ? (
           <div className="note" role="status">
             <b>Pendências:</b> faltam suas respostas em {painel.pendencias.join(", ")}.
@@ -345,6 +539,7 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
           <Questionario m={modulo} atletaId={painel.atleta.id} aoFechar={() => setAberto(null)} />
         )}
         <Consentimento c={painel.consentimento} />
+        <PedidosTitular />
         <Revisoes atletaId={painel.atleta.id} />
       </div>
     </>
