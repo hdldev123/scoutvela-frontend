@@ -1,0 +1,25 @@
+.rev-abas {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rev-filtro {
+  font-size: 0.9rem;
+}
+.rev-texto {
+  max-width: 24rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.rev-contexto {
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+}
+.rev-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
