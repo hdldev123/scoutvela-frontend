@@ -32,6 +32,10 @@ export function EntryScreen({
   const [enviando, setEnviando] = useState(false);
   const [recuperando, setRecuperando] = useState(false);
   const [aviso, setAviso] = useState("");
+  // Antes da hidratação o formulário não pode ser enviado pelo navegador:
+  // o envio nativo poria e-mail e senha na URL (e nos logs do servidor).
+  const [pronto, setPronto] = useState(false);
+  useEffect(() => setPronto(true), []);
   const reduzido = useMovimentoReduzido();
   const comVideo = !!VIDEO_URL && !reduzido;
 
@@ -94,7 +98,7 @@ export function EntryScreen({
             <p className="entry-lead">
               Informe o e-mail da sua conta. Enviaremos um link para definir uma nova senha.
             </p>
-            <form className="auth-form" onSubmit={onRecuperarSubmit}>
+            <form className="auth-form" method="post" onSubmit={onRecuperarSubmit}>
               <label className="auth-field">
                 E-mail
                 <input name="email" type="email" autoComplete="email" maxLength={255} required />
@@ -104,7 +108,7 @@ export function EntryScreen({
                   {aviso}
                 </p>
               )}
-              <button className="auth-primary" type="submit" disabled={enviando}>
+              <button className="auth-primary" type="submit" disabled={!pronto || enviando}>
                 {enviando ? "Enviando…" : "Enviar link"}
               </button>
               <button
@@ -122,7 +126,7 @@ export function EntryScreen({
         ) : (
           <>
             <p className="entry-lead">Entre com sua conta. Cada perfil só vê o que precisa.</p>
-            <form className="auth-form" onSubmit={onSubmit}>
+            <form className="auth-form" method="post" onSubmit={onSubmit}>
               <label className="auth-field">
                 E-mail
                 <input name="email" type="email" autoComplete="email" maxLength={255} required />
@@ -136,7 +140,7 @@ export function EntryScreen({
                   {erro}
                 </p>
               )}
-              <button className="auth-primary" type="submit" disabled={enviando}>
+              <button className="auth-primary" type="submit" disabled={!pronto || enviando}>
                 {enviando ? "Entrando…" : "Entrar →"}
               </button>
               {onRecuperar && (

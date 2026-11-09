@@ -27,7 +27,7 @@ vi.mock("@tanstack/react-router", async (importar) => ({
 
 import { TelaVerificacao } from "@/components/scout/TelaVerificacao";
 import { ErroApi } from "@/lib/api/cliente";
-import { LayoutAutenticado } from "@/routes/_app";
+import { LayoutAutenticado } from "@/components/scout/LayoutAutenticado";
 
 function montar(filho: ReactNode) {
   const qc = new QueryClient();
