@@ -13,6 +13,7 @@ export default tseslint.config(
       ".output",
       ".vinxi",
       ".wrangler",
+      ".vercel",
       "src/lib/api/schema.d.ts",
       "src/routeTree.gen.ts",
       "src/lib/scout/engine.js",
