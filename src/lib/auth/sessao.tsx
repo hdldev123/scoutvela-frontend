@@ -17,6 +17,8 @@ interface ContextoSessao {
   sessao: Session | null;
   entrar: (email: string, senha: string) => Promise<void>;
   sair: () => Promise<void>;
+  /** Envia o link de redefinição de senha (o Supabase não revela se o e-mail tem conta). */
+  recuperarSenha: (email: string) => Promise<void>;
 }
 
 const Contexto = createContext<ContextoSessao | null>(null);
@@ -50,14 +52,21 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   }, []);
 
+  const recuperarSenha = useCallback(async (email: string) => {
+    const { error } = await getSupabase().auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/redefinir-senha",
+    });
+    if (error) throw error;
+  }, []);
+
   const sair = useCallback(async () => {
     await getSupabase().auth.signOut();
     queryClient.clear();
   }, [queryClient]);
 
   const valor = useMemo(
-    () => ({ carregando, sessao, entrar, sair }),
-    [carregando, sessao, entrar, sair],
+    () => ({ carregando, sessao, entrar, sair, recuperarSenha }),
+    [carregando, sessao, entrar, sair, recuperarSenha],
   );
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
 }
