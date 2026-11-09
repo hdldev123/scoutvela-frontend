@@ -32,6 +32,8 @@ const params: Parametros = {
   pilares: [pilar("perf", "Performance", 60), pilar("cf", "Class Fit", 40)],
   faixas: [
     { id: "f1", nome: "Prioridade de programa", nomeCurto: "Prioridade", scoreMin: 85 },
+    { id: "f2", nome: "Alto potencial", nomeCurto: "Alto", scoreMin: 75 },
+    { id: "f3", nome: "Em desenvolvimento", nomeCurto: "Desenv.", scoreMin: 65 },
     { id: "f4", nome: "No radar", nomeCurto: "Radar", scoreMin: 0 },
   ],
   classes: [
@@ -67,6 +69,23 @@ const params: Parametros = {
       valor: { modo: "media", ativo: true },
       atualizadoEm: "2026-11-01T12:00:00.000Z",
     },
+    {
+      codigo: "G3",
+      descricao: "Gate 3",
+      valor: { apto_min_eventos: 3, condicional_min_eventos: 1, janela_meses: 24 },
+      atualizadoEm: "2026-11-02T12:00:00.000Z",
+    },
+    {
+      codigo: "G4",
+      descricao: "Gate 4",
+      valor: {
+        A: { status: "apto", motivo: "Plano para 36 meses" },
+        B: { status: "apto", motivo: "Plano para 24 meses" },
+        C: { status: "condicional", motivo: "Depende da CBVela" },
+        D: { status: "alerta", motivo: "Sem estrutura" },
+      },
+      atualizadoEm: "2026-11-03T12:00:00.000Z",
+    },
   ],
   componentesCusto: [{ id: "treinador", nome: "Treinador" }],
 };
@@ -97,7 +116,11 @@ describe("TelaParametros", () => {
     montar();
     expect(await screen.findByRole("heading", { name: "Parâmetros" })).toBeInTheDocument();
     expect(screen.getByText(/ficam na trilha de auditoria/)).toBeInTheDocument();
-    expect(await screen.findByText("Pódio mundial")).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("Pódio mundial")).toBeInTheDocument();
+    expect(
+      screen.getByText(/só Experiência de alto rendimento tem rubrica própria/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Atualizada em 02/11/2026")).toBeInTheDocument();
     expect(screen.getByText(/modo: media; ativo: Sim/)).toBeInTheDocument();
     expect(screen.getByText("Treinador")).toBeInTheDocument();
     expect(screen.getByText("100")).toBeInTheDocument();
@@ -157,6 +180,131 @@ describe("TelaParametros", () => {
     await screen.findByLabelText("Performance");
     fireEvent.click(screen.getByRole("button", { name: "Salvar pesos" }));
     expect(await screen.findByText("Pesos inválidos no servidor.")).toBeInTheDocument();
+    expect(toastFn.success).not.toHaveBeenCalled();
+  });
+
+  const MSG = "Parâmetros salvos. O ranking já usa os novos valores.";
+  const ok = () => PUT.mockResolvedValue({ data: params, response: { status: 200 } });
+
+  it("valida as faixas de score e envia as 4 faixas", async () => {
+    ok();
+    montar();
+    const alto = await screen.findByLabelText("Score mínimo de Alto potencial");
+    fireEvent.change(alto, { target: { value: "90" } });
+    expect(screen.getByText(/estritamente decrescente/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Salvar faixas" })).toBeDisabled();
+    fireEvent.change(alto, { target: { value: "78" } });
+    fireEvent.change(screen.getByLabelText("Score mínimo de No radar"), { target: { value: "5" } });
+    expect(screen.getByText("A última faixa precisa começar em 0.")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Score mínimo de No radar"), { target: { value: "0" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          faixas: [
+            { id: "f1", scoreMin: 85 },
+            { id: "f2", scoreMin: 78 },
+            { id: "f3", scoreMin: 65 },
+            { id: "f4", scoreMin: 0 },
+          ],
+        },
+      }),
+    );
+    await waitFor(() => expect(toastFn.success).toHaveBeenCalledWith(MSG));
+  });
+
+  it("envia só a rubrica editada", async () => {
+    ok();
+    montar();
+    const campo = await screen.findByLabelText("Descrição da nota 0, escala geral");
+    fireEvent.change(campo, { target: { value: "Nenhuma evidência" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rubricas" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: { rubricas: [{ pilarId: null, nota: 0, descricao: "Nenhuma evidência" }] },
+      }),
+    );
+  });
+
+  it("adiciona rubrica de um pilar com as 6 notas", async () => {
+    ok();
+    montar();
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar rubrica para um pilar" }));
+    fireEvent.change(screen.getByLabelText("Pilar"), { target: { value: "cf" } });
+    expect(screen.getByRole("button", { name: "Salvar rubricas" })).toBeDisabled();
+    for (let n = 0; n <= 5; n++)
+      fireEvent.change(screen.getByLabelText(`Nova rubrica, descrição da nota ${n}`), {
+        target: { value: `Nível ${n} de Class Fit` },
+      });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rubricas" }));
+    await waitFor(() => expect(PUT).toHaveBeenCalledTimes(1));
+    const rubricas = PUT.mock.calls[0]![1].body.rubricas;
+    expect(rubricas).toHaveLength(6);
+    expect(rubricas).toContainEqual({ pilarId: "cf", nota: 5, descricao: "Nível 5 de Class Fit" });
+    expect(rubricas.every((r: { pilarId: string }) => r.pilarId === "cf")).toBe(true);
+  });
+
+  it("salva a regra G3 com o corpo certo e bloqueia valor inválido", async () => {
+    ok();
+    montar();
+    const apto = await screen.findByLabelText("Mínimo de eventos para apto");
+    fireEvent.change(apto, { target: { value: "0" } });
+    expect(
+      screen.getByText("O mínimo de apto não pode ser menor que o de condicional."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Salvar G3" })).toBeDisabled();
+    fireEvent.change(apto, { target: { value: "4" } });
+    fireEvent.change(screen.getByLabelText("Janela (meses)"), { target: { value: "36" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar G3" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          regras: { G3: { apto_min_eventos: 4, condicional_min_eventos: 1, janela_meses: 36 } },
+        },
+      }),
+    );
+  });
+
+  it("salva a regra G4 por perfil", async () => {
+    ok();
+    montar();
+    fireEvent.change(await screen.findByLabelText("Perfil C · status"), {
+      target: { value: "alerta" },
+    });
+    fireEvent.change(screen.getByLabelText("Perfil C · motivo"), {
+      target: { value: "Alta dependência." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar G4" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          regras: {
+            G4: {
+              A: { status: "apto", motivo: "Plano para 36 meses" },
+              B: { status: "apto", motivo: "Plano para 24 meses" },
+              C: { status: "alerta", motivo: "Alta dependência." },
+              D: { status: "alerta", motivo: "Sem estrutura" },
+            },
+          },
+        },
+      }),
+    );
+  });
+
+  it("desativa uma classe e mostra o erro 400 da API", async () => {
+    PUT.mockResolvedValue({
+      error: { erro: "requisicao_invalida", mensagem: "A classe 470 tem atleta ativo." },
+      response: { status: 400 },
+    });
+    montar();
+    fireEvent.click(await screen.findByRole("switch", { name: "Ativa: 470, Timoneiro" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas de peso" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: { classes: [{ id: "c2", ativa: false }] },
+      }),
+    );
+    expect(await screen.findByText("A classe 470 tem atleta ativo.")).toBeInTheDocument();
     expect(toastFn.success).not.toHaveBeenCalled();
   });
 
