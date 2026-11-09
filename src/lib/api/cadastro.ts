@@ -19,8 +19,6 @@ export type TipoImportacao = CorpoImportacao["tipo"];
 export type ResultadoImportacao = Json<paths["/importacoes"]["post"]["responses"][201]>;
 export type ClasseCadastro = Json<paths["/parametros"]["get"]["responses"][200]>["classes"][number];
 
-/** Versão do termo exigida pelo contrato no piloto. */
-export const VERSAO_TERMO: VersaoTermo = "Piloto 18+ · v1";
 /** Limite do conteúdo do CSV no contrato (512 KB). */
 export const LIMITE_CSV_BYTES = 524288;
 
@@ -36,10 +34,17 @@ export async function cadastrarAtleta(corpo: CorpoCadastro): Promise<AtletaCadas
   return data;
 }
 
-export async function registrarTermo(id: string): Promise<void> {
+/** Registra o aceite recebido; a versão é a do termo vigente (`GET /termo`). */
+export async function registrarTermo({
+  id,
+  versao,
+}: {
+  id: string;
+  versao: VersaoTermo;
+}): Promise<void> {
   const { error, response } = await api.POST("/atletas/{id}/termo", {
     params: { path: { id } },
-    body: { versao: VERSAO_TERMO },
+    body: { versao },
   });
   if (error) throw paraErroApi(response.status, error);
 }

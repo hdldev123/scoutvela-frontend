@@ -9,7 +9,7 @@ export const Route = createFileRoute("/entrar")({
 });
 
 function Entrar() {
-  const { sessao, entrar } = useSessao();
+  const { sessao, entrar, recuperarSenha } = useSessao();
   const navigate = useNavigate();
 
   // Com sessão (login recém-feito ou já existente), "/" resolve a tela inicial pelo /me.
@@ -17,5 +17,5 @@ function Entrar() {
     if (sessao) void navigate({ to: "/", replace: true });
   }, [sessao, navigate]);
 
-  return <EntryScreen onEntrar={entrar} />;
+  return <EntryScreen onEntrar={entrar} onRecuperar={recuperarSenha} />;
 }

@@ -17,12 +17,16 @@ function Aviso({ texto }: { texto: string }) {
   );
 }
 
-function LayoutAutenticado() {
+export function LayoutAutenticado() {
   const { carregando, sessao, sair } = useSessao();
   const { data: me, error, isPending, refetch } = useMe();
 
   if (carregando) return <Aviso texto="Carregando…" />;
   if (!sessao) return <Navigate to="/entrar" replace />;
+
+  if (error instanceof ErroApi && error.codigo === "mfa_obrigatorio") {
+    return <Navigate to="/verificacao" replace />;
+  }
 
   if (error) {
     const semAcesso = error instanceof ErroApi && error.status === 403;
