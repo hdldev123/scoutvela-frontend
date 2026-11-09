@@ -1,0 +1,77 @@
+/* Ficha do atleta: plano, financeiro, resultado internacional e evidências. */
+.ficha-dica {
+  font-size: 0.82rem;
+  margin: 0 0 8px;
+}
+.ficha-duas-colunas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 10px;
+}
+.ficha-componentes {
+  border: 1px solid var(--line, #d8dde3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 12px;
+}
+.ficha-componente {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+.ficha-componente > b {
+  grid-column: 1 / -1;
+}
+.ficha-evidencias {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.ficha-evidencias li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.ficha-clipe {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.ficha-clipe:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.ficha-anexo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+  font-size: 0.82rem;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
