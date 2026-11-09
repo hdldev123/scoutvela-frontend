@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { EmConstrucao } from "@/components/scout/EmConstrucao";
+import { SemAcesso } from "@/components/scout/SemAcesso";
+import { TelaPainel } from "@/components/scout/TelaPainel";
+import { useMe } from "@/lib/auth/sessao";
 
 export const Route = createFileRoute("/_app/painel")({
   head: () => ({ meta: [{ title: "Meu painel · Scout Vela" }] }),
-  component: () => <EmConstrucao tela="painel" titulo="Meu painel" />,
+  component: RotaPainel,
 });
+
+function RotaPainel() {
+  const { data: me } = useMe();
+  if (!me) return null;
+  if (!me.telas.includes("painel")) return <SemAcesso />;
+  return <TelaPainel />;
+}
