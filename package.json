@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "e2e": "playwright test",
     "api:tipos": "openapi-typescript ../vela-back/openapi.yaml -o src/lib/api/schema.d.ts"
   },
   "overrides": {
@@ -77,6 +78,7 @@
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.26.5",
+    "@playwright/test": "1.65.0",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
     "@types/node": "^22.16.5",
