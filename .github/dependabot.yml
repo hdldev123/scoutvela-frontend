@@ -1,8 +1,10 @@
 version: 2
 updates:
   # O Dependabot tem suporte ao ecossistema "bun" (lê o bun.lock); usamos ele em vez de npm.
+  # Fluxo HDL: toda atualização entra por staging, nunca direto na main.
   - package-ecosystem: bun
     directory: /
+    target-branch: staging
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -11,7 +13,17 @@ updates:
         patterns: ["@radix-ui/*"]
       tanstack:
         patterns: ["@tanstack/*"]
+      dependencias-menores:
+        update-types: [minor, patch]
+    ignore:
+      # Os tipos acompanham o runtime da Vercel e do CI (Node 22); major só junto com a troca do Node.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # Major de TypeScript só como demanda própria (ferramentas como typescript-eslint precisam acompanhar).
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
+    target-branch: staging
     schedule:
-      interval: weekly
+      interval: monthly
