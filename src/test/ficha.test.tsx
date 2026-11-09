@@ -18,8 +18,24 @@ vi.mock("@/lib/api/mutacoes-ficha", () => ({
 }));
 vi.mock("sonner", () => ({ toast: toastFn }));
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to, params, search, ...resto }: { children: ReactNode; to: string; params?: { id: string }; search?: Record<string, string> } & Record<string, unknown>) => (
-    <a href={(params ? to.replace("$id", params.id) : to) + (search ? `?atleta=${search["atleta"]}` : "")} {...resto}>
+  Link: ({
+    children,
+    to,
+    params,
+    search,
+    ...resto
+  }: {
+    children: ReactNode;
+    to: string;
+    params?: { id: string };
+    search?: Record<string, string>;
+  } & Record<string, unknown>) => (
+    <a
+      href={
+        (params ? to.replace("$id", params.id) : to) + (search ? `?atleta=${search["atleta"]}` : "")
+      }
+      {...resto}
+    >
       {children}
     </a>
   ),
@@ -28,7 +44,13 @@ vi.mock("@tanstack/react-router", () => ({
 import { TelaFicha } from "@/components/scout/TelaFicha";
 import type { FichaAtleta } from "@/lib/api/consultas";
 
-function pilar(id: string, nome: string, peso: number, nota: number | null, extra: Partial<FichaAtleta["pilares"][number]> = {}) {
+function pilar(
+  id: string,
+  nome: string,
+  peso: number,
+  nota: number | null,
+  extra: Partial<FichaAtleta["pilares"][number]> = {},
+) {
   return {
     id,
     nome,
@@ -86,26 +108,88 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
       { ciclo: "Setembro de 2026", score: 60 },
       { ciclo: "Outubro de 2026", score: 66 },
     ],
-    pilares: [pilar("perf", "Performance", 20, 4), pilar("cf", "Class Fit", 20, 2), pilar("car", "Carreira", 5, null)],
+    pilares: [
+      pilar("perf", "Performance", 20, 4),
+      pilar("cf", "Class Fit", 20, 2),
+      pilar("car", "Carreira", 5, null),
+    ],
     gates: {
       statusFinal: "condicional",
       itens: [
-        { gate: 1, nome: "Class Fit", status: "apto", motivo: "Dentro da faixa da classe", sugestaoAutomatica: "apto", ajustadoPeloGestor: false },
-        { gate: 2, nome: "Evidência competitiva", status: "condicional", motivo: "4º no Brasileiro", sugestaoAutomatica: "alerta", ajustadoPeloGestor: true },
-        { gate: 3, nome: "Alto rendimento", status: "alerta", motivo: "Nenhum evento", sugestaoAutomatica: "alerta", ajustadoPeloGestor: false },
-        { gate: 4, nome: "Campanha", status: "condicional", motivo: "Depende de apoio", sugestaoAutomatica: "condicional", ajustadoPeloGestor: false },
+        {
+          gate: 1,
+          nome: "Class Fit",
+          status: "apto",
+          motivo: "Dentro da faixa da classe",
+          sugestaoAutomatica: "apto",
+          ajustadoPeloGestor: false,
+        },
+        {
+          gate: 2,
+          nome: "Evidência competitiva",
+          status: "condicional",
+          motivo: "4º no Brasileiro",
+          sugestaoAutomatica: "alerta",
+          ajustadoPeloGestor: true,
+        },
+        {
+          gate: 3,
+          nome: "Alto rendimento",
+          status: "alerta",
+          motivo: "Nenhum evento",
+          sugestaoAutomatica: "alerta",
+          ajustadoPeloGestor: false,
+        },
+        {
+          gate: 4,
+          nome: "Campanha",
+          status: "condicional",
+          motivo: "Depende de apoio",
+          sugestaoAutomatica: "condicional",
+          ajustadoPeloGestor: false,
+        },
       ],
     },
-    classFit: { pesoKg: 62, alturaCm: 172, pesoMinKg: 55, pesoMedioKg: 60, pesoMaxKg: 65, deltaKg: 2, distanciaRelativa: 0.4 },
+    classFit: {
+      pesoKg: 62,
+      alturaCm: 172,
+      pesoMinKg: 55,
+      pesoMedioKg: 60,
+      pesoMaxKg: 65,
+      deltaKg: 2,
+      distanciaRelativa: 0.4,
+    },
     resultados: [
-      { data: "2026-03-10", nivel: "Brasileiro", evento: "Brasileiro ILCA", posicao: 4, tamanhoFrota: 40, internacional: false, pontosCbvela: 900, fonte: "ranking_cbvela", linkOficial: null },
-      { data: "2026-06-01", nivel: "Sul-Americano", evento: "Sul-Americano", posicao: 9, tamanhoFrota: 30, internacional: true, pontosCbvela: null, fonte: "manual", linkOficial: "https://oficial.exemplo.com/r" },
+      {
+        data: "2026-03-10",
+        nivel: "Brasileiro",
+        evento: "Brasileiro ILCA",
+        posicao: 4,
+        tamanhoFrota: 40,
+        internacional: false,
+        pontosCbvela: 900,
+        fonte: "ranking_cbvela",
+        linkOficial: null,
+      },
+      {
+        data: "2026-06-01",
+        nivel: "Sul-Americano",
+        evento: "Sul-Americano",
+        posicao: 9,
+        tamanhoFrota: 30,
+        internacional: true,
+        pontosCbvela: null,
+        fonte: "manual",
+        linkOficial: "https://oficial.exemplo.com/r",
+      },
     ],
     financeiro: {
       perfilSuporte: "C",
       mesesAssegurados: 12,
       patrocinioPrivado: "nao",
-      componentes: [{ id: "treinador", nome: "Treinador", autonomia: "Baixa", apoioCbvela: "Alta" }],
+      componentes: [
+        { id: "treinador", nome: "Treinador", autonomia: "Baixa", apoioCbvela: "Alta" },
+      ],
     },
     ...extra,
   };
@@ -114,11 +198,16 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
 function montar(papel: string, dados: FichaAtleta | { erro: number }) {
   GET.mockResolvedValue(
     "erro" in dados
-      ? { error: { erro: "nao_encontrado", mensagem: "Atleta não encontrado." }, response: { status: dados.erro } }
+      ? {
+          error: { erro: "nao_encontrado", mensagem: "Atleta não encontrado." },
+          response: { status: dados.erro },
+        }
       : { data: dados, response: { status: 200 } },
   );
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
       <TelaFicha id="a07" papel={papel} />
     </QueryClientProvider>,
   );
@@ -139,7 +228,9 @@ describe("TelaFicha", () => {
     expect(screen.getByText("71,5")).toBeInTheDocument();
     expect(screen.getByText("Parcial")).toBeInTheDocument();
     expect(screen.getByText("Treinador(a): Ana Ribeiro")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: /Score nos últimos ciclos: 60,0, 66,0, 71,5/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: /Score nos últimos ciclos: 60,0, 66,0, 71,5/ }),
+    ).toBeInTheDocument();
     const plano = screen.getByRole("heading", { name: "Plano individual" }).closest("section")!;
     // Só 2 pilares com nota: forças (2 maiores) e lacunas (2 menores) coincidem, como no protótipo.
     expect(within(plano).getAllByText("Performance e Class Fit")).toHaveLength(2);
@@ -162,8 +253,26 @@ describe("TelaFicha", () => {
     f.pilares[0] = {
       ...base,
       indicadores: [
-        { ...base.indicadores![0]!, id: "x1", nome: "Sono", tipo: "A", origem: "resposta_confirmada", resposta: "Bom" },
-        { ...base.indicadores![0]!, id: "x2", nome: "Humor", tipo: "A", nota: null, evidencia: null, origem: null, avaliador: null, lancadoEm: null, sugestaoPendente: { valor: 3, lancadoEm: "2026-11-06T10:00:00Z" } },
+        {
+          ...base.indicadores![0]!,
+          id: "x1",
+          nome: "Sono",
+          tipo: "A",
+          origem: "resposta_confirmada",
+          resposta: "Bom",
+        },
+        {
+          ...base.indicadores![0]!,
+          id: "x2",
+          nome: "Humor",
+          tipo: "A",
+          nota: null,
+          evidencia: null,
+          origem: null,
+          avaliador: null,
+          lancadoEm: null,
+          sugestaoPendente: { valor: 3, lancadoEm: "2026-11-06T10:00:00Z" },
+        },
         { ...base.indicadores![0]!, id: "x3", nome: "Histórico familiar", tipo: "R", nota: null },
       ],
     };
@@ -181,7 +290,9 @@ describe("TelaFicha", () => {
     fireEvent.click(await screen.findByRole("button", { name: /^Class Fit/ }));
     expect(screen.getByText(/Detalhe restrito/)).toBeInTheDocument();
     expect(screen.getByText(/Peso e medidas são dado sensível/)).toBeInTheDocument();
-    expect(screen.getByText(/Componentes de custo restritos ao atleta e ao gestor/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Componentes de custo restritos ao atleta e ao gestor/),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Pedir revisão/ })).not.toBeInTheDocument();
   });
 
@@ -189,7 +300,9 @@ describe("TelaFicha", () => {
     const f = ficha();
     f.atleta.termoAceito = false;
     montar("gestor", f);
-    expect(await screen.findByText(/Aguardando aceite do termo: o atleta ainda não entra no ranking\./)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Aguardando aceite do termo: o atleta ainda não entra no ranking\./),
+    ).toBeInTheDocument();
   });
 
   it("histórico competitivo mostra a fonte e só liga links http(s)", async () => {
@@ -203,18 +316,26 @@ describe("TelaFicha", () => {
 
   it("gestor ajusta um gate pelo select e vê o toast", async () => {
     const f = ficha();
-    atualizarGate.mockResolvedValue({ ...f.gates, itens: f.gates.itens.map((g) => (g.gate === 3 ? { ...g, status: "condicional" } : g)) });
+    atualizarGate.mockResolvedValue({
+      ...f.gates,
+      itens: f.gates.itens.map((g) => (g.gate === 3 ? { ...g, status: "condicional" } : g)),
+    });
     montar("gestor", f);
     const select = await screen.findByLabelText("Status do gate G3");
     expect(screen.getByText(/ajustado pelo gestor/)).toBeInTheDocument();
     fireEvent.change(select, { target: { value: "condicional" } });
-    await waitFor(() => expect(atualizarGate).toHaveBeenCalledWith("a07", { gate: 3, status: "condicional" }));
+    await waitFor(() =>
+      expect(atualizarGate).toHaveBeenCalledWith("a07", { gate: 3, status: "condicional" }),
+    );
     await waitFor(() => expect(toastFn).toHaveBeenCalledWith("G3 atualizado pelo gestor"));
   });
 
   it("treinador e atleta não têm select de gate; treinador lança avaliação", async () => {
     montar("treinador", ficha());
-    expect(await screen.findByRole("link", { name: "Lançar avaliação" })).toHaveAttribute("href", "/avaliar?atleta=a07");
+    expect(await screen.findByRole("link", { name: "Lançar avaliação" })).toHaveAttribute(
+      "href",
+      "/avaliar?atleta=a07",
+    );
     expect(screen.queryByLabelText("Status do gate G1")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Meus atletas/ })).toHaveAttribute("href", "/ranking");
   });
@@ -229,18 +350,28 @@ describe("TelaFicha", () => {
     expect(within(dialogo).getByRole("alert")).toHaveTextContent("Escolha o pilar");
 
     fireEvent.change(within(dialogo).getByLabelText("Pilar"), { target: { value: "perf" } });
-    fireEvent.change(within(dialogo).getByLabelText("Indicador (opcional)"), { target: { value: "perf_1" } });
+    fireEvent.change(within(dialogo).getByLabelText("Indicador (opcional)"), {
+      target: { value: "perf_1" },
+    });
     fireEvent.change(within(dialogo).getByLabelText("Motivo"), { target: { value: "curto" } });
     fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar pedido" }));
     expect(within(dialogo).getByRole("alert")).toHaveTextContent("pelo menos 10 caracteres");
     expect(criarRevisao).not.toHaveBeenCalled();
 
-    fireEvent.change(within(dialogo).getByLabelText("Motivo"), { target: { value: "Fiz um teste novo em outubro." } });
+    fireEvent.change(within(dialogo).getByLabelText("Motivo"), {
+      target: { value: "Fiz um teste novo em outubro." },
+    });
     fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar pedido" }));
     await waitFor(() =>
-      expect(criarRevisao).toHaveBeenCalledWith({ pilarId: "perf", indicadorId: "perf_1", motivo: "Fiz um teste novo em outubro." }),
+      expect(criarRevisao).toHaveBeenCalledWith({
+        pilarId: "perf",
+        indicadorId: "perf_1",
+        motivo: "Fiz um teste novo em outubro.",
+      }),
     );
-    await waitFor(() => expect(toastFn).toHaveBeenCalledWith("Pedido de revisão enviado ao gestor da CBVela"));
+    await waitFor(() =>
+      expect(toastFn).toHaveBeenCalledWith("Pedido de revisão enviado ao gestor da CBVela"),
+    );
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 

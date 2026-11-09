@@ -17,11 +17,21 @@ describe("navegação por papel", () => {
       "Investimento",
       "Parâmetros",
     ]);
-    expect(itens.map((i) => i.to)).toEqual(["/ranking", "/avaliar", "/cadastro", "/investimento", "/parametros"]);
+    expect(itens.map((i) => i.to)).toEqual([
+      "/ranking",
+      "/avaliar",
+      "/cadastro",
+      "/investimento",
+      "/parametros",
+    ]);
   });
 
   it("treinador vê o ranking como Meus atletas", () => {
-    const itens = itensDeNavegacao({ usuario: { papel: "treinador" }, atleta: null, telas: ["ranking", "avaliar"] });
+    const itens = itensDeNavegacao({
+      usuario: { papel: "treinador" },
+      atleta: null,
+      telas: ["ranking", "avaliar"],
+    });
     expect(itens.map((i) => i.rotulo)).toEqual(["Meus atletas", "Lançar avaliação"]);
     expect(itens[0]?.to).toBe("/ranking");
   });
@@ -37,7 +47,11 @@ describe("navegação por papel", () => {
   });
 
   it("ignora ficha sem atleta vinculado e telas desconhecidas", () => {
-    const itens = itensDeNavegacao({ usuario: { papel: "atleta" }, atleta: null, telas: ["ficha", "xyz"] });
+    const itens = itensDeNavegacao({
+      usuario: { papel: "atleta" },
+      atleta: null,
+      telas: ["ficha", "xyz"],
+    });
     expect(itens).toEqual([]);
   });
 

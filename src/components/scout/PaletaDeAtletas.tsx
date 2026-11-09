@@ -29,7 +29,16 @@ export function PaletaDeAtletas({ me }: { me: MeMinimo | null }) {
       status: textoDoStatus(i.statusGates),
     }));
   } else if (me && me.usuario.papel === "atleta" && me.atleta) {
-    itens = [{ id: me.atleta.id, nome: "Minha ficha", classe: me.atleta.nome, score: null, faixa: "", status: "" }];
+    itens = [
+      {
+        id: me.atleta.id,
+        nome: "Minha ficha",
+        classe: me.atleta.nome,
+        score: null,
+        faixa: "",
+        status: "",
+      },
+    ];
   }
 
   return (

@@ -17,11 +17,17 @@ describe("App routing", () => {
 });
 
 describe("Rotas da base", () => {
-  it.each(["/entrar", "/ranking", "/avaliar", "/cadastro", "/painel", "/investimento", "/parametros", "/atletas/abc"])(
-    "%s casa com uma rota",
-    (caminho) => {
-      const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
-      expect(router.matchRoutes(caminho).at(-1)?.routeId).not.toBe(rootRouteId);
-    },
-  );
+  it.each([
+    "/entrar",
+    "/ranking",
+    "/avaliar",
+    "/cadastro",
+    "/painel",
+    "/investimento",
+    "/parametros",
+    "/atletas/abc",
+  ])("%s casa com uma rota", (caminho) => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+    expect(router.matchRoutes(caminho).at(-1)?.routeId).not.toBe(rootRouteId);
+  });
 });

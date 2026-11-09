@@ -31,7 +31,9 @@ function LayoutAutenticado() {
         <section className="panel empty-state">
           <h2>{semAcesso ? "Sem acesso" : "Não foi possível carregar seu perfil"}</h2>
           <p>
-            {semAcesso ? "Sua conta não tem acesso ao Scout Vela neste piloto. Fale com a CBVela." : error.message}
+            {semAcesso
+              ? "Sua conta não tem acesso ao Scout Vela neste piloto. Fale com a CBVela."
+              : error.message}
           </p>
           {!semAcesso && (
             <button type="button" className="side-logout" onClick={() => void refetch()}>

@@ -30,7 +30,8 @@ const TEXTO_NAO_VE =
   "Este perfil não vê a ficha deste atleta. Treinador vê só os próprios atletas; o IBVAR vê só quem consentiu.";
 
 /** Aceita só links http(s) do resultado oficial. */
-const linkSeguro = (url: string | null): string | null => (url && /^https?:\/\//i.test(url) ? url : null);
+const linkSeguro = (url: string | null): string | null =>
+  url && /^https?:\/\//i.test(url) ? url : null;
 
 function LinhaIndicador({ ind }: { ind: Indicador }) {
   const resp = ind.resposta ? ` · resposta: “${ind.resposta}”` : "";
@@ -54,7 +55,9 @@ function LinhaIndicador({ ind }: { ind: Indicador }) {
         ? `Resposta do atleta · nota de ${ind.avaliador?.nome ?? "avaliador"}`
         : ind.avaliador?.nome;
     origem =
-      [ind.evidencia, quem, ind.lancadoEm ? fmtData(ind.lancadoEm) : null].filter(Boolean).join(" · ") + resp;
+      [ind.evidencia, quem, ind.lancadoEm ? fmtData(ind.lancadoEm) : null]
+        .filter(Boolean)
+        .join(" · ") + resp;
   }
   return (
     <div className="ind">
@@ -62,10 +65,14 @@ function LinhaIndicador({ ind }: { ind: Indicador }) {
         {ind.nome}
         <div className="src">{origem}</div>
         {ind.sugestaoPendente && (
-          <div className="src">Sugestão do atleta: {ind.sugestaoPendente.valor}, aguardando avaliador</div>
+          <div className="src">
+            Sugestão do atleta: {ind.sugestaoPendente.valor}, aguardando avaliador
+          </div>
         )}
       </div>
-      <span className={`nota ${ind.nota == null ? "na" : ""}`}>{ind.nota == null ? "—" : ind.nota}</span>
+      <span className={`nota ${ind.nota == null ? "na" : ""}`}>
+        {ind.nota == null ? "—" : ind.nota}
+      </span>
     </div>
   );
 }
@@ -85,19 +92,29 @@ function BlocoPilar({
   const painel = `pilar-${pilar.id}`;
   return (
     <div className="pilar" data-open={aberto ? 1 : 0}>
-      <button type="button" className="pilar-btn" onClick={aoAlternar} aria-expanded={aberto} aria-controls={painel}>
+      <button
+        type="button"
+        className="pilar-btn"
+        onClick={aoAlternar}
+        aria-expanded={aberto}
+        aria-controls={painel}
+      >
         <span className="nm">
           {pilar.nome}
           <small>
             {pilar.peso} pts
-            {pilar.preenchidos < pilar.total ? ` · ${pilar.preenchidos} de ${pilar.total} indicadores` : ""}
+            {pilar.preenchidos < pilar.total
+              ? ` · ${pilar.preenchidos} de ${pilar.total} indicadores`
+              : ""}
             {maiorPerda ? " · maior perda de pontos" : ""}
           </small>
         </span>
         <span className={`meter ${nota != null && nota < 3 ? "low" : ""}`}>
           <span style={{ width: `${nota == null ? 0 : (nota / 5) * 100}%` }} />
         </span>
-        <span className="contrib">{nota == null ? "sem nota" : `${fmt1(pilar.contribuicao)} de ${pilar.peso}`}</span>
+        <span className="contrib">
+          {nota == null ? "sem nota" : `${fmt1(pilar.contribuicao)} de ${pilar.peso}`}
+        </span>
         <span className="chev" aria-hidden="true">
           ›
         </span>
@@ -106,7 +123,8 @@ function BlocoPilar({
         (pilar.restrito || !pilar.indicadores ? (
           <div className="lock" id={painel}>
             <i className="ph ph-lock-simple" aria-hidden="true" /> Detalhe restrito:{" "}
-            {pilar.id === "amb" ? "informação sobre a família" : "dado sensível"}. O IBVAR vê só a nota do pilar.
+            {pilar.id === "amb" ? "informação sobre a família" : "dado sensível"}. O IBVAR vê só a
+            nota do pilar.
           </div>
         ) : (
           <div className="ind-list" id={painel}>
@@ -161,10 +179,12 @@ function LinhaGate({
 }
 
 function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
-  if (!fin) return <div className="lock">Financeiro da campanha: visível só para o atleta e o gestor.</div>;
+  if (!fin)
+    return <div className="lock">Financeiro da campanha: visível só para o atleta e o gestor.</div>;
   const completo = "componentes" in fin;
   const meses = "mesesAssegurados" in fin ? fin.mesesAssegurados : null;
-  const patrocinio = "patrocinioPrivado" in fin && fin.patrocinioPrivado ? PATROCINIO[fin.patrocinioPrivado] : "—";
+  const patrocinio =
+    "patrocinioPrivado" in fin && fin.patrocinioPrivado ? PATROCINIO[fin.patrocinioPrivado] : "—";
   return (
     <>
       <dl className="kv">
@@ -240,8 +260,14 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
     null,
   );
   const ordenados = [...comNota].sort((a, b) => (b.nota ?? 0) - (a.nota ?? 0));
-  const forcas = ordenados.slice(0, 2).map((p) => p.nomeCurto).join(" e ");
-  const lacunas = ordenados.slice(-2).map((p) => p.nomeCurto).join(" e ");
+  const forcas = ordenados
+    .slice(0, 2)
+    .map((p) => p.nomeCurto)
+    .join(" e ");
+  const lacunas = ordenados
+    .slice(-2)
+    .map((p) => p.nomeCurto)
+    .join(" e ");
   const temMundial = resultados.some((r) => r.nivel === "Mundial");
   const perfil = ficha.financeiro?.perfilSuporte;
   const g1 = gates.itens.find((g) => g.gate === 1);
@@ -262,7 +288,9 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
       )}
       <div className="athlete-head">
         <div>
-          <div className="eyebrow">Ficha individual{ficha.ciclo ? ` · ciclo de ${ficha.ciclo.nome}` : ""}</div>
+          <div className="eyebrow">
+            Ficha individual{ficha.ciclo ? ` · ciclo de ${ficha.ciclo.nome}` : ""}
+          </div>
           <h1>{atleta.nome}</h1>
           <div className="facts">
             {atleta.numeroVela && <span className="sail">{atleta.numeroVela}</span>}
@@ -274,7 +302,12 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
             </span>
             <span>{atleta.idade} anos</span>
             <span>
-              {[atleta.clube, atleta.cidade && atleta.uf ? `${atleta.cidade}/${atleta.uf}` : (atleta.cidade ?? atleta.uf)]
+              {[
+                atleta.clube,
+                atleta.cidade && atleta.uf
+                  ? `${atleta.cidade}/${atleta.uf}`
+                  : (atleta.cidade ?? atleta.uf),
+              ]
                 .filter(Boolean)
                 .join(" · ")}
             </span>
@@ -330,7 +363,8 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
             <div className="panel-head">
               <h2>Histórico competitivo</h2>
               <span className="num">
-                <b>{fmt0(ficha.pontosCbvela)}</b> <span className="muted">pts no Ranking CBVela</span>
+                <b>{fmt0(ficha.pontosCbvela)}</b>{" "}
+                <span className="muted">pts no Ranking CBVela</span>
               </span>
             </div>
             <div className="table-scroll">
@@ -359,7 +393,12 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                           {r.fonte === "ranking_cbvela" ? (
                             <span className="src-tag">Ranking CBVela</span>
                           ) : link ? (
-                            <a className="src-tag man" href={link} target="_blank" rel="noopener noreferrer">
+                            <a
+                              className="src-tag man"
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
                               Lançado + link oficial
                             </a>
                           ) : (
@@ -373,8 +412,8 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               </table>
             </div>
             <p className="muted" style={{ fontSize: "0.82rem", margin: "10px 0 0" }}>
-              Resultados nacionais chegam do Ranking CBVela pelo código VelaID. Internacionais são lançados com o link
-              do resultado oficial.
+              Resultados nacionais chegam do Ranking CBVela pelo código VelaID. Internacionais são
+              lançados com o link do resultado oficial.
             </p>
           </section>
         </div>
@@ -395,7 +434,9 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
             ))}
             <p className="muted" style={{ fontSize: "0.8rem", margin: "8px 0 0" }}>
               Sugestão automática por regra provisória (P7).{" "}
-              {papel === "gestor" ? "O gestor confirma ou ajusta cada gate." : "Quem decide é o gestor."}
+              {papel === "gestor"
+                ? "O gestor confirma ou ajusta cada gate."
+                : "Quem decide é o gestor."}
             </p>
           </section>
           <section className="panel">
@@ -442,7 +483,9 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               <dt>Lacunas</dt>
               <dd>{lacunas || "—"}</dd>
               <dt>Meta 12 meses</dt>
-              <dd>{temMundial ? "Top 10 no Mundial da classe" : "Primeiro Mundial da classe, top 50%"}</dd>
+              <dd>
+                {temMundial ? "Top 10 no Mundial da classe" : "Primeiro Mundial da classe, top 50%"}
+              </dd>
               <dt>Meta 24 meses</dt>
               <dd>
                 {gates.statusFinal === "apto"
