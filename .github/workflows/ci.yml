@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+      - name: Tipos
+        run: bun run typecheck
+      - name: Lint
+        run: bun run lint
+      - name: Testes
+        run: bun run test
+      - name: Build (preset Vercel)
+        run: bun run build
+      # Varredura de dependências (boaspraticas.md). Falha em vulnerabilidade alta ou crítica.
+      - name: Auditoria de dependências
+        run: bun audit --audit-level=high
+      # Não há passo de api:verificar: o contrato (openapi.yaml) vive no repositório do vela-back.
+      # Rode `npm run api:verificar` localmente, com o vela-back ao lado, antes de abrir o PR.

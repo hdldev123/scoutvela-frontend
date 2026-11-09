@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # O Dependabot tem suporte ao ecossistema "bun" (lê o bun.lock); usamos ele em vez de npm.
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      radix:
+        patterns: ["@radix-ui/*"]
+      tanstack:
+        patterns: ["@tanstack/*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
