@@ -3,9 +3,12 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BigScore } from "./BigScore";
-import { FaixaPill } from "./FaixaPill";
+import { EvidenciasSecao, AbrirEvidencia } from "./EvidenciasSecao";
+import { FinanceiroDialog } from "./FinanceiroDialog";
 import { GaugeClassFit } from "./GaugeClassFit";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
+import { PlanoIndividual } from "./PlanoIndividual";
+import { ResultadoDialog, rotuloNivel } from "./ResultadoDialog";
 import { SemAcesso } from "./SemAcesso";
 import { SparkScore } from "./SparkScore";
 import { StatusPill, textoDoStatus } from "./StatusPill";
@@ -13,6 +16,7 @@ import { fmt0, fmt1, fmtData, rotuloCiclo } from "./formato";
 import { ErroApi, mensagemDeErro } from "@/lib/api/cliente";
 import { useFicha, type FichaAtleta } from "@/lib/api/consultas";
 import { atualizarGate } from "@/lib/api/mutacoes-ficha";
+import "@/styles/ficha.css";
 
 type Pilar = FichaAtleta["pilares"][number];
 type Indicador = NonNullable<Pilar["indicadores"]>[number];
@@ -68,6 +72,16 @@ function LinhaIndicador({ ind }: { ind: Indicador }) {
           <div className="src">
             Sugestão do atleta: {ind.sugestaoPendente.valor}, aguardando avaliador
           </div>
+        )}
+        {ind.anexo && (
+          <AbrirEvidencia
+            id={ind.anexo.id}
+            nomeArquivo={ind.anexo.nomeArquivo}
+            className="ficha-clipe"
+          >
+            <i className="ph ph-paperclip" aria-hidden="true" />
+            <span>{ind.anexo.nomeArquivo}</span>
+          </AbrirEvidencia>
         )}
       </div>
       <span className={`nota ${ind.nota == null ? "na" : ""}`}>
@@ -235,6 +249,8 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
   const queryClient = useQueryClient();
   const [abertos, setAbertos] = useState<Record<string, boolean>>({});
   const [pedindoRevisao, setPedindoRevisao] = useState(false);
+  const [lancandoResultado, setLancandoResultado] = useState(false);
+  const [editandoFinanceiro, setEditandoFinanceiro] = useState(false);
   const { atleta, pilares, gates, classFit, resultados } = ficha;
 
   const alterarGate = useMutation({
@@ -259,18 +275,11 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
     (m, p) => (m === null || p.peso - p.contribuicao > m.peso - m.contribuicao ? p : m),
     null,
   );
-  const ordenados = [...comNota].sort((a, b) => (b.nota ?? 0) - (a.nota ?? 0));
-  const forcas = ordenados
-    .slice(0, 2)
-    .map((p) => p.nomeCurto)
-    .join(" e ");
-  const lacunas = ordenados
-    .slice(-2)
-    .map((p) => p.nomeCurto)
-    .join(" e ");
-  const temMundial = resultados.some((r) => r.nivel === "mundial");
-  const perfil = ficha.financeiro?.perfilSuporte;
   const g1 = gates.itens.find((g) => g.gate === 1);
+  const podeLancar = papel === "gestor" || papel === "treinador";
+  const indicadoresEvidencia = pilares.flatMap((p) =>
+    (p.indicadores ?? []).filter((i) => i.tipo !== "R").map((i) => ({ id: i.id, nome: i.nome })),
+  );
 
   const pontos = [
     ...ficha.historicoScore.map((h) => ({ rotulo: rotuloCiclo(h.ciclo), score: h.score })),
@@ -367,12 +376,20 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 <span className="muted">pts no Ranking CBVela</span>
               </span>
             </div>
+            {podeLancar && (
+              <div className="btn-row" style={{ marginBottom: 10 }}>
+                <button type="button" className="btn" onClick={() => setLancandoResultado(true)}>
+                  Lançar resultado internacional
+                </button>
+              </div>
+            )}
             <div className="table-scroll">
               <table className="data">
                 <thead>
                   <tr>
                     <th>Data</th>
                     <th>Evento</th>
+                    <th>Nível</th>
                     <th className="r">Posição</th>
                     <th className="r">Pts CBVela</th>
                     <th>Fonte</th>
@@ -385,6 +402,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                       <tr key={`${r.data}-${r.evento}-${i}`}>
                         <td className="num">{fmtData(r.data)}</td>
                         <td>{r.evento}</td>
+                        <td>{rotuloNivel(r.nivel)}</td>
                         <td className="r">
                           {r.posicao}º de {r.tamanhoFrota}
                         </td>
@@ -470,37 +488,34 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
           <section className="panel">
             <div className="panel-head">
               <h2>Sustentabilidade da campanha</h2>
+              {papel === "gestor" && (
+                <button type="button" className="btn" onClick={() => setEditandoFinanceiro(true)}>
+                  Atualizar financeiro
+                </button>
+              )}
             </div>
             <BlocoFinanceiro fin={ficha.financeiro} />
           </section>
-          <section className="panel">
-            <div className="panel-head">
-              <h2>Plano individual</h2>
-            </div>
-            <dl className="kv">
-              <dt>Forças</dt>
-              <dd>{forcas || "Aguardando a primeira avaliação"}</dd>
-              <dt>Lacunas</dt>
-              <dd>{lacunas || "—"}</dd>
-              <dt>Meta 12 meses</dt>
-              <dd>
-                {temMundial ? "Top 10 no Mundial da classe" : "Primeiro Mundial da classe, top 50%"}
-              </dd>
-              <dt>Meta 24 meses</dt>
-              <dd>
-                {gates.statusFinal === "apto"
-                  ? "Campanha completa no circuito internacional"
-                  : "Fechar os gates em aberto"}
-              </dd>
-              <dt>Recomendação</dt>
-              <dd>
-                <FaixaPill faixa={ficha.faixa} />
-                {perfil === "C" || perfil === "D" ? ", com apoio para viagens e equipamento" : ""}
-              </dd>
-            </dl>
-          </section>
+          <PlanoIndividual ficha={ficha} papel={papel} />
+          {papel !== "ibvar" && (
+            <EvidenciasSecao
+              atletaId={atleta.id}
+              papel={papel}
+              indicadores={indicadoresEvidencia}
+            />
+          )}
         </div>
       </div>
+      {lancandoResultado && (
+        <ResultadoDialog atletaId={atleta.id} aoFechar={() => setLancandoResultado(false)} />
+      )}
+      {editandoFinanceiro && (
+        <FinanceiroDialog
+          atletaId={atleta.id}
+          atual={ficha.financeiro}
+          aoFechar={() => setEditandoFinanceiro(false)}
+        />
+      )}
       {pedindoRevisao && (
         <PedirRevisaoDialog
           aoFechar={() => setPedindoRevisao(false)}
