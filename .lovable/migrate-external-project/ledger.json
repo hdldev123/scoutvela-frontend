@@ -1,0 +1,3 @@
+[{"capability":"code/screens/rules","source":"index.html","outcome":"migrate","status":"verified","next_action":"none"},
+{"capability":"database/records","source":"none (fictitious in-memory data)","outcome":"not applicable","status":"accepted","next_action":"user chose browser-only"},
+{"capability":"auth","source":"profile switcher (simulated)","outcome":"kept simulated","status":"accepted","next_action":"none"}]
