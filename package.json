@@ -1,5 +1,5 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "vela-front",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -13,7 +13,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "api:tipos": "openapi-typescript ../vela-back/openapi.yaml -o src/lib/api/schema.d.ts"
+    "api:tipos": "openapi-typescript ../vela-back/openapi.yaml -o src/lib/api/schema.d.ts",
+    "typecheck": "tsc --noEmit",
+    "api:verificar": "node scripts/api-verificar.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -99,5 +101,6 @@
     "typescript-eslint": "^8.56.1",
     "vite": "8.1.5",
     "vitest": "^4.1.10"
-  }
+  },
+  "version": "0.1.0"
 }
