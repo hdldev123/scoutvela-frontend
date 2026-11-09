@@ -10,33 +10,142 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as AppAvaliarRouteImport } from './routes/_app/avaliar'
+import { Route as AppCadastroRouteImport } from './routes/_app/cadastro'
+import { Route as AppInvestimentoRouteImport } from './routes/_app/investimento'
+import { Route as AppPainelRouteImport } from './routes/_app/painel'
+import { Route as AppParametrosRouteImport } from './routes/_app/parametros'
+import { Route as AppRankingRouteImport } from './routes/_app/ranking'
+import { Route as AppAtletasIdRouteImport } from './routes/_app/atletas.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntrarRoute = EntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAvaliarRoute = AppAvaliarRouteImport.update({
+  id: '/avaliar',
+  path: '/avaliar',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCadastroRoute = AppCadastroRouteImport.update({
+  id: '/cadastro',
+  path: '/cadastro',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInvestimentoRoute = AppInvestimentoRouteImport.update({
+  id: '/investimento',
+  path: '/investimento',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPainelRoute = AppPainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppParametrosRoute = AppParametrosRouteImport.update({
+  id: '/parametros',
+  path: '/parametros',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRankingRoute = AppRankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAtletasIdRoute = AppAtletasIdRouteImport.update({
+  id: '/atletas/$id',
+  path: '/atletas/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/entrar': typeof EntrarRoute
+  '/avaliar': typeof AppAvaliarRoute
+  '/cadastro': typeof AppCadastroRoute
+  '/investimento': typeof AppInvestimentoRoute
+  '/painel': typeof AppPainelRoute
+  '/parametros': typeof AppParametrosRoute
+  '/ranking': typeof AppRankingRoute
+  '/atletas/$id': typeof AppAtletasIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/entrar': typeof EntrarRoute
+  '/avaliar': typeof AppAvaliarRoute
+  '/cadastro': typeof AppCadastroRoute
+  '/investimento': typeof AppInvestimentoRoute
+  '/painel': typeof AppPainelRoute
+  '/parametros': typeof AppParametrosRoute
+  '/ranking': typeof AppRankingRoute
+  '/atletas/$id': typeof AppAtletasIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/entrar': typeof EntrarRoute
+  '/_app/avaliar': typeof AppAvaliarRoute
+  '/_app/cadastro': typeof AppCadastroRoute
+  '/_app/investimento': typeof AppInvestimentoRoute
+  '/_app/painel': typeof AppPainelRoute
+  '/_app/parametros': typeof AppParametrosRoute
+  '/_app/ranking': typeof AppRankingRoute
+  '/_app/atletas/$id': typeof AppAtletasIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/entrar'
+    | '/avaliar'
+    | '/cadastro'
+    | '/investimento'
+    | '/painel'
+    | '/parametros'
+    | '/ranking'
+    | '/atletas/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/entrar'
+    | '/avaliar'
+    | '/cadastro'
+    | '/investimento'
+    | '/painel'
+    | '/parametros'
+    | '/ranking'
+    | '/atletas/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/entrar'
+    | '/_app/avaliar'
+    | '/_app/cadastro'
+    | '/_app/investimento'
+    | '/_app/painel'
+    | '/_app/parametros'
+    | '/_app/ranking'
+    | '/_app/atletas/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  EntrarRoute: typeof EntrarRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +157,98 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrar': {
+      id: '/entrar'
+      path: '/entrar'
+      fullPath: '/entrar'
+      preLoaderRoute: typeof EntrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/avaliar': {
+      id: '/_app/avaliar'
+      path: '/avaliar'
+      fullPath: '/avaliar'
+      preLoaderRoute: typeof AppAvaliarRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/cadastro': {
+      id: '/_app/cadastro'
+      path: '/cadastro'
+      fullPath: '/cadastro'
+      preLoaderRoute: typeof AppCadastroRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/investimento': {
+      id: '/_app/investimento'
+      path: '/investimento'
+      fullPath: '/investimento'
+      preLoaderRoute: typeof AppInvestimentoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/painel': {
+      id: '/_app/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof AppPainelRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/parametros': {
+      id: '/_app/parametros'
+      path: '/parametros'
+      fullPath: '/parametros'
+      preLoaderRoute: typeof AppParametrosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/ranking': {
+      id: '/_app/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof AppRankingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/atletas/$id': {
+      id: '/_app/atletas/$id'
+      path: '/atletas/$id'
+      fullPath: '/atletas/$id'
+      preLoaderRoute: typeof AppAtletasIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAvaliarRoute: typeof AppAvaliarRoute
+  AppCadastroRoute: typeof AppCadastroRoute
+  AppInvestimentoRoute: typeof AppInvestimentoRoute
+  AppPainelRoute: typeof AppPainelRoute
+  AppParametrosRoute: typeof AppParametrosRoute
+  AppRankingRoute: typeof AppRankingRoute
+  AppAtletasIdRoute: typeof AppAtletasIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAvaliarRoute: AppAvaliarRoute,
+  AppCadastroRoute: AppCadastroRoute,
+  AppInvestimentoRoute: AppInvestimentoRoute,
+  AppPainelRoute: AppPainelRoute,
+  AppParametrosRoute: AppParametrosRoute,
+  AppRankingRoute: AppRankingRoute,
+  AppAtletasIdRoute: AppAtletasIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  EntrarRoute: EntrarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
