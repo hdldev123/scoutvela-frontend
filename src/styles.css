@@ -679,3 +679,8 @@ footer { margin-top: 32px; font-size: 0.8rem; color: var(--ink-2); }
   .entry-scene { background: oklch(0.16 0.03 255); }
   .entry-video { left: 22%; width: 78%; object-position: center; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22%); mask-image: linear-gradient(90deg, transparent 0, #000 22%); }
 }
+
+/* Foco visível nos campos do login e botão desabilitado */
+.auth-field input:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+.auth-primary:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+.auth-primary:disabled { opacity: 0.6; cursor: progress; }
