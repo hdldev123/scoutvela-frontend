@@ -1,0 +1,22 @@
+.aud-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+.aud-id {
+  font-family: var(--f-mono);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+.aud-det summary {
+  cursor: pointer;
+}
+.aud-det pre {
+  margin: 6px 0 0;
+  font-family: var(--f-mono);
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 28rem;
+}
