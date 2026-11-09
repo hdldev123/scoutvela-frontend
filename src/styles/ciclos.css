@@ -1,0 +1,34 @@
+.cic-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+.cic-campos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.cic-campos:disabled {
+  opacity: 0.55;
+}
+.cic-aberto {
+  border-left: 4px solid var(--c-accent, #0b5fa5);
+}
+.cic-sub {
+  margin: 0;
+  font-size: 0.85rem;
+}
+.cic-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
