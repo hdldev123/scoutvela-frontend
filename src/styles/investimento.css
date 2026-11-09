@@ -1,0 +1,34 @@
+.inv-gate {
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+.inv-gate .bar {
+  height: 18px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  overflow: hidden;
+  display: flex;
+}
+.inv-gate .bar span {
+  display: block;
+  height: 100%;
+}
+.inv-gate .contagem {
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.inv-nota {
+  font-size: 0.82rem;
+  margin: 10px 0 0;
+}
+.inv-oculto {
+  font-size: 0.85rem;
+  margin-top: 10px;
+}
+.inv-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

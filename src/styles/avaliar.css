@@ -1,0 +1,82 @@
+/* Tela Lançar avaliação: complementa as classes .ptab, .ed-row, .seg e .rubric de styles.css. */
+.avaliar-peso {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.avaliar-peso .field {
+  min-width: 7rem;
+}
+.avaliar-sugestao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+.avaliar-erro-campo {
+  color: var(--bad, #b3261e);
+  font-size: 0.78rem;
+}
+.avaliar-previa ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.86rem;
+}
+.avaliar-previa li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .ed-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .seg button {
+    width: 2.8rem;
+    padding: 10px 0;
+  }
+  .avaliar-previa {
+    position: static;
+  }
+}
+.seg-radio label {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.3rem;
+  padding: 6px 0;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+  cursor: pointer;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.seg-radio label:first-child {
+  border-left: 0;
+}
+.seg-radio input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.seg-radio label:has(input:checked) {
+  background: var(--sea);
+  color: var(--sea-ink);
+}
+.seg-radio label:has(input:focus-visible) {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+@media (max-width: 640px) {
+  .seg-radio label {
+    width: 2.8rem;
+    padding: 10px 0;
+  }
+}

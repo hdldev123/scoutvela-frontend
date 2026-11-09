@@ -1,0 +1,49 @@
+.cad-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+.cad-codigo {
+  font-family: var(--f-mono);
+  max-width: 14rem;
+}
+.cad-motivo {
+  border-left: 4px solid #b3261e;
+  font-weight: 600;
+}
+.cad-sub {
+  margin: 0;
+  font-size: 0.85rem;
+}
+.cad-tipos {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.cad-tipos label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.cad-formato {
+  font-family: var(--f-mono);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+.cad-resumo {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.cad-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

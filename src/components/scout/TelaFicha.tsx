@@ -268,7 +268,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
     .slice(-2)
     .map((p) => p.nomeCurto)
     .join(" e ");
-  const temMundial = resultados.some((r) => r.nivel === "Mundial");
+  const temMundial = resultados.some((r) => r.nivel === "mundial");
   const perfil = ficha.financeiro?.perfilSuporte;
   const g1 = gates.itens.find((g) => g.gate === 1);
 
