@@ -28,5 +28,3 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
-
-- Scout Vela engine lives in src/lib/scout/engine.js as the original prototype logic ported verbatim and mounted client-side from src/routes/index.tsx; keeps the approved calculation rules identical to the source.
