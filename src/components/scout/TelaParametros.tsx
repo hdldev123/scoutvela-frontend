@@ -2,11 +2,15 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import "@/styles/parametros.css";
 import { fmt1 } from "./formato";
+import { SecaoFaixas, SecaoRubricas } from "./ParametrosFaixasRubricas";
+import { SecaoRegras } from "./ParametrosRegras";
+import { MSG_SALVO } from "./parametros-util";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useParametros, useSalvarParametros, type Parametros } from "@/lib/api/parametros";
 
-const MSG_SALVO = "Parâmetros salvos. O ranking já usa os novos valores.";
 const POSICAO = { helm: "Timoneiro", crew: "Proeiro", ind: "Individual" } as const;
+
+export { formatarValor } from "./parametros-util";
 
 /** Aceita "82,8" ou "82.8"; devolve null quando não for número finito >= 0. */
 export function lerKg(texto: string): number | null {
@@ -14,21 +18,6 @@ export function lerKg(texto: string): number | null {
   if (!/^\d+(\.\d+)?$/.test(t)) return null;
   const n = Number(t);
   return Number.isFinite(n) ? Math.round(n * 10) / 10 : null;
-}
-
-/** Valor de regra em texto legível (números, booleanos, listas e objetos simples). */
-export function formatarValor(v: unknown): string {
-  if (v === null || v === undefined) return "—";
-  if (typeof v === "boolean") return v ? "Sim" : "Não";
-  if (typeof v === "number") return v.toLocaleString("pt-BR");
-  if (typeof v === "string") return v;
-  if (Array.isArray(v)) return v.map(formatarValor).join(", ");
-  if (typeof v === "object") {
-    return Object.entries(v as Record<string, unknown>)
-      .map(([k, val]) => `${k}: ${formatarValor(val)}`)
-      .join("; ");
-  }
-  return String(v);
 }
 
 /** Tela de parâmetros da metodologia (gestor). Pesos e faixas de peso editáveis; o resto é leitura. */
@@ -78,7 +67,9 @@ function ConteudoParametros({ dados }: { dados: Parametros }) {
       </div>
       <div className="stack">
         <SecaoClasses
-          key={dados.classes.map((c) => `${c.pesoMinKg}/${c.pesoMedioKg}/${c.pesoMaxKg}`).join(",")}
+          key={dados.classes
+            .map((c) => `${c.pesoMinKg}/${c.pesoMedioKg}/${c.pesoMaxKg}/${c.ativa}`)
+            .join(",")}
           dados={dados}
         />
         <SecaoRubricas dados={dados} />
@@ -146,7 +137,7 @@ function SecaoPesos({ dados }: { dados: Parametros }) {
   );
 }
 
-type Linha = { min: string; med: string; max: string };
+type Linha = { min: string; med: string; max: string; ativa: boolean };
 
 function SecaoClasses({ dados }: { dados: Parametros }) {
   const salvar = useSalvarParametros();
@@ -154,7 +145,12 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
     Object.fromEntries(
       dados.classes.map((c) => [
         c.id,
-        { min: fmt1(c.pesoMinKg), med: fmt1(c.pesoMedioKg), max: fmt1(c.pesoMaxKg) },
+        {
+          min: fmt1(c.pesoMinKg),
+          med: fmt1(c.pesoMedioKg),
+          max: fmt1(c.pesoMaxKg),
+          ativa: c.ativa,
+        },
       ]),
     ),
   );
@@ -173,30 +169,30 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
 
   const resultado = dados.classes.map((c) => {
     const a = analisar(c.id);
-    const alterada = a.min !== c.pesoMinKg || a.med !== c.pesoMedioKg || a.max !== c.pesoMaxKg;
-    return { c, a, alterada };
+    const pesoAlterado = a.min !== c.pesoMinKg || a.med !== c.pesoMedioKg || a.max !== c.pesoMaxKg;
+    const ativaAlterada = linhas[c.id]!.ativa !== c.ativa;
+    return { c, a, pesoAlterado, ativaAlterada, alterada: pesoAlterado || ativaAlterada };
   });
   const alteradas = resultado.filter((r) => r.alterada);
   const comErro = alteradas.some((r) => r.a.erro);
 
-  const mudar = (id: string, campo: keyof Linha, valor: string) =>
+  const mudar = (id: string, campo: "min" | "med" | "max", valor: string) =>
     setLinhas((ls) => ({ ...ls, [id]: { ...ls[id]!, [campo]: valor } }));
 
   const enviar = (e: FormEvent) => {
     e.preventDefault();
     if (alteradas.length === 0 || comErro) return;
-    const classes = alteradas.map(({ c, a }) => ({
+    const classes = alteradas.map(({ c, a, pesoAlterado, ativaAlterada }) => ({
       id: c.id,
-      pesoMinKg: a.min!,
-      pesoMedioKg: a.med!,
-      pesoMaxKg: a.max!,
+      ...(pesoAlterado ? { pesoMinKg: a.min!, pesoMedioKg: a.med!, pesoMaxKg: a.max! } : {}),
+      ...(ativaAlterada ? { ativa: linhas[c.id]!.ativa } : {}),
     }));
     salvar.mutate({ classes }, { onSuccess: () => toast.success(MSG_SALVO) });
   };
 
   const campo = (
     c: Parametros["classes"][number],
-    k: keyof Linha,
+    k: "min" | "med" | "max",
     rotulo: string,
     erro: boolean,
   ) => (
@@ -228,17 +224,18 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
                 <th className="r">Mín.</th>
                 <th className="r">Média</th>
                 <th className="r">Máx.</th>
+                <th className="r">Ativa</th>
               </tr>
             </thead>
             <tbody>
-              {resultado.map(({ c, a, alterada }) => (
+              {resultado.map(({ c, a, alterada, pesoAlterado }) => (
                 <tr key={c.id} data-alterada={alterada || undefined}>
                   <td>
                     {c.nome}
                     <div className="muted" style={{ fontSize: "0.78rem" }}>
                       {c.evento} · {POSICAO[c.posicao]}
                     </div>
-                    {a.erro && alterada && (
+                    {a.erro && pesoAlterado && (
                       <div className="par-erro" role="alert">
                         {a.erro}
                       </div>
@@ -247,6 +244,21 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
                   <td className="r">{campo(c, "min", "Mínimo", !!a.erro)}</td>
                   <td className="r">{campo(c, "med", "Média", !!a.erro)}</td>
                   <td className="r">{campo(c, "max", "Máximo", !!a.erro)}</td>
+                  <td className="r">
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      className="par-ativa"
+                      aria-label={`Ativa: ${c.nome}, ${POSICAO[c.posicao]}`}
+                      checked={linhas[c.id]!.ativa}
+                      onChange={(e) =>
+                        setLinhas((ls) => ({
+                          ...ls,
+                          [c.id]: { ...ls[c.id]!, ativa: e.target.checked },
+                        }))
+                      }
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -275,8 +287,6 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
   );
 }
 
-/* Somente leitura por enquanto. Cada seção recebe `dados` e pode ganhar edição depois. */
-
 function CabecalhoLeitura({ titulo }: { titulo: string }) {
   return (
     <div className="panel-head">
@@ -285,80 +295,6 @@ function CabecalhoLeitura({ titulo }: { titulo: string }) {
         somente leitura
       </span>
     </div>
-  );
-}
-
-function SecaoFaixas({ dados }: { dados: Parametros }) {
-  const faixas = [...dados.faixas].sort((a, b) => b.scoreMin - a.scoreMin);
-  return (
-    <section className="panel">
-      <CabecalhoLeitura titulo="Faixas de resultado" />
-      <div className="stack" style={{ gap: 8 }}>
-        {faixas.map((f, i) => {
-          const acima = faixas[i - 1];
-          const intervalo = acima ? `${f.scoreMin} a ${acima.scoreMin - 1}` : `${f.scoreMin} a 100`;
-          return (
-            <div className="par-linha" key={f.id}>
-              <span>{f.nome}</span>
-              <span className="num muted">
-                {f.scoreMin === 0 && acima ? `abaixo de ${acima.scoreMin}` : intervalo}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function SecaoRegras({ dados }: { dados: Parametros }) {
-  return (
-    <section className="panel">
-      <CabecalhoLeitura titulo="Regras provisórias" />
-      <ul className="par-lista">
-        {dados.regras.map((r) => (
-          <li key={r.codigo}>
-            <b>{r.codigo}</b> · {r.descricao}{" "}
-            <span className="muted">({formatarValor(r.valor)})</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function SecaoRubricas({ dados }: { dados: Parametros }) {
-  const geral = dados.rubricas.filter((r) => r.pilarId === null).sort((a, b) => b.nota - a.nota);
-  const porPilar = dados.pilares
-    .map((p) => ({
-      pilar: p,
-      itens: dados.rubricas.filter((r) => r.pilarId === p.id).sort((a, b) => b.nota - a.nota),
-    }))
-    .filter((g) => g.itens.length > 0);
-  return (
-    <section className="panel">
-      <CabecalhoLeitura titulo="Rubricas de 0 a 5" />
-      <h3 style={{ fontSize: "0.95rem" }}>Escala geral</h3>
-      <ul className="par-rubricas">
-        {geral.map((r) => (
-          <li key={r.nota}>
-            <strong>{r.nota}</strong> {r.descricao}
-          </li>
-        ))}
-      </ul>
-      {porPilar.map(({ pilar, itens }) => (
-        <div key={pilar.id}>
-          <h3 style={{ fontSize: "0.95rem" }}>{pilar.nome}</h3>
-          <ul className="par-rubricas">
-            {itens.map((r) => (
-              <li key={r.nota}>
-                <strong>{r.nota}</strong> {r.descricao}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </section>
   );
 }
 
