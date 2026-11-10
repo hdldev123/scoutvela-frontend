@@ -1,9 +1,21 @@
 import { useEffect, useState, type FormEvent } from "react";
 import heroPhoto from "@/assets/olympic-dinghy-sailing.jpg";
 
-/* Imagem padrão do fundo. O vídeo só entra se VITE_LOGIN_VIDEO_URL existir. */
+/*
+ * Fundo do login. Ordem de preferência:
+ * 1. VITE_LOGIN_VIDEO_URL (vídeo hospedado fora, ex.: CDN ou Storage);
+ * 2. src/assets/login-bg.mp4, se o arquivo existir (o glob fica vazio quando não existe,
+ *    então não há requisição 404);
+ * 3. a foto, com movimento lento de câmera (CSS). Com prefers-reduced-motion, tudo parado.
+ */
 const HERO_MEDIA_URL = heroPhoto;
-const VIDEO_URL = import.meta.env.VITE_LOGIN_VIDEO_URL || "";
+const VIDEOS_LOCAIS = import.meta.glob<string>("../../assets/login-bg.mp4", {
+  eager: true,
+  query: "?url",
+  import: "default",
+});
+const VIDEO_URL: string =
+  import.meta.env.VITE_LOGIN_VIDEO_URL || Object.values(VIDEOS_LOCAIS)[0] || "";
 
 export const MENSAGEM_RECUPERACAO = "Se o e-mail tiver conta, você vai receber um link.";
 
