@@ -38,6 +38,10 @@ Contas de teste (fictícias, existem só no seed de desenvolvimento):
 
 Confira o README do `vela-back` caso as contas mudem.
 
+### Fundo do login
+
+O login tenta, nesta ordem: `VITE_LOGIN_VIDEO_URL`; o arquivo `src/assets/login-bg.mp4` (coloque o vídeo exportado do Lovable aqui, de preferência comprimido, H.264, sem áudio, até uns 5 MB); e, sem vídeo, a foto com movimento lento de câmera. Com `prefers-reduced-motion`, o fundo fica parado.
+
 ## Scripts
 
 | Script          | O que faz                                                                       |
