@@ -1828,15 +1828,17 @@
   object-fit: cover;
   object-position: right center;
   filter: contrast(1.05) saturate(1.1);
-  animation: kenburns 20s ease-out infinite alternate;
+  animation: kenburns 18s ease-in-out infinite alternate;
   transform-origin: 75% 55%;
+  will-change: transform;
 }
+/* Movimento lento de câmera sobre a foto: aproxima e desliza em direção ao barco. */
 @keyframes kenburns {
   from {
-    transform: scale(1);
+    transform: scale(1.02) translate3d(0, 0, 0);
   }
   to {
-    transform: scale(1.05);
+    transform: scale(1.16) translate3d(-3%, -1.5%, 0);
   }
 }
 @media (prefers-reduced-motion: reduce) {
