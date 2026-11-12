@@ -53,11 +53,24 @@ const pedido = {
   respondidoEm: null,
 };
 
+const lancamento = {
+  id: "av9",
+  indicadorId: "i1",
+  indicadorNome: "Largada",
+  valor: 4,
+  lancadoEm: "2026-11-08T12:00:00.000Z",
+  origem: "treinador",
+  avaliador: { id: "u1", nome: "Ana Ribeiro" },
+};
+let lancamentos: unknown[];
+
 beforeEach(() => {
   vi.clearAllMocks();
-  GET.mockImplementation(async (caminho: string) =>
-    ok(caminho === "/revisoes" ? [revisao] : [pedido]),
-  );
+  lancamentos = [lancamento];
+  GET.mockImplementation(async (caminho: string) => {
+    if (caminho === "/revisoes/{id}/lancamentos") return ok({ lancamentos });
+    return ok(caminho === "/revisoes" ? [revisao] : [pedido]);
+  });
 });
 
 function montar(papel: string) {
@@ -100,6 +113,72 @@ describe("TelaRevisoes", () => {
       }),
     );
     await waitFor(() => expect(inv).toHaveBeenCalledWith({ queryKey: ["revisoes"] }));
+  });
+
+  it("o diálogo lista os lançamentos e envia o avaliacaoId escolhido", async () => {
+    PUT.mockResolvedValue(ok({ ...revisao, status: "respondido", resposta: "Corrigida." }));
+    montar("gestor");
+    fireEvent.click(await screen.findByRole("button", { name: "Responder" }));
+    const dialogo = await screen.findByRole("dialog");
+    const select = await within(dialogo).findByLabelText(/Lançamento que corrigiu a nota/);
+    expect(GET).toHaveBeenCalledWith("/revisoes/{id}/lancamentos", {
+      params: { path: { id: "r1" } },
+    });
+    const opcoes = within(select)
+      .getAllByRole("option")
+      .map((o) => o.textContent);
+    expect(opcoes[0]).toBe("Nenhum (resposta sem nova nota)");
+    expect(opcoes[1]).toBe("Largada · nota 4 · 08/11/2026 · Ana Ribeiro");
+    fireEvent.change(select, { target: { value: "av9" } });
+    fireEvent.change(within(dialogo).getByLabelText("Resposta"), {
+      target: { value: "Corrigida." },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar resposta" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/revisoes/{id}", {
+        params: { path: { id: "r1" } },
+        body: { resposta: "Corrigida.", avaliacaoId: "av9" },
+      }),
+    );
+  });
+
+  it("com lista vazia mostra a dica e não envia avaliacaoId", async () => {
+    lancamentos = [];
+    PUT.mockResolvedValue(ok({ ...revisao, status: "respondido", resposta: "Mantida." }));
+    montar("gestor");
+    fireEvent.click(await screen.findByRole("button", { name: "Responder" }));
+    const dialogo = await screen.findByRole("dialog");
+    expect(await within(dialogo).findByText(/Nenhum lançamento posterior ao pedido/)).toBeTruthy();
+    fireEvent.change(within(dialogo).getByLabelText("Resposta"), { target: { value: "Mantida." } });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar resposta" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/revisoes/{id}", {
+        params: { path: { id: "r1" } },
+        body: { resposta: "Mantida." },
+      }),
+    );
+  });
+
+  it("mostra a nota anterior e a nova na lista", async () => {
+    GET.mockImplementation(async (caminho: string) =>
+      ok(
+        caminho === "/revisoes"
+          ? [
+              {
+                ...revisao,
+                status: "respondido",
+                avaliacaoId: "av9",
+                notaAnterior: 2,
+                notaNova: 4,
+              },
+              { ...revisao, id: "r2", avaliacaoId: "av8", notaAnterior: null, notaNova: 3 },
+            ]
+          : [],
+      ),
+    );
+    montar("treinador");
+    expect(await screen.findByText("2 → 4")).toBeTruthy();
+    expect(screen.getByText("Nota nova: 3")).toBeTruthy();
   });
 
   it("treinador só lê e não vê a aba LGPD", async () => {

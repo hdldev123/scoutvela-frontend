@@ -1,10 +1,12 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
 import { fmtData } from "./formato";
+import { NotaRevisao } from "./NotaRevisao";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import {
+  useLancamentosRevisao,
   usePedidosTitular,
   useResponderPedidoTitular,
   useResponderRevisao,
@@ -98,12 +100,14 @@ function FormResposta({
   erro,
   aoEnviar,
   aoCancelar,
+  extra,
 }: {
   rotuloBotao: string;
   pendente: boolean;
   erro: string;
   aoEnviar: (resposta: string) => void;
   aoCancelar: () => void;
+  extra?: ReactNode;
 }) {
   const [texto, setTexto] = useState("");
   const enviar = (e: FormEvent) => {
@@ -123,6 +127,7 @@ function FormResposta({
           maxLength={2000}
         />
       </label>
+      {extra}
       {erro && (
         <div className="note" role="alert">
           {erro}
@@ -146,12 +151,14 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
   const responder = useResponderRevisao();
   const [alvo, setAlvo] = useState<Revisao | null>(null);
   const [erro, setErro] = useState("");
+  const [avaliacaoId, setAvaliacaoId] = useState("");
+  const lancamentos = useLancamentosRevisao(alvo?.id);
 
   const enviar = (resposta: string) => {
     if (!alvo) return;
     setErro("");
     responder.mutate(
-      { id: alvo.id, resposta },
+      { id: alvo.id, resposta, ...(avaliacaoId ? { avaliacaoId } : {}) },
       {
         onSuccess: () => {
           setAlvo(null);
@@ -224,7 +231,15 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                     {r.pilar?.nomeCurto ?? "—"}
                     {r.indicador && <span className="muted"> / {r.indicador.nome}</span>}
                   </td>
-                  <td className="rev-texto">{r.motivo}</td>
+                  <td className="rev-texto">
+                    {r.motivo}
+                    {typeof r.notaNova === "number" && (
+                      <div>
+                        <span className="muted">Nota: </span>
+                        <NotaRevisao notaAnterior={r.notaAnterior} notaNova={r.notaNova} />
+                      </div>
+                    )}
+                  </td>
                   <td>{fmtData(r.criadoEm)}</td>
                   <td>
                     <Status status={r.status} />
@@ -249,6 +264,7 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                           className="btn"
                           onClick={() => {
                             setErro("");
+                            setAvaliacaoId("");
                             setAlvo(r);
                           }}
                         >
@@ -274,10 +290,60 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
             erro={erro}
             aoEnviar={enviar}
             aoCancelar={() => setAlvo(null)}
+            extra={
+              <LancamentoCorrigiu
+                consulta={lancamentos}
+                valor={avaliacaoId}
+                aoMudar={setAvaliacaoId}
+              />
+            }
           />
         </Dialogo>
       )}
     </section>
+  );
+}
+
+function LancamentoCorrigiu({
+  consulta,
+  valor,
+  aoMudar,
+}: {
+  consulta: ReturnType<typeof useLancamentosRevisao>;
+  valor: string;
+  aoMudar: (id: string) => void;
+}) {
+  return (
+    <div className="field">
+      <label htmlFor="rev-lancamento">Lançamento que corrigiu a nota (opcional)</label>
+      {consulta.isPending ? (
+        <p className="muted" role="status">
+          Carregando lançamentos…
+        </p>
+      ) : consulta.isError ? (
+        <p className="muted" role="alert">
+          {mensagemDeErro(consulta.error)}
+        </p>
+      ) : (
+        <>
+          <select id="rev-lancamento" value={valor} onChange={(e) => aoMudar(e.target.value)}>
+            <option value="">Nenhum (resposta sem nova nota)</option>
+            {consulta.data.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.indicadorNome} · nota {l.valor} · {fmtData(l.lancadoEm)} ·{" "}
+                {l.avaliador?.nome ?? l.origem}
+              </option>
+            ))}
+          </select>
+          {consulta.data.length === 0 && (
+            <p className="muted" style={{ margin: 0 }}>
+              Nenhum lançamento posterior ao pedido. Lance a nota corrigida em Lançar avaliação
+              antes, se for o caso.
+            </p>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
