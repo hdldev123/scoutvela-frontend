@@ -101,7 +101,10 @@ function renderizar() {
 }
 
 function montar() {
-  GET.mockResolvedValue({ data: params, response: { status: 200 } });
+  GET.mockImplementation(async (caminho: string) => ({
+    data: caminho === "/termos" ? [] : params,
+    response: { status: 200 },
+  }));
   renderizar();
 }
 
