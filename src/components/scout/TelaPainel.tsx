@@ -368,8 +368,8 @@ function PedidosTitular() {
           />
         </label>
         <p className="muted" style={{ fontSize: ".82rem", margin: 0 }}>
-          A exclusão é atendida pela CBVela com a anonimização do cadastro: a série histórica e a
-          trilha de auditoria podem precisar ser mantidos. Você recebe a resposta aqui.
+          A exclusão é analisada pela CBVela: dados que sustentam a série histórica e a trilha de
+          auditoria podem precisar ser mantidos. Você recebe a resposta aqui.
         </p>
         {erro && (
           <p className="note" role="alert">
