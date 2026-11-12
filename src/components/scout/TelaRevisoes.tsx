@@ -5,6 +5,7 @@ import { Dialogo } from "./Dialogo";
 import { fmtData } from "./formato";
 import { NotaRevisao } from "./NotaRevisao";
 import { mensagemDeErro } from "@/lib/api/cliente";
+import { useAnonimizarAtleta, type ResultadoAnonimizacao } from "@/lib/api/titular";
 import {
   useLancamentosRevisao,
   usePedidosTitular,
@@ -351,6 +352,7 @@ function PedidosTitular() {
   const q = usePedidosTitular(true);
   const responder = useResponderPedidoTitular();
   const [alvo, setAlvo] = useState<PedidoTitular | null>(null);
+  const [anonimizando, setAnonimizando] = useState<PedidoTitular | null>(null);
   const [erro, setErro] = useState("");
 
   const enviar = (resposta: string) => {
@@ -374,8 +376,9 @@ function PedidosTitular() {
         <h2 id="rev-tit-t">Pedidos do titular (LGPD)</h2>
       </div>
       <div className="note" role="note">
-        A exclusão é procedimento manual, registrado na resposta: o histórico (notas, respostas,
-        medidas, gates e financeiro) só aceita inserção, então responder aqui não apaga dados.
+        A exclusão é atendida pela ação “Anonimizar atleta”, que tira a identificação direta e
+        mantém o histórico (notas, respostas, medidas, gates e financeiro), que só aceita inserção.
+        Os demais tipos seguem procedimento manual, registrado na resposta.
       </div>
       {q.isPending ? (
         <p className="muted" role="status">
@@ -419,18 +422,30 @@ function PedidosTitular() {
                   </td>
                   <td className="rev-texto">{p.resposta ?? "—"}</td>
                   <td className="r">
-                    {p.status === "aberto" && (
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => {
-                          setErro("");
-                          setAlvo(p);
-                        }}
-                      >
-                        Responder
-                      </button>
-                    )}
+                    <div className="btn-row">
+                      {p.tipo === "exclusao" && (p.status === "aberto" || anonimizado(p)) && (
+                        <button
+                          type="button"
+                          className="btn"
+                          aria-label={`${anonimizado(p) ? ROTULO_RETOMAR : ROTULO_ANONIMIZAR}: ${p.atleta.nome}`}
+                          onClick={() => setAnonimizando(p)}
+                        >
+                          {anonimizado(p) ? ROTULO_RETOMAR : ROTULO_ANONIMIZAR}
+                        </button>
+                      )}
+                      {p.status === "aberto" && (
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => {
+                            setErro("");
+                            setAlvo(p);
+                          }}
+                        >
+                          Responder
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -448,7 +463,8 @@ function PedidosTitular() {
           </p>
           {alvo.tipo === "exclusao" && (
             <div className="note">
-              Registre na resposta o procedimento manual feito. Esta ação não apaga dados.
+              Para atender a exclusão, use “Anonimizar atleta”. Responder aqui só registra o texto e
+              não apaga dados.
             </div>
           )}
           <FormResposta
@@ -460,6 +476,141 @@ function PedidosTitular() {
           />
         </Dialogo>
       )}
+      {anonimizando && (
+        <DialogoAnonimizar pedido={anonimizando} aoFechar={() => setAnonimizando(null)} />
+      )}
     </section>
+  );
+}
+
+const ROTULO_ANONIMIZAR = "Anonimizar atleta";
+const ROTULO_RETOMAR = "Concluir pendências da anonimização";
+
+/** Pedido de exclusão já anonimizado: a resposta automática começa por este texto. */
+const anonimizado = (p: PedidoTitular) =>
+  p.status === "respondido" && !!p.resposta?.startsWith("Dados pessoais anonimizados");
+
+function ResultadoAnon({ r }: { r: ResultadoAnonimizacao }) {
+  const pendente = r.pendencias.arquivos > 0 || r.pendencias.conta;
+  return (
+    <div className="stack" style={{ gap: 8 }} role="status">
+      <p>
+        <strong>Atleta anonimizado.</strong> Evidências removidas: {r.evidenciasRemovidas}.
+      </p>
+      {pendente ? (
+        <div className="note">
+          Restam pendências:
+          <ul>
+            {r.pendencias.arquivos > 0 && (
+              <li>{r.pendencias.arquivos} arquivo(s) ainda não saíram do armazenamento.</li>
+            )}
+            {r.pendencias.conta && <li>A conta de login ainda não foi apagada.</li>}
+          </ul>
+          Repita a ação “{ROTULO_RETOMAR}” depois para concluir.
+        </div>
+      ) : (
+        <p className="muted">Sem pendências.</p>
+      )}
+    </div>
+  );
+}
+
+function DialogoAnonimizar({ pedido, aoFechar }: { pedido: PedidoTitular; aoFechar: () => void }) {
+  const anonimizar = useAnonimizarAtleta();
+  const [texto, setTexto] = useState("");
+  const [erro, setErro] = useState("");
+  const [resultado, setResultado] = useState<ResultadoAnonimizacao | null>(null);
+  const retomada = anonimizado(pedido);
+
+  const enviar = (e: FormEvent) => {
+    e.preventDefault();
+    if (texto !== "ANONIMIZAR") return;
+    setErro("");
+    anonimizar.mutate(
+      { atletaId: pedido.atleta.id, pedidoTitularId: pedido.id },
+      {
+        onSuccess: (r) => {
+          setResultado(r);
+          toast.success("Atleta anonimizado.");
+        },
+        onError: (err) => setErro(mensagemDeErro(err)),
+      },
+    );
+  };
+
+  return (
+    <Dialogo titulo={retomada ? ROTULO_RETOMAR : ROTULO_ANONIMIZAR} aoFechar={aoFechar}>
+      {resultado ? (
+        <div className="stack" style={{ gap: 12 }}>
+          <ResultadoAnon r={resultado} />
+          <div className="btn-row">
+            <button type="button" className="btn primary" onClick={aoFechar}>
+              Fechar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <form className="stack" style={{ gap: 12 }} onSubmit={enviar}>
+          <p className="rev-contexto">
+            <strong>{pedido.atleta.nome}</strong>: {pedido.descricao}
+          </p>
+          <div className="note" role="alert">
+            <strong>Esta ação não pode ser desfeita.</strong>
+          </div>
+          <div>
+            <p style={{ margin: "0 0 4px" }}>
+              <strong>O que some:</strong>
+            </p>
+            <p className="muted" style={{ margin: 0 }}>
+              nome, contato, clube, cidade e UF, número de vela, ID World Sailing, código VelaID e
+              registro do VelaID, a conta de login e os arquivos de evidência.
+            </p>
+          </div>
+          <div>
+            <p style={{ margin: "0 0 4px" }}>
+              <strong>O que fica:</strong>
+            </p>
+            <p className="muted" style={{ margin: 0 }}>
+              a série histórica de notas, respostas, medidas, gates, financeiro, plano e resultados,
+              sem identificação direta.
+            </p>
+          </div>
+          {retomada && (
+            <p className="muted" style={{ margin: 0 }}>
+              O atleta já foi anonimizado. Repetir a ação só tenta de novo as pendências.
+            </p>
+          )}
+          <label className="field" htmlFor="rev-anon-conf">
+            Digite ANONIMIZAR para confirmar
+            <input
+              id="rev-anon-conf"
+              type="text"
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+            />
+          </label>
+          {erro && (
+            <div className="note" role="alert">
+              {erro}
+            </div>
+          )}
+          <div className="btn-row">
+            <button
+              type="submit"
+              className="btn primary"
+              disabled={texto !== "ANONIMIZAR" || anonimizar.isPending}
+            >
+              {anonimizar.isPending ? "Anonimizando…" : "Anonimizar"}
+            </button>
+            <button type="button" className="btn" onClick={aoFechar}>
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
+    </Dialogo>
   );
 }

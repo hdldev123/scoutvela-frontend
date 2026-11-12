@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const GET = vi.fn();
 const PUT = vi.fn();
+const POST = vi.fn();
 const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }));
 
 vi.mock("@/lib/api/cliente", async (importar) => ({
@@ -12,6 +13,7 @@ vi.mock("@/lib/api/cliente", async (importar) => ({
   api: {
     GET: (...args: unknown[]) => GET(...args),
     PUT: (...args: unknown[]) => PUT(...args),
+    POST: (...args: unknown[]) => POST(...args),
   },
 }));
 vi.mock("sonner", () => ({ toast: toastFn }));
@@ -207,5 +209,98 @@ describe("TelaRevisoes", () => {
       }),
     );
     await waitFor(() => expect(inv).toHaveBeenCalledWith({ queryKey: ["pedidos-titular"] }));
+  });
+
+  describe("anonimização", () => {
+    const abrirTitular = async () => {
+      const inv = montar("gestor");
+      fireEvent.click(await screen.findByRole("tab", { name: "Pedidos do titular (LGPD)" }));
+      return inv;
+    };
+
+    it("só aparece em pedido de exclusão", async () => {
+      GET.mockImplementation(async (caminho: string) =>
+        ok(
+          caminho === "/pedidos-titular"
+            ? [pedido, { ...pedido, id: "t2", tipo: "acesso", descricao: "Quero meus dados." }]
+            : [],
+        ),
+      );
+      await abrirTitular();
+      expect(await screen.findAllByRole("button", { name: "Responder" })).toHaveLength(2);
+      expect(screen.getAllByRole("button", { name: /^Anonimizar atleta/ })).toHaveLength(1);
+    });
+
+    it("habilita o botão só com ANONIMIZAR exato, envia o corpo e mostra pendências", async () => {
+      POST.mockResolvedValue(
+        ok({
+          atletaId: "a2",
+          anonimizadoEm: "2026-11-12T12:00:00.000Z",
+          evidenciasRemovidas: 3,
+          pendencias: { arquivos: 2, conta: true },
+        }),
+      );
+      const inv = await abrirTitular();
+      fireEvent.click(await screen.findByRole("button", { name: /^Anonimizar atleta/ }));
+      const dialogo = await screen.findByRole("dialog");
+      expect(within(dialogo).getByText("Esta ação não pode ser desfeita.")).toBeTruthy();
+      const botao = within(dialogo).getByRole("button", { name: "Anonimizar" });
+      const campo = within(dialogo).getByLabelText("Digite ANONIMIZAR para confirmar");
+      expect(botao).toBeDisabled();
+      fireEvent.change(campo, { target: { value: "anonimizar" } });
+      expect(botao).toBeDisabled();
+      fireEvent.change(campo, { target: { value: "ANONIMIZAR" } });
+      expect(botao).toBeEnabled();
+      fireEvent.click(botao);
+      await waitFor(() =>
+        expect(POST).toHaveBeenCalledWith("/atletas/{id}/anonimizar", {
+          params: { path: { id: "a2" } },
+          body: { pedidoTitularId: "t1", confirmacao: "ANONIMIZAR" },
+        }),
+      );
+      expect(await within(dialogo).findByText(/Evidências removidas: 3/)).toBeTruthy();
+      expect(within(dialogo).getByText(/2 arquivo\(s\)/)).toBeTruthy();
+      expect(within(dialogo).getByText(/conta de login ainda não foi apagada/)).toBeTruthy();
+      const chaves = inv.mock.calls.map((c) => JSON.stringify(c[0]?.queryKey));
+      expect(chaves).toEqual(
+        expect.arrayContaining(['["pedidos-titular"]', '["atletas"]', '["atleta"]', '["ranking"]']),
+      );
+    });
+
+    it("oferece concluir pendências num pedido já anonimizado", async () => {
+      GET.mockImplementation(async (caminho: string) =>
+        ok(
+          caminho === "/pedidos-titular"
+            ? [
+                {
+                  ...pedido,
+                  status: "respondido",
+                  resposta: "Dados pessoais anonimizados em 12/11/2026.",
+                },
+              ]
+            : [],
+        ),
+      );
+      await abrirTitular();
+      expect(
+        await screen.findByRole("button", { name: /^Concluir pendências da anonimização/ }),
+      ).toBeTruthy();
+      expect(screen.queryByRole("button", { name: /^Anonimizar atleta/ })).toBeNull();
+    });
+
+    it("exibe o erro da API no diálogo", async () => {
+      POST.mockResolvedValue({
+        error: { erro: "requisicao_invalida", mensagem: "Pedido já respondido." },
+        response: { status: 409 },
+      });
+      await abrirTitular();
+      fireEvent.click(await screen.findByRole("button", { name: /^Anonimizar atleta/ }));
+      const dialogo = await screen.findByRole("dialog");
+      fireEvent.change(within(dialogo).getByLabelText("Digite ANONIMIZAR para confirmar"), {
+        target: { value: "ANONIMIZAR" },
+      });
+      fireEvent.click(within(dialogo).getByRole("button", { name: "Anonimizar" }));
+      expect(await within(dialogo).findByText("Pedido já respondido.")).toBeTruthy();
+    });
   });
 });
