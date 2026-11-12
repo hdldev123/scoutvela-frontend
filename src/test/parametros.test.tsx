@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const GET = vi.fn();
@@ -227,6 +227,29 @@ describe("TelaParametros", () => {
         body: { rubricas: [{ pilarId: null, nota: 0, descricao: "Nenhuma evidência" }] },
       }),
     );
+  });
+
+  it("remove a rubrica de um pilar depois da confirmação; a escala geral não tem o botão", async () => {
+    ok();
+    montar();
+    await screen.findByDisplayValue("Pódio mundial");
+    const botoes = screen.getAllByRole("button", { name: /Remover rubrica deste pilar/ });
+    expect(botoes).toHaveLength(1);
+    expect(botoes[0]).toHaveAccessibleName("Remover rubrica deste pilar (Performance)");
+    fireEvent.click(botoes[0]!);
+    const dialogo = await screen.findByRole("dialog");
+    expect(
+      within(dialogo).getByText(/As notas desse pilar passam a usar a escala geral/),
+    ).toBeInTheDocument();
+    expect(PUT).not.toHaveBeenCalled();
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Remover rubrica" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", { body: { rubricasRemover: ["perf"] } }),
+    );
+    await waitFor(() =>
+      expect(toastFn.success).toHaveBeenCalledWith("Rubrica de Performance removida."),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
   it("adiciona rubrica de um pilar com as 6 notas", async () => {

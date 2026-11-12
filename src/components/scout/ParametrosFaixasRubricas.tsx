@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useSalvarParametros, type Parametros } from "@/lib/api/parametros";
+import { Dialogo } from "./Dialogo";
 import { MSG_SALVO } from "./parametros-util";
 
 function ErroApi({ erro }: { erro: unknown }) {
@@ -104,6 +105,7 @@ export function SecaoRubricas({ dados }: { dados: Parametros }) {
   const [valores, setValores] = useState<Record<string, string>>(originais);
   const [novoPilar, setNovoPilar] = useState<string | null>(null); // null = fechado
   const [novas, setNovas] = useState<string[]>(() => NOTAS.map(() => ""));
+  const [removendo, setRemovendo] = useState<{ id: string; nome: string } | null>(null);
 
   const comRubrica = new Set(dados.rubricas.map((r) => r.pilarId).filter((p) => p !== null));
   const grupos = [
@@ -186,6 +188,19 @@ export function SecaoRubricas({ dados }: { dados: Parametros }) {
             <ul className="par-rubricas par-rubricas-edit">
               {NOTAS.map((n) => campo(g.pilarId, n, g.titulo.toLowerCase()))}
             </ul>
+            {g.pilarId !== null && (
+              <button
+                type="button"
+                className="btn"
+                aria-label={`Remover rubrica deste pilar (${g.titulo})`}
+                onClick={() => {
+                  salvar.reset();
+                  setRemovendo({ id: g.pilarId!, nome: g.titulo });
+                }}
+              >
+                Remover rubrica deste pilar
+              </button>
+            )}
           </fieldset>
         ))}
         {novoPilar === null ? (
@@ -263,6 +278,43 @@ export function SecaoRubricas({ dados }: { dados: Parametros }) {
           </button>
         </div>
       </form>
+      {removendo && (
+        <Dialogo
+          titulo={`Remover rubrica de ${removendo.nome}`}
+          aoFechar={() => setRemovendo(null)}
+        >
+          <div className="stack" style={{ gap: 12 }}>
+            <p>
+              As notas desse pilar passam a usar a escala geral. A remoção fica registrada na
+              auditoria.
+            </p>
+            <ErroApi erro={salvar.error} />
+            <div className="btn-row">
+              <button
+                type="button"
+                className="btn primary"
+                disabled={salvar.isPending}
+                onClick={() =>
+                  salvar.mutate(
+                    { rubricasRemover: [removendo.id] },
+                    {
+                      onSuccess: () => {
+                        setRemovendo(null);
+                        toast.success(`Rubrica de ${removendo.nome} removida.`);
+                      },
+                    },
+                  )
+                }
+              >
+                {salvar.isPending ? "Removendo…" : "Remover rubrica"}
+              </button>
+              <button type="button" className="btn" onClick={() => setRemovendo(null)}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </Dialogo>
+      )}
     </section>
   );
 }
