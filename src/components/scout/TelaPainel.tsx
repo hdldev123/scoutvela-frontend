@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import "@/styles/contas.css";
 import "@/styles/painel.css";
 import { BigScore } from "./BigScore";
+import { NotaRevisao } from "./NotaRevisao";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
 import { fmtData, primeiroNome } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
@@ -195,6 +196,9 @@ function Consentimento({ c }: { c: ConsentimentoPainel }) {
           {c.termoAceitoEm
             ? `Termo do piloto 18+${c.termoVersao ? ` (versão ${c.termoVersao})` : ""} · aceito em ${fmtData(c.termoAceitoEm)}`
             : "Termo do piloto 18+ ainda não aceito"}
+          {c.termoAceitoEm && c.termoPendente
+            ? ` · aceite da versão ${c.termoVigenteVersao} pendente`
+            : ""}
         </span>
       </div>
       <label className="switch" htmlFor="c-ibvar">
@@ -238,8 +242,8 @@ const TIPOS_PEDIDO: Record<TipoPedidoTitular, string> = {
   revogacao: "Revogação de consentimento",
 };
 
-/** Termo vigente e botão de aceite; some quando o atleta já aceitou. */
-function TermoAceite() {
+/** Termo vigente e botão de aceite; some quando o atleta já aceitou a versão vigente. */
+function TermoAceite({ novaVersao }: { novaVersao?: string | undefined }) {
   const termo = useTermo();
   const aceitar = useAceitarTermo();
   return (
@@ -249,7 +253,9 @@ function TermoAceite() {
         {termo.data && <span className="muted">Versão {termo.data.versao}</span>}
       </div>
       <p className="muted" style={{ marginTop: 0 }}>
-        Leia e aceite o termo para entrar no ranking do piloto.
+        {novaVersao
+          ? `Há uma nova versão do termo (${novaVersao}). Leia e aceite para continuar no piloto.`
+          : "Leia e aceite o termo para entrar no ranking do piloto."}
       </p>
       {termo.isPending && (
         <p role="status" className="muted">
@@ -362,8 +368,8 @@ function PedidosTitular() {
           />
         </label>
         <p className="muted" style={{ fontSize: ".82rem", margin: 0 }}>
-          A exclusão é analisada pela CBVela: dados que sustentam a série histórica e a trilha de
-          auditoria podem precisar ser mantidos. Você recebe a resposta aqui.
+          A exclusão é atendida pela CBVela com a anonimização do cadastro: a série histórica e a
+          trilha de auditoria podem precisar ser mantidos. Você recebe a resposta aqui.
         </p>
         {erro && (
           <p className="note" role="alert">
@@ -473,6 +479,11 @@ function Revisoes({ atletaId }: { atletaId: string }) {
           <span className="muted" style={{ fontSize: ".82rem" }}>
             Pedido em {fmtData(r.criadoEm)}
           </span>
+          {typeof r.notaNova === "number" && (
+            <p>
+              <b>Nota:</b> <NotaRevisao notaAnterior={r.notaAnterior} notaNova={r.notaNova} />
+            </p>
+          )}
           {r.resposta && (
             <p>
               <b>Resposta do gestor:</b> {r.resposta}
@@ -514,7 +525,15 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
         <BigScore score={painel.score} faixa={painel.faixa} parcial={!painel.completo} />
       </div>
       <div className="stack">
-        {!painel.consentimento.termoAceitoEm && <TermoAceite />}
+        {(!painel.consentimento.termoAceitoEm || painel.consentimento.termoPendente) && (
+          <TermoAceite
+            novaVersao={
+              painel.consentimento.termoAceitoEm
+                ? painel.consentimento.termoVigenteVersao
+                : undefined
+            }
+          />
+        )}
         {painel.pendencias.length > 0 ? (
           <div className="note" role="status">
             <b>Pendências:</b> faltam suas respostas em {painel.pendencias.join(", ")}.
