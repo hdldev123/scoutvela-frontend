@@ -31,6 +31,28 @@ export function useRanking(filtros: FiltrosRanking = {}, opcoes: { enabled?: boo
   });
 }
 
+export type LancamentoHistorico =
+  paths["/atletas/{id}/indicadores/{indicadorId}/historico"]["get"]["responses"][200]["content"]["application/json"][number];
+
+/**
+ * `GET /atletas/{id}/indicadores/{indicadorId}/historico` (chave `['atleta', id, 'historico', indicadorId]`).
+ * A API decide o que cada papel recebe (o IBVAR não vê evidência nem avaliador; pilar sensível dá 403).
+ */
+export function useHistoricoIndicador(atletaId: string, indicadorId: string) {
+  return useQuery({
+    queryKey: ["atleta", atletaId, "historico", indicadorId],
+    retry: false,
+    queryFn: async () => {
+      const { data, error, response } = await api.GET(
+        "/atletas/{id}/indicadores/{indicadorId}/historico",
+        { params: { path: { id: atletaId, indicadorId } } },
+      );
+      if (error || !data) throw paraErroApi(response.status, error);
+      return data;
+    },
+  });
+}
+
 /** `GET /atletas/{id}` (chave `['atleta', id]`). */
 export function useFicha(id: string) {
   return useQuery({

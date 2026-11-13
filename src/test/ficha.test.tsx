@@ -86,6 +86,7 @@ function pilar(
         lancadoEm: nota == null ? null : "2026-11-05T12:00:00.000Z",
         resposta: null,
         sugestaoPendente: null,
+        sugestaoPontos: null,
         anexo: null,
       },
     ],
@@ -546,6 +547,81 @@ describe("TelaFicha", () => {
     montar("gestor", f);
     fireEvent.click(await screen.findByRole("button", { name: /^Performance/ }));
     expect(screen.getByRole("button", { name: "video-teste.pdf" })).toBeInTheDocument();
+  });
+
+  it("Ver histórico lista os lançamentos do indicador com o que a API devolve", async () => {
+    montar("gestor", ficha());
+    const anterior = GET.getMockImplementation()!;
+    GET.mockImplementation((caminho: string, opcoes: unknown) =>
+      caminho === "/atletas/{id}/indicadores/{indicadorId}/historico"
+        ? Promise.resolve({
+            data: [
+              {
+                valor: 4,
+                pesoKg: null,
+                evidencia: "Brasileiro 2026",
+                origem: "avaliacao",
+                pendente: false,
+                avaliador: { id: "u1", nome: "Ana Ribeiro" },
+                cicloNome: "Novembro de 2026",
+                lancadoEm: "2026-11-05T12:00:00.000Z",
+                anexo: { id: "e9", nomeArquivo: "sumula.pdf" },
+              },
+              {
+                valor: 3,
+                pesoKg: null,
+                evidencia: null,
+                origem: "resposta_sugerida",
+                pendente: true,
+                avaliador: null,
+                cicloNome: null,
+                lancadoEm: "2026-10-02T12:00:00.000Z",
+                anexo: null,
+              },
+            ],
+            response: { status: 200 },
+          })
+        : anterior(caminho, opcoes),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /^Performance/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ver histórico de Indicador de Performance" }),
+    );
+    const dialogo = await screen.findByRole("dialog", {
+      name: "Histórico: Indicador de Performance",
+    });
+    await within(dialogo).findByText("Evidência: Brasileiro 2026");
+    expect(GET).toHaveBeenCalledWith("/atletas/{id}/indicadores/{indicadorId}/historico", {
+      params: { path: { id: "a07", indicadorId: "perf_1" } },
+    });
+    const itens = within(dialogo).getAllByRole("listitem");
+    expect(itens).toHaveLength(2);
+    expect(itens[0]).toHaveTextContent("05/11/2026 · Novembro de 2026");
+    expect(itens[0]).toHaveTextContent("Avaliação · Ana Ribeiro");
+    expect(within(itens[0]!).getByRole("button", { name: "sumula.pdf" })).toBeInTheDocument();
+    expect(itens[1]).toHaveTextContent("Sugestão do atleta, aguardando avaliador");
+    expect(itens[1]).not.toHaveTextContent("Evidência");
+  });
+
+  it("Ver histórico mostra a mensagem da API quando o papel não tem acesso", async () => {
+    montar("ibvar", ficha());
+    const anterior = GET.getMockImplementation()!;
+    GET.mockImplementation((caminho: string, opcoes: unknown) =>
+      caminho === "/atletas/{id}/indicadores/{indicadorId}/historico"
+        ? Promise.resolve({
+            error: { erro: "sem_acesso", mensagem: "O IBVAR não vê o detalhe deste pilar." },
+            response: { status: 403 },
+          })
+        : anterior(caminho, opcoes),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /^Performance/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ver histórico de Indicador de Performance" }),
+    );
+    const dialogo = await screen.findByRole("dialog");
+    expect(await within(dialogo).findByRole("alert")).toHaveTextContent(
+      "O IBVAR não vê o detalhe deste pilar.",
+    );
   });
 
   it("pilar abre como acordeão e marca a maior perda de pontos", async () => {

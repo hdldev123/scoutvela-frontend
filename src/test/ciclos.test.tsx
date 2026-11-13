@@ -16,6 +16,17 @@ vi.mock("@/lib/api/cliente", async (importar) => ({
   },
 }));
 vi.mock("sonner", () => ({ toast: toastFn }));
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({
+    children,
+    to,
+    params,
+  }: {
+    children: React.ReactNode;
+    to: string;
+    params?: { id: string };
+  }) => <a href={params ? to.replace("$id", params.id) : to}>{children}</a>,
+}));
 
 import { TelaCiclos, diasAtePrazo, sugestaoCiclo } from "@/components/scout/TelaCiclos";
 
@@ -45,12 +56,31 @@ const aberto = {
   fechadoEm: null,
 };
 
+const PENDENCIAS = {
+  treinadores: [
+    {
+      id: "t1",
+      nome: "Ana Ribeiro",
+      atletasPendentes: [
+        { id: "a1", nome: "Lívia Arruda", faltam: 3 },
+        { id: "a2", nome: "Bianca Lemos", faltam: 1 },
+      ],
+    },
+  ],
+  atletas: [{ id: "a7", nome: "Helena Vasques", perguntasSemResposta: 2 }],
+  totais: { treinadoresComPendencia: 1, atletasComPendencia: 1, diasParaPrazo: 24 },
+};
+
 let itens: unknown[];
+let pendencias: unknown;
 
 beforeEach(() => {
   vi.clearAllMocks();
   itens = [fechado];
-  GET.mockImplementation(async () => ok({ itens }));
+  pendencias = PENDENCIAS;
+  GET.mockImplementation(async (caminho: string) =>
+    caminho === "/ciclos/{id}/pendencias" ? ok(pendencias) : ok({ itens }),
+  );
 });
 
 function montar() {
@@ -130,6 +160,52 @@ describe("TelaCiclos", () => {
         body: { prazo: "2026-12-05" },
       }),
     );
+  });
+
+  it("sem ciclo aberto não busca pendências", async () => {
+    montar();
+    await screen.findByRole("table");
+    expect(screen.queryByRole("heading", { name: "Pendências" })).toBeNull();
+    expect(GET).not.toHaveBeenCalledWith("/ciclos/{id}/pendencias", expect.anything());
+  });
+
+  it("bloco Pendências: totais, treinadores e atletas com link para a ficha", async () => {
+    itens = [aberto, fechado];
+    montar();
+    const bloco = (await screen.findByRole("heading", { name: "Pendências" })).closest("section")!;
+    await within(bloco).findByText("Ana Ribeiro");
+    expect(GET).toHaveBeenCalledWith("/ciclos/{id}/pendencias", { params: { path: { id: "c2" } } });
+
+    const totais = within(bloco).getByText("Treinadores com pendência").closest("dl")!;
+    expect(totais).toHaveTextContent("Treinadores com pendência1");
+    expect(totais).toHaveTextContent("Atletas com questionário pendente1");
+    expect(totais).toHaveTextContent("faltam 24 dias");
+
+    expect(within(bloco).getByText(/2 atletas pendentes/)).toBeTruthy();
+    expect(within(bloco).getByRole("link", { name: "Lívia Arruda" })).toHaveAttribute(
+      "href",
+      "/atletas/a1",
+    );
+    expect(within(bloco).getByText(/faltam 3 indicadores/)).toBeTruthy();
+    expect(within(bloco).getByText(/faltam 1 indicador$/)).toBeTruthy();
+    expect(within(bloco).getByRole("link", { name: "Helena Vasques" })).toHaveAttribute(
+      "href",
+      "/atletas/a7",
+    );
+    expect(within(bloco).getByText(/2 perguntas sem resposta/)).toBeTruthy();
+  });
+
+  it("bloco Pendências: listas vazias e prazo vencido", async () => {
+    itens = [aberto, fechado];
+    pendencias = {
+      treinadores: [],
+      atletas: [],
+      totais: { treinadoresComPendencia: 0, atletasComPendencia: 0, diasParaPrazo: -2 },
+    };
+    montar();
+    expect(await screen.findByText("Nenhum treinador com avaliação pendente.")).toBeTruthy();
+    expect(screen.getByText("Nenhum atleta com questionário pendente.")).toBeTruthy();
+    expect(screen.getByText("atrasado há 2 dias")).toBeTruthy();
   });
 
   it("fecha o ciclo só após confirmar e mostra quantos foram congelados", async () => {

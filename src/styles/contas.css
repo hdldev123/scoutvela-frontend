@@ -14,6 +14,13 @@
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+.ct-filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 12px;
+}
 .ct-inativo {
   opacity: 0.65;
 }
