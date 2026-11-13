@@ -41,20 +41,36 @@ const usuario = (extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-const itemRanking = {
-  posicao: 1,
-  atleta: {
-    id: "a1",
-    nome: "Bruno Lima",
-    velaid: "MG-T15",
-    numeroVela: "BRA 1766",
-    uf: "MG",
-    idade: 21,
-    genero: "M",
-    classe: { id: "ilca7", nome: "ILCA 7", evento: "ILCA 7" },
-  },
-  score: 80,
-};
+const atleta = (extra: Record<string, unknown> = {}) => ({
+  id: "a1",
+  nome: "Bruno Lima",
+  velaid: "MG-T15",
+  classe: { id: "ilca7", nome: "ILCA 7" },
+  treinador: { id: "t1", nome: "Ana Ribeiro" },
+  numeroVela: "BRA 1766",
+  ativo: true,
+  termoAceito: true,
+  contaVinculada: false,
+  ...extra,
+});
+
+const ATLETAS = [
+  atleta(),
+  atleta({ id: "a2", nome: "Carla Sem Termo", velaid: "RJ-T20", termoAceito: false }),
+  atleta({ id: "a3", nome: "Davi Inativo", velaid: "SP-T30", ativo: false, treinador: null }),
+  atleta({ id: "a4", nome: "Eva Com Conta", velaid: "SC-T40", contaVinculada: true }),
+];
+
+/** Simula os filtros de GET /atletas que a tela usa. */
+function filtrarAtletas(query: Record<string, string> = {}) {
+  return ATLETAS.filter(
+    (a) =>
+      (!query["ativo"] || String(a.ativo) === query["ativo"]) &&
+      (!query["termoAceito"] || String(a.termoAceito) === query["termoAceito"]) &&
+      (!query["busca"] ||
+        `${a.nome} ${a.velaid}`.toLowerCase().includes(query["busca"].toLowerCase())),
+  );
+}
 
 let usuarios: unknown[];
 
@@ -77,9 +93,9 @@ beforeEach(() => {
       contaVinculada: true,
     }),
   ];
-  GET.mockImplementation(async (caminho: string) => {
+  GET.mockImplementation(async (caminho: string, opcoes?: { params?: { query?: never } }) => {
     if (caminho === "/usuarios") return ok(usuarios);
-    if (caminho === "/ranking") return ok({ ciclo: null, itens: [itemRanking] });
+    if (caminho === "/atletas") return ok(filtrarAtletas(opcoes?.params?.query));
     if (caminho === "/parametros") {
       return ok({
         classes: [
@@ -115,7 +131,67 @@ describe("TelaUsuarios", () => {
     expect(screen.getAllByText("Conta vinculada")).toHaveLength(2);
   });
 
-  it("cria conta de atleta escolhendo o atleta do ranking", async () => {
+  it("conta de atleta: só ativos sem conta, inclusive quem não aceitou o termo", async () => {
+    montar();
+    await screen.findByText("ana@cbvela.org");
+    fireEvent.change(screen.getByLabelText("Papel"), { target: { value: "atleta" } });
+    const select = screen.getByLabelText("Atleta");
+    await within(select).findByRole("option", { name: "Bruno Lima (MG-T15)" });
+    expect(
+      within(select).getByRole("option", { name: "Carla Sem Termo (RJ-T20) · termo pendente" }),
+    ).toBeTruthy();
+    expect(within(select).queryByRole("option", { name: /Eva Com Conta/ })).toBeNull();
+    expect(within(select).queryByRole("option", { name: /Davi Inativo/ })).toBeNull();
+    expect(GET).toHaveBeenCalledWith("/atletas", { params: { query: { ativo: "true" } } });
+  });
+
+  it("Atletas do piloto: todos os atletas com treinador, situação, termo e conta", async () => {
+    montar();
+    const bloco = (await screen.findByRole("heading", { name: "Atletas do piloto" })).closest(
+      "section",
+    )!;
+    const linha = async (nome: string) =>
+      (await within(bloco).findByRole("cell", { name: nome })).closest("tr")!;
+    expect(await linha("Bruno Lima")).toHaveTextContent(
+      "Bruno LimaMG-T15ILCA 7Ana RibeiroBRA 1766AtivoAceitoSem conta",
+    );
+    expect(await linha("Carla Sem Termo")).toHaveTextContent("Pendente");
+    expect(await linha("Davi Inativo")).toHaveTextContent("—BRA 1766Inativo");
+    expect(await linha("Eva Com Conta")).toHaveTextContent("Com conta");
+    expect(GET).toHaveBeenCalledWith("/atletas", { params: { query: {} } });
+  });
+
+  it("Atletas do piloto: filtros e busca vão para a API", async () => {
+    montar();
+    const bloco = (await screen.findByRole("heading", { name: "Atletas do piloto" })).closest(
+      "section",
+    )!;
+    await within(bloco).findByRole("cell", { name: "Davi Inativo" });
+
+    fireEvent.change(within(bloco).getByLabelText("Situação"), { target: { value: "false" } });
+    await waitFor(() =>
+      expect(GET).toHaveBeenCalledWith("/atletas", { params: { query: { ativo: "false" } } }),
+    );
+    await waitFor(() =>
+      expect(within(bloco).queryByRole("cell", { name: "Bruno Lima" })).toBeNull(),
+    );
+    expect(within(bloco).getByRole("cell", { name: "Davi Inativo" })).toBeTruthy();
+
+    fireEvent.change(within(bloco).getByLabelText("Situação"), { target: { value: "" } });
+    fireEvent.change(within(bloco).getByLabelText("Termo"), { target: { value: "false" } });
+    fireEvent.change(within(bloco).getByLabelText("Buscar"), { target: { value: "carla" } });
+    await waitFor(() =>
+      expect(GET).toHaveBeenCalledWith("/atletas", {
+        params: { query: { busca: "carla", termoAceito: "false" } },
+      }),
+    );
+    expect(await within(bloco).findByRole("cell", { name: "Carla Sem Termo" })).toBeTruthy();
+    await waitFor(() =>
+      expect(within(bloco).queryByRole("cell", { name: "Bruno Lima" })).toBeNull(),
+    );
+  });
+
+  it("cria conta de atleta escolhendo o atleta da lista", async () => {
     POST.mockResolvedValue(
       ok(
         { usuario: usuario({ nome: "Bruno Lima", email: "bruno@x.com" }), convite: "enviado" },

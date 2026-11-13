@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BigScore } from "./BigScore";
+import { Dialogo } from "./Dialogo";
 import { EvidenciasSecao, AbrirEvidencia } from "./EvidenciasSecao";
 import { FinanceiroDialog } from "./FinanceiroDialog";
 import { GaugeClassFit } from "./GaugeClassFit";
@@ -14,7 +15,12 @@ import { SparkScore } from "./SparkScore";
 import { StatusPill, textoDoStatus } from "./StatusPill";
 import { fmt0, fmt1, fmtData, rotuloCiclo } from "./formato";
 import { ErroApi, mensagemDeErro } from "@/lib/api/cliente";
-import { useFicha, type FichaAtleta } from "@/lib/api/consultas";
+import {
+  useFicha,
+  useHistoricoIndicador,
+  type FichaAtleta,
+  type LancamentoHistorico,
+} from "@/lib/api/consultas";
 import { atualizarGate } from "@/lib/api/mutacoes-ficha";
 import "@/styles/ficha.css";
 
@@ -37,7 +43,90 @@ const TEXTO_NAO_VE =
 const linkSeguro = (url: string | null): string | null =>
   url && /^https?:\/\//i.test(url) ? url : null;
 
-function LinhaIndicador({ ind }: { ind: Indicador }) {
+const ORIGEM_LANCAMENTO: Record<LancamentoHistorico["origem"], string> = {
+  avaliacao: "Avaliação",
+  resposta_confirmada: "Resposta do atleta confirmada",
+  resposta_sugerida: "Sugestão do atleta, aguardando avaliador",
+  calculado: "Calculada pela pesagem",
+};
+
+/** Lançamentos do indicador, do mais novo para o mais antigo. Mostra só o que a API devolve ao papel. */
+function HistoricoDialog({
+  atletaId,
+  ind,
+  aoFechar,
+}: {
+  atletaId: string;
+  ind: Indicador;
+  aoFechar: () => void;
+}) {
+  const hist = useHistoricoIndicador(atletaId, ind.id);
+  return (
+    <Dialogo titulo={`Histórico: ${ind.nome}`} aoFechar={aoFechar}>
+      {hist.isPending ? (
+        <p className="muted" role="status">
+          Carregando histórico…
+        </p>
+      ) : hist.isError ? (
+        <div className="note" role="alert">
+          {mensagemDeErro(hist.error)}
+        </div>
+      ) : hist.data.length === 0 ? (
+        <p className="muted">Nenhum lançamento para este indicador.</p>
+      ) : (
+        <ol className="ficha-historico">
+          {hist.data.map((l, i) => (
+            <li key={`${l.lancadoEm}-${i}`} className={l.pendente ? "pendente" : undefined}>
+              <div className="ficha-historico-topo">
+                <span className="nota">{l.valor}</span>
+                <span>
+                  {fmtData(l.lancadoEm)}
+                  {l.cicloNome ? ` · ${l.cicloNome}` : ""}
+                  {l.pesoKg != null ? ` · ${fmt1(l.pesoKg)} kg` : ""}
+                </span>
+              </div>
+              <div className="src">
+                {[ORIGEM_LANCAMENTO[l.origem], l.avaliador?.nome].filter(Boolean).join(" · ")}
+              </div>
+              {l.evidencia && <div className="src">Evidência: {l.evidencia}</div>}
+              {l.anexo && (
+                <AbrirEvidencia
+                  id={l.anexo.id}
+                  nomeArquivo={l.anexo.nomeArquivo}
+                  className="ficha-clipe"
+                >
+                  <i className="ph ph-paperclip" aria-hidden="true" />
+                  <span>{l.anexo.nomeArquivo}</span>
+                </AbrirEvidencia>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+    </Dialogo>
+  );
+}
+
+function BotaoHistorico({ atletaId, ind }: { atletaId: string; ind: Indicador }) {
+  const [aberto, setAberto] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        className="ficha-clipe"
+        aria-label={`Ver histórico de ${ind.nome}`}
+        onClick={() => setAberto(true)}
+      >
+        Ver histórico
+      </button>
+      {aberto && (
+        <HistoricoDialog atletaId={atletaId} ind={ind} aoFechar={() => setAberto(false)} />
+      )}
+    </>
+  );
+}
+
+function LinhaIndicador({ ind, atletaId }: { ind: Indicador; atletaId: string }) {
   const resp = ind.resposta ? ` · resposta: “${ind.resposta}”` : "";
   if (ind.tipo === "R") {
     return (
@@ -83,6 +172,9 @@ function LinhaIndicador({ ind }: { ind: Indicador }) {
             <span>{ind.anexo.nomeArquivo}</span>
           </AbrirEvidencia>
         )}
+        <div>
+          <BotaoHistorico atletaId={atletaId} ind={ind} />
+        </div>
       </div>
       <span className={`nota ${ind.nota == null ? "na" : ""}`}>
         {ind.nota == null ? "—" : ind.nota}
@@ -96,11 +188,13 @@ function BlocoPilar({
   aberto,
   aoAlternar,
   maiorPerda,
+  atletaId,
 }: {
   pilar: Pilar;
   aberto: boolean;
   aoAlternar: () => void;
   maiorPerda: boolean;
+  atletaId: string;
 }) {
   const { nota } = pilar;
   const painel = `pilar-${pilar.id}`;
@@ -143,7 +237,7 @@ function BlocoPilar({
         ) : (
           <div className="ind-list" id={painel}>
             {pilar.indicadores.map((i) => (
-              <LinhaIndicador key={i.id} ind={i} />
+              <LinhaIndicador key={i.id} ind={i} atletaId={atletaId} />
             ))}
           </div>
         ))}
@@ -348,6 +442,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 aberto={!!abertos[p.id]}
                 aoAlternar={() => setAbertos((a) => ({ ...a, [p.id]: !a[p.id] }))}
                 maiorPerda={maiorPerda?.id === p.id}
+                atletaId={ficha.atleta.id}
               />
             ))}
             {papel === "atleta" && (

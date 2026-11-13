@@ -32,6 +32,7 @@ const ind = (id: string, nome: string, extra: Record<string, unknown> = {}) => (
   lancadoEm: "2026-11-05T12:00:00.000Z",
   resposta: null,
   sugestaoPendente: null,
+  sugestaoPontos: null,
   ...extra,
 });
 
@@ -287,6 +288,54 @@ describe("TelaAvaliar", () => {
       { name: "4" },
     ) as HTMLInputElement;
     expect(quatro.checked).toBe(true);
+  });
+
+  it("sugestão do Ranking CBVela em resultados nacionais: usa a nota e a evidência continua obrigatória", async () => {
+    preparar({
+      ficha: {
+        ...FICHA,
+        pilares: [
+          pilarFicha("perf", "Performance", 20, [
+            ind("perf_nacional", "Resultados nacionais", {
+              sugestaoPontos: { nota: 4, pontos: 310.03 },
+            }),
+          ]),
+          ...FICHA.pilares,
+        ],
+      },
+    });
+    montar("a07");
+    expect(await screen.findByText("Sugerido pelo Ranking CBVela: nota 4 (310 pts)")).toBeTruthy();
+    // Sem sugestão nos outros indicadores.
+    expect(screen.getAllByText(/Sugerido pelo Ranking CBVela/)).toHaveLength(1);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Usar sugestão do Ranking CBVela (nota 4) em Resultados nacionais",
+      }),
+    );
+    const quatro = within(
+      screen.getByRole("radiogroup", { name: "Nota de Resultados nacionais" }),
+    ).getByRole("radio", { name: "4" }) as HTMLInputElement;
+    expect(quatro.checked).toBe(true);
+
+    const ev = screen.getByLabelText("Evidência (obrigatória)", {
+      selector: "#ev-perf_nacional",
+    }) as HTMLInputElement;
+    await waitFor(() => expect(ev.getAttribute("aria-invalid")).toBe("true"));
+    expect(POST).not.toHaveBeenCalledWith("/atletas/{id}/avaliacoes/previa", expect.anything());
+
+    fireEvent.change(ev, { target: { value: "Ranking CBVela 2026" } });
+    await waitFor(
+      () =>
+        expect(POST).toHaveBeenCalledWith("/atletas/{id}/avaliacoes/previa", {
+          params: { path: { id: "a07" } },
+          body: {
+            notas: [{ indicadorId: "perf_nacional", valor: 4, evidencia: "Ranking CBVela 2026" }],
+          },
+        }),
+      { timeout: 2000 },
+    );
   });
 
   it("indicador calculado não recebe nota e envia peso e altura em medida", async () => {

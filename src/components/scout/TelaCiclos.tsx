@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
@@ -7,7 +8,9 @@ import {
   useAjustarPrazo,
   useCiclos,
   useFecharCiclo,
+  usePendenciasCiclo,
   type Ciclo,
+  type PendenciasCiclo,
 } from "@/lib/api/ciclos";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import "@/styles/ciclos.css";
@@ -98,6 +101,7 @@ export function TelaCiclos() {
                 aoFechar={(r) => setCongelados({ nome: r.nome, atletas: r.atletas })}
               />
             )}
+            {aberto && <PendenciasDoCiclo cicloId={aberto.id} />}
             <AbrirCiclo bloqueado={!!aberto} />
             <TabelaCiclos itens={ciclos.data} />
           </>
@@ -238,6 +242,109 @@ function CicloAberto({
         </Dialogo>
       )}
     </section>
+  );
+}
+
+const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+
+/** Quem está atrasado no ciclo aberto, pela mesma regra dos lembretes (a API decide). */
+function PendenciasDoCiclo({ cicloId }: { cicloId: string }) {
+  const pend = usePendenciasCiclo(cicloId);
+  return (
+    <section className="panel" aria-labelledby="cic-pend-t">
+      <div className="panel-head">
+        <h2 id="cic-pend-t">Pendências</h2>
+        <span className="muted cic-sub">Atletas ativos com termo aceito</span>
+      </div>
+      {pend.isPending ? (
+        <p className="muted" role="status">
+          Carregando pendências…
+        </p>
+      ) : pend.isError ? (
+        <div className="note" role="alert">
+          {mensagemDeErro(pend.error)}
+        </div>
+      ) : (
+        <ListaPendencias p={pend.data} />
+      )}
+    </section>
+  );
+}
+
+function ListaPendencias({ p }: { p: PendenciasCiclo }) {
+  const { totais } = p;
+  return (
+    <div className="stack" style={{ gap: 14 }}>
+      <dl className="cic-totais">
+        <div>
+          <dt>Treinadores com pendência</dt>
+          <dd>{totais.treinadoresComPendencia}</dd>
+        </div>
+        <div>
+          <dt>Atletas com questionário pendente</dt>
+          <dd>{totais.atletasComPendencia}</dd>
+        </div>
+        <div>
+          <dt>Prazo</dt>
+          <dd>{textoPrazo(totais.diasParaPrazo)}</dd>
+        </div>
+      </dl>
+
+      <div>
+        <h3 className="cic-pend-titulo">Avaliações dos treinadores</h3>
+        {p.treinadores.length === 0 ? (
+          <p className="muted">Nenhum treinador com avaliação pendente.</p>
+        ) : (
+          <ul className="cic-pend-lista">
+            {p.treinadores.map((t) => (
+              <li key={t.id}>
+                <b>{t.nome}</b>{" "}
+                <span className="muted">
+                  · {plural(t.atletasPendentes.length, "atleta pendente", "atletas pendentes")}
+                </span>
+                <ul>
+                  {t.atletasPendentes.map((a) => (
+                    <li key={a.id}>
+                      <Link to="/atletas/$id" params={{ id: a.id }}>
+                        {a.nome}
+                      </Link>{" "}
+                      <span className="muted">
+                        · faltam {plural(a.faltam, "indicador", "indicadores")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div>
+        <h3 className="cic-pend-titulo">Questionário dos atletas</h3>
+        {p.atletas.length === 0 ? (
+          <p className="muted">Nenhum atleta com questionário pendente.</p>
+        ) : (
+          <ul className="cic-pend-lista">
+            {p.atletas.map((a) => (
+              <li key={a.id}>
+                <Link to="/atletas/$id" params={{ id: a.id }}>
+                  {a.nome}
+                </Link>{" "}
+                <span className="muted">
+                  ·{" "}
+                  {plural(
+                    a.perguntasSemResposta,
+                    "pergunta sem resposta",
+                    "perguntas sem resposta",
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }
 
