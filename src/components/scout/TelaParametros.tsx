@@ -4,6 +4,7 @@ import "@/styles/parametros.css";
 import { fmt1 } from "./formato";
 import { SecaoFaixas, SecaoRubricas } from "./ParametrosFaixasRubricas";
 import { SecaoRegras } from "./ParametrosRegras";
+import { SecaoTermos } from "./ParametrosTermos";
 import { MSG_SALVO } from "./parametros-util";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useParametros, useSalvarParametros, type Parametros } from "@/lib/api/parametros";
@@ -21,7 +22,7 @@ export function lerKg(texto: string): number | null {
 }
 
 /** Tela de parâmetros da metodologia (gestor). Pesos e faixas de peso editáveis; o resto é leitura. */
-export function TelaParametros() {
+export function TelaParametros({ papel = "gestor" }: { papel?: string }) {
   const consulta = useParametros();
   return (
     <>
@@ -51,13 +52,13 @@ export function TelaParametros() {
           {mensagemDeErro(consulta.error)}
         </div>
       ) : (
-        <ConteudoParametros dados={consulta.data} />
+        <ConteudoParametros dados={consulta.data} gestor={papel === "gestor"} />
       )}
     </>
   );
 }
 
-function ConteudoParametros({ dados }: { dados: Parametros }) {
+function ConteudoParametros({ dados, gestor }: { dados: Parametros; gestor: boolean }) {
   return (
     <div className="grid-2">
       <div className="stack">
@@ -74,6 +75,7 @@ function ConteudoParametros({ dados }: { dados: Parametros }) {
         />
         <SecaoRubricas dados={dados} />
         <SecaoCustos dados={dados} />
+        {gestor && <SecaoTermos />}
       </div>
     </div>
   );

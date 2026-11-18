@@ -91,7 +91,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -104,7 +104,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -206,7 +206,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -219,7 +219,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -232,7 +232,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -354,6 +354,12 @@ export interface paths {
                                         valor: number;
                                         lancadoEm: string;
                                     } | null;
+                                    /** @description Nota sugerida pelos pontos do Ranking CBVela (regra PERF_PONTOS). Só em perf_nacional e com a regra ativa; não entra no score até o avaliador lançar a nota. */
+                                    sugestaoPontos: {
+                                        nota: number;
+                                        /** @description Pontos do Ranking CBVela na janela */
+                                        pontos: number;
+                                    } | null;
                                     anexo: {
                                         id: string;
                                         nomeArquivo: string;
@@ -444,7 +450,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -457,7 +463,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -470,7 +476,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -483,7 +489,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -538,7 +544,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -551,7 +557,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -564,7 +570,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -577,13 +583,128 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
                 };
             };
         };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/indicadores/{indicadorId}/historico": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Histórico de lançamentos de um indicador, do mais novo para o mais antigo
+         * @description Mesma matriz de acesso da ficha: gestor vê todos, treinador só os próprios atletas, atleta só a si. Inclui a sugestão do atleta ainda pendente (pendente: true, origem resposta_sugerida). cf_peso_kg (calculado) traz as pesagens, com a nota pela regra P3 atual. IBVAR: pilar sensível dá 403; nos demais, sem evidência, avaliador, anexo nem sugestão pendente. Atleta fora do acesso ou indicador inexistente: 404.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    indicadorId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Nota de 0 a 5 */
+                            valor: number;
+                            /** @description Só em cf_peso_kg: o peso da pesagem */
+                            pesoKg: number | null;
+                            evidencia: string | null;
+                            /** @enum {string} */
+                            origem: "avaliacao" | "resposta_confirmada" | "resposta_sugerida" | "calculado";
+                            /** @description Sugestão do atleta aguardando o avaliador */
+                            pendente: boolean;
+                            avaliador: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            cicloNome: string | null;
+                            /** @description Instante ISO */
+                            lancadoEm: string;
+                            anexo: {
+                                id: string;
+                                nomeArquivo: string;
+                            } | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -663,6 +784,13 @@ export interface paths {
                                 /** @enum {string} */
                                 statusGates: "apto" | "condicional" | "nao_prioritario";
                             };
+                            /** @description Nota sugerida para perf_nacional pelos pontos do Ranking CBVela (regra PERF_PONTOS). Nula com a regra desligada. Não entra na prévia nem no score: o avaliador confirma lançando a nota. */
+                            sugestaoPontos: {
+                                indicadorId: string;
+                                nota: number;
+                                /** @description Pontos do Ranking CBVela na janela */
+                                pontos: number;
+                            } | null;
                         };
                     };
                 };
@@ -674,7 +802,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -687,7 +815,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -700,7 +828,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -713,7 +841,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -804,7 +932,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -817,7 +945,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -830,7 +958,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -843,7 +971,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -915,7 +1043,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -928,7 +1056,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -941,7 +1069,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -954,7 +1082,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1030,7 +1158,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1043,7 +1171,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1056,7 +1184,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1069,7 +1197,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1119,7 +1247,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1132,7 +1260,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1154,7 +1282,92 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Todos os atletas do piloto, para gestão do cadastro
+         * @description Inclui inativos e quem não aceitou o termo. Sem dado sensível nem e-mail. termoAceito segue a regra do ranking (TERMO_EXIGE_REACEITE). contaVinculada: já existe conta de atleta ligada a ele. busca procura no nome e no código VelaID.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    ativo?: "true" | "false";
+                    termoAceito?: "true" | "false";
+                    classeId?: string;
+                    treinadorId?: string;
+                    /** @description Parte do nome ou do VelaID */
+                    busca?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            nome: string;
+                            velaid: string;
+                            classe: {
+                                id: string;
+                                nome: string;
+                            };
+                            treinador: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            numeroVela: string | null;
+                            ativo: boolean;
+                            termoAceito: boolean;
+                            contaVinculada: boolean;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
         put?: never;
         /**
          * Cadastra o atleta a partir do VelaID e registra o envio do termo
@@ -1213,7 +1426,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1226,7 +1439,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1239,7 +1452,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1252,7 +1465,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1265,7 +1478,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1285,7 +1498,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Atletas cadastrados que ainda não aceitaram o termo do piloto */
+        /**
+         * Atletas com aceite do termo do piloto pendente
+         * @description Quem nunca aceitou (termoAceitoVersao nulo) e quem aceitou só uma versão anterior à vigente (termoAceitoVersao preenchido).
+         */
         get: {
             parameters: {
                 query?: never;
@@ -1311,6 +1527,8 @@ export interface paths {
                             };
                             /** @description Instante ISO */
                             criadoEm: string;
+                            /** @description Última versão aceita; nulo = nunca aceitou */
+                            termoAceitoVersao: string | null;
                         }[];
                     };
                 };
@@ -1322,7 +1540,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1335,7 +1553,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1400,7 +1618,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1413,7 +1631,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1426,7 +1644,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1439,7 +1657,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1452,7 +1670,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1523,7 +1741,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1536,7 +1754,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1549,7 +1767,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1634,7 +1852,12 @@ export interface paths {
                             consentimento: {
                                 /** @description Instante ISO do aceite do termo do piloto */
                                 termoAceitoEm: string | null;
+                                /** @description Última versão do termo aceita */
                                 termoVersao: string | null;
+                                /** @description Versão do termo vigente hoje */
+                                termoVigenteVersao: string;
+                                /** @description true quando o atleta ainda não aceitou a versão vigente */
+                                termoPendente: boolean;
                                 compartilharIbvar: boolean;
                                 /** @description Instante ISO da última decisão sobre o IBVAR */
                                 atualizadoEm: string | null;
@@ -1650,7 +1873,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1663,7 +1886,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1676,7 +1899,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1741,7 +1964,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1754,7 +1977,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1767,7 +1990,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1780,7 +2003,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1829,7 +2052,12 @@ export interface paths {
                         "application/json": {
                             /** @description Instante ISO do aceite do termo do piloto */
                             termoAceitoEm: string | null;
+                            /** @description Última versão do termo aceita */
                             termoVersao: string | null;
+                            /** @description Versão do termo vigente hoje */
+                            termoVigenteVersao: string;
+                            /** @description true quando o atleta ainda não aceitou a versão vigente */
+                            termoPendente: boolean;
                             compartilharIbvar: boolean;
                             /** @description Instante ISO da última decisão sobre o IBVAR */
                             atualizadoEm: string | null;
@@ -1844,7 +2072,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1857,7 +2085,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1870,7 +2098,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1883,7 +2111,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1942,6 +2170,12 @@ export interface paths {
                             criadoEm: string;
                             resposta: string | null;
                             respondidoEm: string | null;
+                            /** @description Lançamento ligado à resposta, se houver */
+                            avaliacaoId: string | null;
+                            /** @description Nota do lançamento anterior ao ligado (mesmo atleta e indicador) */
+                            notaAnterior: number | null;
+                            /** @description Nota do lançamento ligado */
+                            notaNova: number | null;
                         }[];
                     };
                 };
@@ -1953,7 +2187,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -1966,7 +2200,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2013,7 +2247,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2026,7 +2260,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2039,7 +2273,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2052,13 +2286,120 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/revisoes/{id}/lancamentos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista os lançamentos que podem ser ligados ao pedido de revisão
+         * @description Só os lançamentos que o PUT /revisoes/:id aceitaria em avaliacaoId (mesmo atleta, indicador do pedido ou de um indicador do pilar, e lançados depois do pedido), do mais novo para o mais antigo. Vale para pedido aberto ou respondido. Sem evidência.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            lancamentos: {
+                                id: string;
+                                indicadorId: string;
+                                indicadorNome: string;
+                                valor: number;
+                                /** @description Instante ISO do lançamento */
+                                lancadoEm: string;
+                                origem: string;
+                                avaliador: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2075,7 +2416,7 @@ export interface paths {
         get?: never;
         /**
          * Responde um pedido de revisão
-         * @description Pedido já respondido devolve 409 (código requisicao_invalida).
+         * @description Pedido já respondido devolve 409 (código requisicao_invalida). avaliacaoId (opcional) liga a resposta ao lançamento que a atendeu: do mesmo atleta, do indicador do pedido (ou de um indicador do pilar, se o pedido foi por pilar) e lançado depois do pedido. Depois de gravar, o atleta recebe um e-mail só com o aviso e o link; falha no envio não desfaz a resposta.
          */
         put: {
             parameters: {
@@ -2090,6 +2431,8 @@ export interface paths {
                 content: {
                     "application/json": {
                         resposta: string;
+                        /** @description Id do lançamento (série histórica) que atendeu o pedido */
+                        avaliacaoId?: string | number;
                     };
                 };
             };
@@ -2120,6 +2463,12 @@ export interface paths {
                             criadoEm: string;
                             resposta: string | null;
                             respondidoEm: string | null;
+                            /** @description Lançamento ligado à resposta, se houver */
+                            avaliacaoId: string | null;
+                            /** @description Nota do lançamento anterior ao ligado (mesmo atleta e indicador) */
+                            notaAnterior: number | null;
+                            /** @description Nota do lançamento ligado */
+                            notaNova: number | null;
                         };
                     };
                 };
@@ -2131,7 +2480,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2144,7 +2493,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2157,7 +2506,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2170,7 +2519,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2183,7 +2532,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2285,7 +2634,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2298,7 +2647,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2400,7 +2749,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2413,7 +2762,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2450,7 +2799,9 @@ export interface paths {
                             nota: number;
                             descricao: string;
                         }[];
-                        /** @description {codigo: valor}; códigos aceitos: P3, G1, G2, G3, G4, RANKING_CBVELA. O valor segue o formato lido em GET /parametros */
+                        /** @description Ids de pilar cujas rubricas próprias saem (volta a valer a escala geral). A escala geral não pode ser removida: nulo ou vazio dão 400 com mensagem explícita */
+                        rubricasRemover?: (string | null)[];
+                        /** @description {codigo: valor}; códigos aceitos: P3, G1, G2, G3, G4, RANKING_CBVELA, TERMO_EXIGE_REACEITE, PERF_PONTOS. O valor segue o formato lido em GET /parametros. PERF_PONTOS: { ativa, faixas: [{ ate, nota }] }, ate crescente e nota de 0 a 5 que não diminui */
                         regras?: {
                             [key: string]: unknown;
                         };
@@ -2533,7 +2884,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2546,7 +2897,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2559,7 +2910,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2623,7 +2974,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2636,7 +2987,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2649,7 +3000,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2714,7 +3065,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2727,7 +3078,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2740,7 +3091,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2753,7 +3104,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2827,7 +3178,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2840,7 +3191,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2853,7 +3204,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2866,7 +3217,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2879,7 +3230,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2951,7 +3302,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2964,7 +3315,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2977,7 +3328,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -2990,7 +3341,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3003,13 +3354,139 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ciclos/{id}/pendencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quem está atrasado no ciclo aberto: treinadores e atletas com pendência
+         * @description Mesma regra do job de lembretes. Só atletas ativos com o termo do piloto aceito. Treinador: atletas sem nota no ciclo em algum indicador T (faltam = indicadores sem nota). Atleta: perguntas do questionário sem resposta. diasParaPrazo é negativo depois do prazo. Ciclo fechado: 409.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            treinadores: {
+                                id: string;
+                                nome: string;
+                                atletasPendentes: {
+                                    id: string;
+                                    nome: string;
+                                    faltam: number;
+                                }[];
+                            }[];
+                            atletas: {
+                                id: string;
+                                nome: string;
+                                perguntasSemResposta: number;
+                            }[];
+                            totais: {
+                                treinadoresComPendencia: number;
+                                atletasComPendencia: number;
+                                diasParaPrazo: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3085,7 +3562,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3098,7 +3575,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3111,7 +3588,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3124,7 +3601,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3207,7 +3684,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3220,7 +3697,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3233,7 +3710,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3246,7 +3723,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3259,7 +3736,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3339,7 +3816,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3352,7 +3829,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3365,7 +3842,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3459,7 +3936,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3472,7 +3949,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3485,7 +3962,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3548,7 +4025,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3561,7 +4038,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3571,7 +4048,7 @@ export interface paths {
         put?: never;
         /**
          * Registra um pedido do titular (acesso, correção, exclusão ou revogação)
-         * @description O pedido fica aberto até o gestor responder. Exclusão e revogação são tratadas manualmente pelo gestor, fora da API.
+         * @description O pedido fica aberto até o gestor responder. Revogação é tratada pelo gestor; a exclusão é atendida pela anonimização (`POST /atletas/{id}/anonimizar`).
          */
         post: {
             parameters: {
@@ -3611,7 +4088,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3624,7 +4101,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3637,7 +4114,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3650,7 +4127,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3673,7 +4150,7 @@ export interface paths {
         get?: never;
         /**
          * Responde um pedido do titular
-         * @description Registra a resposta e fecha o pedido. A exclusão de dados NÃO é feita por esta rota: é procedimento manual do gestor, porque a série histórica (notas, respostas, medidas, gates, financeiro) só aceita inserção. Pedido já respondido devolve 409 (código requisicao_invalida).
+         * @description Registra a resposta e fecha o pedido. A exclusão de dados NÃO é feita por esta rota: para pedido de exclusão use `POST /atletas/{id}/anonimizar`, que anonimiza o atleta e responde o pedido (a série histórica, que só aceita inserção, é mantida sem identificação direta). Pedido já respondido devolve 409 (código requisicao_invalida).
          */
         put: {
             parameters: {
@@ -3723,7 +4200,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3736,7 +4213,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3749,7 +4226,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3762,7 +4239,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3775,7 +4252,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3783,6 +4260,131 @@ export interface paths {
             };
         };
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/anonimizar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Anonimiza o atleta a pedido de exclusão (LGPD, art. 18)
+         * @description Só o gestor, com o pedido de exclusão do próprio atleta (aberto) e a confirmação `ANONIMIZAR`. Numa transação: tira nome, contato, clube, cidade, número de vela, ID World Sailing e código VelaID (vira `ANON-xxxxxxxx`), apaga a linha do VelaID, anonimiza a conta de login, revoga os consentimentos, marca as evidências como removidas, responde o pedido e audita. A série histórica (notas, respostas, medidas, gates, financeiro, plano) é mantida, sem identificação direta. Depois do commit remove os arquivos do Storage e a conta do Supabase Auth: se algo falhar, a anonimização vale e a resposta traz `pendencias`. Repetir a chamada com o mesmo pedido só tenta de novo essas pendências. Atleta já anonimizado por outro pedido, ou pedido já respondido, devolve 409.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        pedidoTitularId: string;
+                        /** @enum {string} */
+                        confirmacao: "ANONIMIZAR";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            atletaId: string;
+                            /** @description Instante ISO */
+                            anonimizadoEm: string;
+                            evidenciasRemovidas: number;
+                            pendencias: {
+                                /** @description Arquivos que ainda não saíram do Storage */
+                                arquivos: number;
+                                /** @description A conta no Supabase Auth ainda não foi apagada */
+                                conta: boolean;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -3872,7 +4474,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3885,7 +4487,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3898,7 +4500,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3911,7 +4513,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3963,6 +4565,8 @@ export interface paths {
                                 indicadorId: string | null;
                                 /** @description Instante ISO */
                                 enviadoEm: string;
+                                /** @description Instante ISO em que o arquivo foi removido (anonimização); nulo = disponível */
+                                removidoEm: string | null;
                             }[];
                         };
                     };
@@ -3975,7 +4579,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -3988,7 +4592,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4001,7 +4605,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4011,7 +4615,7 @@ export interface paths {
         put?: never;
         /**
          * Anexa uma evidência (PDF, JPEG ou PNG de até 5 MB) ao atleta
-         * @description Gestor, ou treinador dos próprios atletas. O arquivo vai em base64, é conferido pelo tamanho e pela assinatura e fica no Storage privado. Use o `id` retornado como `anexoId` ao lançar a nota.
+         * @description Gestor, ou treinador dos próprios atletas. O arquivo vai em base64, é conferido pelo tamanho e pela assinatura e fica no Storage privado. Use o `id` retornado como `anexoId` ao lançar a nota. Limite de 20 envios por minuto por usuário (429 `limite_excedido`).
          */
         post: {
             parameters: {
@@ -4049,6 +4653,8 @@ export interface paths {
                             indicadorId: string | null;
                             /** @description Instante ISO */
                             enviadoEm: string;
+                            /** @description Instante ISO em que o arquivo foi removido (anonimização); nulo = disponível */
+                            removidoEm: string | null;
                         };
                     };
                 };
@@ -4060,7 +4666,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4073,7 +4679,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4086,7 +4692,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4099,7 +4705,20 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4112,7 +4731,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4134,7 +4753,7 @@ export interface paths {
         };
         /**
          * Link temporário (5 minutos) para abrir a evidência
-         * @description Mesmo acesso da listagem, pelo atleta do anexo. Cada geração de link fica na auditoria.
+         * @description Mesmo acesso da listagem, pelo atleta do anexo. Anexo removido (anonimização) devolve 410 `evidencia_removida`. Cada geração de link fica na auditoria.
          */
         get: {
             parameters: {
@@ -4168,7 +4787,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4181,7 +4800,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4194,7 +4813,20 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4207,7 +4839,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4271,7 +4903,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4284,7 +4916,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4352,7 +4984,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4365,7 +4997,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4378,7 +5010,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4391,7 +5023,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4404,7 +5036,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4479,7 +5111,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4492,7 +5124,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4505,7 +5137,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4518,7 +5150,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4576,7 +5208,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4589,7 +5221,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4602,7 +5234,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4615,7 +5247,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4628,7 +5260,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4641,7 +5273,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4663,7 +5295,7 @@ export interface paths {
         };
         /**
          * Termo de consentimento vigente
-         * @description Texto da versão vigente (a de maior vigente_desde). Qualquer usuário autenticado lê.
+         * @description Texto da versão vigente (a de maior vigente_desde que já começou). Qualquer usuário autenticado lê.
          */
         get: {
             parameters: {
@@ -4697,7 +5329,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4710,7 +5342,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4773,7 +5405,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4786,7 +5418,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4799,7 +5431,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };
@@ -4812,7 +5444,170 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/termos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Versões do termo de consentimento (gestor)
+         * @description Da mais nova para a mais antiga, com a quantidade de aceites de cada uma. Sem o texto (o vigente vem em GET /termo).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            versao: string;
+                            titulo: string;
+                            /** @description Instante ISO */
+                            vigenteDesde: string;
+                            /** @description Instante ISO */
+                            criadoEm: string;
+                            /** @description É a versão vigente agora */
+                            vigente: boolean;
+                            /** @description Ainda não começou a valer */
+                            futura: boolean;
+                            /** @description Atletas distintos com aceite concedido desta versão */
+                            aceites: number;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Publica uma nova versão do termo (gestor)
+         * @description A versão passa a valer em vigenteDesde, que não pode estar no passado nem ser anterior ou igual à vigência de outra versão (inclusive futura). Quem aceitou só a anterior fica com aceite pendente; se o ranking os exclui depende da regra TERMO_EXIGE_REACEITE. A auditoria não guarda o texto.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        versao: string;
+                        titulo: string;
+                        texto: string;
+                        /** Format: date-time */
+                        vigenteDesde: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            versao: string;
+                            titulo: string;
+                            /** @description Instante ISO */
+                            vigenteDesde: string;
+                            /** @description Instante ISO */
+                            criadoEm: string;
+                            /** @description É a versão vigente agora */
+                            vigente: boolean;
+                            /** @description Ainda não começou a valer */
+                            futura: boolean;
+                            /** @description Atletas distintos com aceite concedido desta versão */
+                            aceites: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
                             mensagem: string;
                         };
                     };

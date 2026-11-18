@@ -11,10 +11,19 @@ export type PedidoTitular = Json<paths["/pedidos-titular"]["get"]["responses"][2
 export type TipoPedido = PedidoTitular["tipo"];
 export type StatusRevisao = "aberto" | "respondido";
 
-export async function responderRevisao(id: string, resposta: string): Promise<Revisao> {
+export type LancamentoRevisao = Json<
+  paths["/revisoes/{id}/lancamentos"]["get"]["responses"][200]
+>["lancamentos"][number];
+
+/** `avaliacaoId` (opcional) liga a resposta ao lançamento que corrigiu a nota. */
+export async function responderRevisao(
+  id: string,
+  resposta: string,
+  avaliacaoId?: string,
+): Promise<Revisao> {
   const { data, error, response } = await api.PUT("/revisoes/{id}", {
     params: { path: { id } },
-    body: { resposta },
+    body: avaliacaoId ? { resposta, avaliacaoId } : { resposta },
   });
   if (error || !data) throw paraErroApi(response.status, error);
   return data;
@@ -55,10 +64,26 @@ export function usePedidosTitular(habilitado: boolean) {
   });
 }
 
+/** `GET /revisoes/{id}/lancamentos` (chave `['revisao-lancamentos', id]`); só com o diálogo aberto. */
+export function useLancamentosRevisao(id: string | undefined) {
+  return useQuery({
+    queryKey: ["revisao-lancamentos", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error, response } = await api.GET("/revisoes/{id}/lancamentos", {
+        params: { path: { id: id! } },
+      });
+      if (error || !data) throw paraErroApi(response.status, error);
+      return data.lancamentos;
+    },
+  });
+}
+
 export function useResponderRevisao() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { id: string; resposta: string }) => responderRevisao(v.id, v.resposta),
+    mutationFn: (v: { id: string; resposta: string; avaliacaoId?: string }) =>
+      responderRevisao(v.id, v.resposta, v.avaliacaoId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["revisoes"] }),
   });
 }

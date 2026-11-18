@@ -53,6 +53,7 @@ beforeEach(() => {
       velaid: "BA-T16",
       classe: { id: "c1", nome: "ILCA 6" },
       criadoEm: "2026-11-05T12:00:00.000Z",
+      termoAceitoVersao: null,
     },
   ];
   GET.mockImplementation(async (caminho: string) => {
@@ -236,6 +237,23 @@ describe("TelaCadastro", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Enviar termo de consentimento" }));
     expect(await screen.findByText("Atleta já cadastrado.")).toBeTruthy();
+  });
+
+  it("diferencia quem nunca aceitou de quem aceitou só a versão anterior", async () => {
+    pendentes = [
+      ...pendentes,
+      {
+        id: "a10",
+        nome: "Davi Rocha",
+        velaid: "BA-T17",
+        classe: { id: "c1", nome: "ILCA 6" },
+        criadoEm: "2026-11-06T12:00:00.000Z",
+        termoAceitoVersao: "Piloto 18+ · v1",
+      },
+    ];
+    montar();
+    expect(await screen.findByText("Nunca aceitou")).toBeTruthy();
+    expect(screen.getByText("Aceitou a versão Piloto 18+ · v1; falta a vigente")).toBeTruthy();
   });
 
   it("registra o aceite com a versão do termo e invalida pendentes e ranking", async () => {

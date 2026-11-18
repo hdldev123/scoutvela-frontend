@@ -1,18 +1,20 @@
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
 import { fmtData } from "./formato";
 import { useTreinadores } from "@/lib/api/cadastro";
 import { mensagemDeErro } from "@/lib/api/cliente";
-import { useRanking, type ItemRanking } from "@/lib/api/consultas";
 import { useParametros } from "@/lib/api/parametros";
 import {
   useAlterarAtivo,
+  useAtletasGestao,
   useCriarUsuario,
   useEditarAtleta,
   useReenviarConvite,
   useUsuarios,
+  type AtletaGestao,
   type CorpoAtleta,
+  type FiltrosAtletas,
   type PapelUsuario,
   type Usuario,
 } from "@/lib/api/usuarios";
@@ -63,7 +65,9 @@ function NovaConta() {
   const [erro, setErro] = useState("");
   const [resultado, setResultado] = useState("");
   const criar = useCriarUsuario();
-  const ranking = useRanking({});
+  // Atletas ativos ainda sem conta, inclusive quem não aceitou o termo (a conta é que permite aceitar).
+  const atletas = useAtletasGestao({ ativo: "true" });
+  const semConta = (atletas.data ?? []).filter((a) => !a.contaVinculada);
 
   const ehAtleta = papel === "atleta";
 
@@ -151,9 +155,9 @@ function NovaConta() {
                 required
               >
                 <option value="">Escolha</option>
-                {(ranking.data?.itens ?? []).map((i) => (
-                  <option key={i.atleta.id} value={i.atleta.id}>
-                    {i.atleta.nome} ({i.atleta.velaid})
+                {semConta.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.nome} ({a.velaid}){a.termoAceito ? "" : " · termo pendente"}
                   </option>
                 ))}
               </select>
@@ -311,25 +315,120 @@ function ListaContas() {
   );
 }
 
+type Sim = "" | "true" | "false";
+
+/** Espera o usuário parar de digitar antes de buscar. */
+function useAtrasado<T>(valor: T, ms = 300): T {
+  const [v, setV] = useState(valor);
+  useEffect(() => {
+    const t = setTimeout(() => setV(valor), ms);
+    return () => clearTimeout(t);
+  }, [valor, ms]);
+  return v;
+}
+
 function AtletasDoPiloto() {
-  const ranking = useRanking({});
-  const [alvo, setAlvo] = useState<ItemRanking | null>(null);
+  const idBusca = useId();
+  const idSituacao = useId();
+  const idTermo = useId();
+  const idClasse = useId();
+  const idTreinador = useId();
+  const [busca, setBusca] = useState("");
+  const [ativo, setAtivo] = useState<Sim>("");
+  const [termoAceito, setTermoAceito] = useState<Sim>("");
+  const [classeId, setClasseId] = useState("");
+  const [treinadorId, setTreinadorId] = useState("");
+  const buscaAtrasada = useAtrasado(busca.trim());
+  const filtros: FiltrosAtletas = {
+    ...(buscaAtrasada ? { busca: buscaAtrasada } : {}),
+    ...(ativo ? { ativo } : {}),
+    ...(termoAceito ? { termoAceito } : {}),
+    ...(classeId ? { classeId } : {}),
+    ...(treinadorId ? { treinadorId } : {}),
+  };
+  const atletas = useAtletasGestao(filtros);
+  const parametros = useParametros();
+  const treinadores = useTreinadores();
+  const [alvo, setAlvo] = useState<AtletaGestao | null>(null);
+
   return (
     <section className="panel" aria-labelledby="ct-atl-t">
       <div className="panel-head">
         <h2 id="ct-atl-t">Atletas do piloto</h2>
-        <span className="muted ct-sub">Classe, treinador, número de vela e situação</span>
+        <span className="muted ct-sub">
+          Todos os atletas, inclusive inativos e sem termo aceito
+        </span>
       </div>
-      {ranking.isPending ? (
+      <div className="ct-filtros" role="search" aria-label="Filtrar atletas">
+        <label className="field" htmlFor={idBusca}>
+          Buscar
+          <input
+            id={idBusca}
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            maxLength={80}
+            placeholder="Nome ou VelaID"
+            autoComplete="off"
+          />
+        </label>
+        <label className="field" htmlFor={idSituacao}>
+          Situação
+          <select id={idSituacao} value={ativo} onChange={(e) => setAtivo(e.target.value as Sim)}>
+            <option value="">Todas</option>
+            <option value="true">Ativos</option>
+            <option value="false">Inativos</option>
+          </select>
+        </label>
+        <label className="field" htmlFor={idTermo}>
+          Termo
+          <select
+            id={idTermo}
+            value={termoAceito}
+            onChange={(e) => setTermoAceito(e.target.value as Sim)}
+          >
+            <option value="">Todos</option>
+            <option value="true">Aceito</option>
+            <option value="false">Pendente</option>
+          </select>
+        </label>
+        <label className="field" htmlFor={idClasse}>
+          Classe
+          <select id={idClasse} value={classeId} onChange={(e) => setClasseId(e.target.value)}>
+            <option value="">Todas</option>
+            {(parametros.data?.classes ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field" htmlFor={idTreinador}>
+          Treinador(a)
+          <select
+            id={idTreinador}
+            value={treinadorId}
+            onChange={(e) => setTreinadorId(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {(treinadores.data ?? []).map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nome}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {atletas.isPending ? (
         <p className="muted" role="status">
           Carregando atletas…
         </p>
-      ) : ranking.isError ? (
+      ) : atletas.isError ? (
         <div className="note" role="alert">
-          {mensagemDeErro(ranking.error)}
+          {mensagemDeErro(atletas.error)}
         </div>
-      ) : ranking.data.itens.length === 0 ? (
-        <p className="muted">Nenhum atleta no piloto.</p>
+      ) : atletas.data.length === 0 ? (
+        <p className="muted">Nenhum atleta encontrado.</p>
       ) : (
         <div className="table-scroll">
           <table className="data">
@@ -338,25 +437,33 @@ function AtletasDoPiloto() {
                 <th>Atleta</th>
                 <th>VelaID</th>
                 <th>Classe</th>
+                <th>Treinador(a)</th>
                 <th>Nº de vela</th>
+                <th>Situação</th>
+                <th>Termo</th>
+                <th>Conta</th>
                 <th>
                   <span className="ct-sr">Ação</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {ranking.data.itens.map((i) => (
-                <tr key={i.atleta.id}>
-                  <td>{i.atleta.nome}</td>
-                  <td>{i.atleta.velaid}</td>
-                  <td>{i.atleta.classe.nome}</td>
-                  <td>{i.atleta.numeroVela ?? "—"}</td>
+              {atletas.data.map((a) => (
+                <tr key={a.id} className={a.ativo ? undefined : "ct-inativo"}>
+                  <td>{a.nome}</td>
+                  <td>{a.velaid}</td>
+                  <td>{a.classe.nome}</td>
+                  <td>{a.treinador?.nome ?? "—"}</td>
+                  <td>{a.numeroVela ?? "—"}</td>
+                  <td>{a.ativo ? "Ativo" : "Inativo"}</td>
+                  <td>{a.termoAceito ? "Aceito" : "Pendente"}</td>
+                  <td>{a.contaVinculada ? "Com conta" : "Sem conta"}</td>
                   <td className="r">
                     <button
                       type="button"
                       className="btn"
-                      aria-label={`Editar ${i.atleta.nome}`}
-                      onClick={() => setAlvo(i)}
+                      aria-label={`Editar ${a.nome}`}
+                      onClick={() => setAlvo(a)}
                     >
                       Editar
                     </button>
@@ -367,20 +474,19 @@ function AtletasDoPiloto() {
           </table>
         </div>
       )}
-      {alvo && <EditarAtleta item={alvo} aoFechar={() => setAlvo(null)} />}
+      {alvo && <EditarAtleta atleta={alvo} aoFechar={() => setAlvo(null)} />}
     </section>
   );
 }
 
-function EditarAtleta({ item, aoFechar }: { item: ItemRanking; aoFechar: () => void }) {
-  const a = item.atleta;
+function EditarAtleta({ atleta: a, aoFechar }: { atleta: AtletaGestao; aoFechar: () => void }) {
   const parametros = useParametros();
   const treinadores = useTreinadores();
   const editar = useEditarAtleta();
   const [classeId, setClasseId] = useState(a.classe.id);
   const [treinadorId, setTreinadorId] = useState("");
   const [numeroVela, setNumeroVela] = useState(a.numeroVela ?? "");
-  const [ativo, setAtivo] = useState(true);
+  const [ativo, setAtivo] = useState(a.ativo);
   const [ativoMexido, setAtivoMexido] = useState(false);
   const [erro, setErro] = useState("");
 

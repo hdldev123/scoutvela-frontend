@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { FaixaPill } from "./FaixaPill";
 import { textoDoStatus } from "./StatusPill";
-import { fmt1, fmtData } from "./formato";
+import { fmt0, fmt1, fmtData } from "./formato";
 import "@/styles/avaliar.css";
 import "@/styles/ficha.css";
 import {
@@ -483,6 +483,8 @@ function LinhaIndicador({
 
   const valor = rascunho?.valor ?? ind.nota ?? undefined;
   const sug = ind.sugestaoPendente;
+  // Nota sugerida pelos pontos do Ranking CBVela (regra PERF_PONTOS). Só vale se o avaliador lançar.
+  const pontos = ind.sugestaoPontos;
   const descricao = escala.find((r) => r.nota === valor)?.descricao;
   return (
     <div className="ed-row">
@@ -503,6 +505,21 @@ function LinhaIndicador({
               className="btn"
               onClick={() => aoMudar({ valor: sug.valor })}
               aria-label={`Usar sugestão ${sug.valor} em ${ind.nome}`}
+            >
+              Usar sugestão
+            </button>
+          </div>
+        )}
+        {pontos && (
+          <div className="avaliar-sugestao">
+            <span>
+              Sugerido pelo Ranking CBVela: nota {pontos.nota} ({fmt0(pontos.pontos)} pts)
+            </span>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => aoMudar({ valor: pontos.nota })}
+              aria-label={`Usar sugestão do Ranking CBVela (nota ${pontos.nota}) em ${ind.nome}`}
             >
               Usar sugestão
             </button>

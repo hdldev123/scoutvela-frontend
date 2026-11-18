@@ -11,6 +11,9 @@ export type PedidoTitular = Json<paths["/pedidos-titular"]["get"]["responses"][2
 export type CorpoPedidoTitular =
   paths["/pedidos-titular"]["post"]["requestBody"]["content"]["application/json"];
 export type TipoPedidoTitular = CorpoPedidoTitular["tipo"];
+export type ResultadoAnonimizacao = Json<
+  paths["/atletas/{id}/anonimizar"]["post"]["responses"][200]
+>;
 
 /** `GET /termo` (chave `['termo']`): texto e versão vigentes. */
 export function useTermo(opcoes: { enabled?: boolean } = {}) {
@@ -84,5 +87,31 @@ export function useCriarPedidoTitular() {
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pedidos-titular"] }),
+  });
+}
+
+/**
+ * `POST /atletas/{id}/anonimizar`: anonimiza o atleta a pedido de exclusão. Repetir com o mesmo
+ * pedido só tenta de novo as pendências (arquivos e conta).
+ */
+export function useAnonimizarAtleta() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { atletaId: string; pedidoTitularId: string }) => {
+      const { data, error, response } = await api.POST("/atletas/{id}/anonimizar", {
+        params: { path: { id: v.atletaId } },
+        body: { pedidoTitularId: v.pedidoTitularId, confirmacao: "ANONIMIZAR" },
+      });
+      if (error || !data) throw paraErroApi(response.status, error);
+      return data;
+    },
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ["pedidos-titular"] }),
+        qc.invalidateQueries({ queryKey: ["atletas"] }),
+        qc.invalidateQueries({ queryKey: ["atleta"] }),
+        qc.invalidateQueries({ queryKey: ["ranking"] }),
+        qc.invalidateQueries({ queryKey: ["investimento"] }),
+      ]),
   });
 }

@@ -54,6 +54,23 @@ export function useCiclos() {
   });
 }
 
+export type PendenciasCiclo = Json<paths["/ciclos/{id}/pendencias"]["get"]["responses"][200]>;
+
+/** `GET /ciclos/{id}/pendencias` (só ciclo aberto). Fica sob `['ciclos']`: abrir, ajustar e fechar atualizam. */
+export function usePendenciasCiclo(id: string) {
+  return useQuery({
+    queryKey: ["ciclos", id, "pendencias"],
+    retry: false,
+    queryFn: async () => {
+      const { data, error, response } = await api.GET("/ciclos/{id}/pendencias", {
+        params: { path: { id } },
+      });
+      if (error || !data) throw paraErroApi(response.status, error);
+      return data;
+    },
+  });
+}
+
 export function useAbrirCiclo() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: abrirCiclo, onSuccess: () => invalidarDependentes(qc) });

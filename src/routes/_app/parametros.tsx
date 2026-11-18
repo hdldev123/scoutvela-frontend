@@ -12,5 +12,5 @@ function RotaParametros() {
   const { data: me } = useMe();
   if (!me) return null;
   if (!me.telas.includes("parametros")) return <SemAcesso />;
-  return <TelaParametros />;
+  return <TelaParametros papel={me.usuario.papel} />;
 }

@@ -20,6 +20,43 @@
 .cic-aberto {
   border-left: 4px solid var(--c-accent, #0b5fa5);
 }
+.cic-totais {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.cic-totais > div {
+  border: 1px solid var(--line, #d8dde3);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.cic-totais dt {
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}
+.cic-totais dd {
+  margin: 2px 0 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.cic-pend-titulo {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+.cic-pend-lista {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.cic-pend-lista ul {
+  margin: 4px 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 2px;
+}
 .cic-sub {
   margin: 0;
   font-size: 0.85rem;

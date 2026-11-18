@@ -295,7 +295,9 @@ function TermosPendentes() {
     <section className="panel" aria-labelledby="cad-pend-t">
       <div className="panel-head">
         <h2 id="cad-pend-t">Termos pendentes</h2>
-        <span className="muted cad-sub">Atletas que ainda não aceitaram o termo do piloto</span>
+        <span className="muted cad-sub">
+          Atletas sem aceite da versão vigente do termo do piloto
+        </span>
       </div>
       {pendentes.isPending ? (
         <p className="muted" role="status">
@@ -316,6 +318,7 @@ function TermosPendentes() {
                 <th>VelaID</th>
                 <th>Classe</th>
                 <th>Cadastrado em</th>
+                <th>Termo</th>
                 <th>
                   <span className="cad-sr">Ação</span>
                 </th>
@@ -328,6 +331,11 @@ function TermosPendentes() {
                   <td>{p.velaid}</td>
                   <td>{p.classe.nome}</td>
                   <td>{fmtData(p.criadoEm)}</td>
+                  <td>
+                    {p.termoAceitoVersao
+                      ? `Aceitou a versão ${p.termoAceitoVersao}; falta a vigente`
+                      : "Nunca aceitou"}
+                  </td>
                   <td className="r">
                     <button
                       type="button"

@@ -55,6 +55,38 @@
   overflow-wrap: anywhere;
   text-align: left;
 }
+.ficha-historico {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.ficha-historico li {
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.ficha-historico li.pendente {
+  border: 1px dashed var(--line);
+}
+.ficha-historico-topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ficha-historico-topo .nota {
+  min-width: 2.2rem;
+}
+.ficha-historico .src {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
 .ficha-clipe:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;

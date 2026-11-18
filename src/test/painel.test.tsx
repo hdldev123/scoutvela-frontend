@@ -93,6 +93,8 @@ function painel(extra: Partial<PainelAtleta> = {}): PainelAtleta {
     consentimento: {
       termoAceitoEm: "2026-10-14T12:00:00.000Z",
       termoVersao: "1.0",
+      termoVigenteVersao: "1.0",
+      termoPendente: false,
       compartilharIbvar: false,
       atualizadoEm: "2026-10-15T12:00:00.000Z",
     },
@@ -247,6 +249,31 @@ describe("TelaPainel", () => {
     await waitFor(() =>
       expect(POST).toHaveBeenCalledWith("/termo/aceite", { body: { versao: "Piloto 18+ · v2" } }),
     );
+  });
+
+  it("mostra o termo e a nova versão quando o aceite está pendente", async () => {
+    const base = painel();
+    montar(
+      painel({
+        consentimento: { ...base.consentimento, termoVigenteVersao: "2.0", termoPendente: true },
+      }),
+    );
+    expect(
+      await screen.findByText(
+        "Há uma nova versão do termo (2.0). Leia e aceite para continuar no piloto.",
+      ),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Li e aceito" })).toBeInTheDocument();
+    expect(screen.getByText(/aceite da versão 2\.0 pendente/)).toBeInTheDocument();
+  });
+
+  it("mostra a nota anterior e a nova na revisão respondida", async () => {
+    montar(painel(), [
+      revisao({ avaliacaoId: "av1", notaAnterior: 2, notaNova: 4 }),
+      revisao({ id: "r3", avaliacaoId: "av2", notaAnterior: null, notaNova: 3 }),
+    ]);
+    expect(await screen.findByText("2 → 4")).toBeInTheDocument();
+    expect(screen.getByText("Nota nova: 3")).toBeInTheDocument();
   });
 
   it("não mostra o termo quando já foi aceito", async () => {
