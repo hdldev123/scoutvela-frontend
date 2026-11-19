@@ -15,7 +15,8 @@ vi.mock("@/lib/auth/supabase", () => ({
 }));
 
 import { EntryScreen } from "@/components/scout/EntryScreen";
-import { SessaoProvider, useSessao } from "@/lib/auth/sessao";
+import { useSessao } from "@/lib/auth/sessao";
+import { SessaoProvider } from "@/lib/auth/SessaoProvider";
 
 function Login() {
   const { entrar } = useSessao();

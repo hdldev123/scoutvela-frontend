@@ -31,7 +31,8 @@ vi.mock("@tanstack/react-router", () => ({
 
 import { EntryScreen, MENSAGEM_RECUPERACAO } from "@/components/scout/EntryScreen";
 import { TelaRedefinirSenha } from "@/components/scout/TelaRedefinirSenha";
-import { SessaoProvider, useSessao } from "@/lib/auth/sessao";
+import { useSessao } from "@/lib/auth/sessao";
+import { SessaoProvider } from "@/lib/auth/SessaoProvider";
 
 function Login() {
   const { entrar, recuperarSenha } = useSessao();

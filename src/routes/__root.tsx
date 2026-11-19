@@ -11,7 +11,7 @@ import {
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { SessaoProvider } from "../lib/auth/sessao";
+import { SessaoProvider } from "../lib/auth/SessaoProvider";
 
 function NotFoundComponent() {
   return (
