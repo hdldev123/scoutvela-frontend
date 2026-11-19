@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import "@/styles/contas.css";
@@ -219,6 +218,7 @@ function Consentimento({ c }: { c: ConsentimentoPainel }) {
           disabled={alterar.isPending}
           onChange={(e) => alterar.mutate(e.target.checked)}
         />
+        <span aria-hidden="true">{c.compartilharIbvar ? "Ativado" : "Desativado"}</span>
       </label>
       <div className="switch">
         <span>
@@ -250,7 +250,6 @@ function TermoAceite({ novaVersao }: { novaVersao?: string | undefined }) {
     <section className="panel" aria-labelledby="painel-termo">
       <div className="panel-head">
         <h2 id="painel-termo">{termo.data?.titulo ?? "Termo de consentimento"}</h2>
-        {termo.data && <span className="muted">Versão {termo.data.versao}</span>}
       </div>
       <p className="muted" style={{ marginTop: 0 }}>
         {novaVersao
@@ -517,9 +516,6 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
             <span className="muted">
               {painel.completo ? "Avaliação completa" : "Avaliação parcial: faltam indicadores"}
             </span>
-            <Link to="/atletas/$id" params={{ id: painel.atleta.id }} className="btn">
-              Minha ficha
-            </Link>
           </div>
         </div>
         <BigScore score={painel.score} faixa={painel.faixa} parcial={!painel.completo} />

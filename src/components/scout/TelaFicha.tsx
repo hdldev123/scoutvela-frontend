@@ -14,7 +14,7 @@ import { SemAcesso } from "./SemAcesso";
 import { SparkScore } from "./SparkScore";
 import { StatusPill } from "./StatusPill";
 import { fmt0, fmt1, fmtData, rotuloCiclo } from "./formato";
-import { rotuloNivel } from "./niveis";
+import { rotuloNivelHistorico } from "./niveis";
 import { textoDoStatus } from "./status-gate";
 import { ErroApi, mensagemDeErro } from "@/lib/api/cliente";
 import {
@@ -499,7 +499,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                       <tr key={`${r.data}-${r.evento}-${i}`}>
                         <td className="num">{fmtData(r.data)}</td>
                         <td>{r.evento}</td>
-                        <td>{rotuloNivel(r.nivel)}</td>
+                        <td>{rotuloNivelHistorico(r.nivel)}</td>
                         <td className="r">
                           {r.posicao}º de {r.tamanhoFrota}
                         </td>
@@ -572,7 +572,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                   status={g1?.sugestaoAutomatica ?? "condicional"}
                 />
                 <p className="muted" style={{ fontSize: "0.82rem", margin: "6px 0 0" }}>
-                  Faixa de peso da classe pelo Word do Juan.
+                  Faixa de peso de referência da classe (parâmetro da metodologia).
                   {classFit.alturaCm != null ? ` Altura: ${classFit.alturaCm} cm.` : ""}
                 </p>
               </>

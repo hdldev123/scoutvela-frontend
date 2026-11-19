@@ -2013,7 +2013,7 @@
 .side {
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -2166,10 +2166,32 @@
   background: oklch(0.929 0.013 255.508 / 60%);
   color: var(--ink);
 }
-.side-demo {
-  padding: 0 10px;
-  font-size: 11px;
+.side-body {
+  display: contents;
+}
+.side-toggle,
+.side-fundo {
+  display: none;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.aviso-ambiente {
+  margin: 24px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
   color: var(--ink-2);
+}
+.entry-note.aviso-ambiente {
+  margin-top: 18px;
+  padding-top: 0;
+  border-top: 0;
 }
 
 /* canvas */
@@ -2656,31 +2678,67 @@
     z-index: 5;
     height: auto;
     flex-direction: row;
-    flex-wrap: wrap;
     align-items: center;
     padding: 10px 12px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
-  .scout .cmdk-trigger {
-    width: auto;
-    flex: 1;
+  .side-brand {
+    width: 100%;
+  }
+  .side-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .side-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: min(320px, 86vw);
+    height: 100dvh;
+    padding: 16px 12px;
+    overflow-y: auto;
+    background: var(--surface-2);
+    border-right: 1px solid var(--line);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 0.2s,
+      visibility 0.2s;
+  }
+  .side-body[data-aberta="true"] {
+    transform: none;
+    visibility: visible;
+  }
+  .side-fundo {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    background: oklch(0.208 0.042 265.755 / 40%);
   }
   .scout .tabs {
-    flex-direction: row;
-    overflow-x: auto;
+    flex-direction: column;
     width: 100%;
   }
   .side-foot {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    display: flex;
-    align-items: center;
-  }
-  .side-user,
-  .side-demo {
-    display: none;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    display: grid;
   }
   .scout main.wrap {
     padding: 20px 16px 48px;

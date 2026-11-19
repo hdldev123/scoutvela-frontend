@@ -312,7 +312,7 @@ describe("TelaFicha", () => {
     expect(within(secao).getByText("Registrado por Ana Ribeiro em 02/11/2026")).toBeInTheDocument();
     expect(within(secao).getByText("Regata de vento forte")).toBeInTheDocument();
     expect(within(secao).queryByText(SUGESTAO.forcas)).not.toBeInTheDocument();
-    expect(within(secao).queryByText(/Sugestão da API/)).not.toBeInTheDocument();
+    expect(within(secao).queryByText(/Sugestão automática/)).not.toBeInTheDocument();
   });
 
   it("sem plano registrado mostra a sugestão da API, marcada", async () => {
@@ -320,7 +320,9 @@ describe("TelaFicha", () => {
     const secao = (await screen.findByRole("heading", { name: "Plano individual" })).closest(
       "section",
     )!;
-    expect(within(secao).getByText("Sugestão da API, ainda não registrada")).toBeInTheDocument();
+    expect(
+      within(secao).getByText("Sugestão automática, ainda não registrada"),
+    ).toBeInTheDocument();
     expect(within(secao).getByText(SUGESTAO.recomendacao)).toBeInTheDocument();
   });
 
@@ -458,18 +460,53 @@ describe("TelaFicha", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("evidências: lista, abre o link https em nova aba e baixa data:", async () => {
-    const cliques: { href: string; target: string; rel: string; download: string }[] = [];
+  it("Class Fit mostra a faixa de peso como parâmetro da metodologia", async () => {
+    montar("atleta", ficha());
+    expect(
+      await screen.findByText(
+        /Faixa de peso de referência da classe \(parâmetro da metodologia\)\./,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Word do Juan/)).not.toBeInTheDocument();
+  });
+
+  it("histórico traduz todos os níveis para pt-BR", async () => {
+    const base = ficha();
+    const f = {
+      ...base,
+      resultados: [
+        "mundial",
+        "sul_americano",
+        "continental",
+        "internacional_aberto",
+        "brasileiro",
+        "estadual",
+        "regional",
+      ].map((nivel, i) => ({ ...base.resultados[0]!, nivel, evento: `Evento ${i}` })),
+    };
+    montar("atleta", f);
+    for (const rotulo of [
+      "Mundial",
+      "Sul-Americano",
+      "Continental",
+      "Internacional aberto",
+      "Brasileiro",
+      "Estadual",
+      "Regional",
+    ]) {
+      expect(await screen.findByRole("cell", { name: rotulo })).toBeInTheDocument();
+    }
+  });
+
+  it("evidências: abre a aba no clique e navega ao link; data: baixa; erro fecha a aba", async () => {
+    const cliques: { download: string; target: string }[] = [];
     const clique = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
       this: HTMLAnchorElement,
     ) {
-      cliques.push({
-        href: this.href,
-        target: this.target,
-        rel: this.rel,
-        download: this.download,
-      });
+      cliques.push({ download: this.download, target: this.target });
     });
+    const aba = { opener: {} as unknown, location: { href: "" }, close: vi.fn() };
+    const abrir = vi.spyOn(window, "open").mockReturnValue(aba as unknown as Window);
     montar("atleta", ficha());
     const secao = (await screen.findByRole("heading", { name: "Evidências anexadas" })).closest(
       "section",
@@ -479,15 +516,24 @@ describe("TelaFicha", () => {
     expect(within(secao).queryByRole("button", { name: "Anexar arquivo" })).not.toBeInTheDocument();
 
     fireEvent.click(within(secao).getByRole("button", { name: "Abrir teste-de-campo.pdf" }));
-    await waitFor(() => expect(cliques).toHaveLength(1));
-    expect(cliques[0]).toMatchObject({ target: "_blank", rel: "noopener noreferrer" });
-    expect(cliques[0]!.href).toContain("https://storage.exemplo.com/a.pdf");
+    expect(abrir).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(aba.location.href).toContain("https://storage.exemplo.com/a.pdf"));
+    expect(aba.opener).toBeNull();
+    expect(aba.close).not.toHaveBeenCalled();
 
     linkEvidencia.url = "data:application/pdf;base64,AAAA";
     fireEvent.click(within(secao).getByRole("button", { name: "Abrir teste-de-campo.pdf" }));
-    await waitFor(() => expect(cliques).toHaveLength(2));
-    expect(cliques[1]).toMatchObject({ download: "teste-de-campo.pdf", target: "" });
+    await waitFor(() => expect(cliques).toHaveLength(1));
+    expect(cliques[0]).toMatchObject({ download: "teste-de-campo.pdf", target: "" });
+    expect(aba.close).toHaveBeenCalledTimes(1);
+
+    linkEvidencia.url = "javascript:alert(1)";
+    fireEvent.click(within(secao).getByRole("button", { name: "Abrir teste-de-campo.pdf" }));
+    await waitFor(() => expect(aba.close).toHaveBeenCalledTimes(2));
+    expect(cliques).toHaveLength(1);
+
     linkEvidencia.url = "https://storage.exemplo.com/a.pdf?assinatura=1";
+    abrir.mockRestore();
     clique.mockRestore();
   });
 
