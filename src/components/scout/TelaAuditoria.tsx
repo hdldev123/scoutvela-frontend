@@ -167,7 +167,7 @@ export function TelaAuditoria() {
           ) : itens.length === 0 ? (
             <p className="muted">Nenhum evento para estes filtros.</p>
           ) : (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data">
                 <thead>
                   <tr>

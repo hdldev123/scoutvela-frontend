@@ -396,7 +396,7 @@ function TabelaCiclos({ itens }: { itens: Ciclo[] }) {
       {itens.length === 0 ? (
         <p className="muted">Nenhum ciclo cadastrado.</p>
       ) : (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data">
             <thead>
               <tr>

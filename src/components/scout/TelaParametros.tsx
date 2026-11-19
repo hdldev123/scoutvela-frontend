@@ -216,7 +216,7 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
             kg · Word, seção 5
           </span>
         </div>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data">
             <thead>
               <tr>

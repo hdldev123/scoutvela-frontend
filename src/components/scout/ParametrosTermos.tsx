@@ -38,7 +38,7 @@ export function SecaoTermos() {
       ) : q.data.length === 0 ? (
         <p className="muted">Nenhuma versão publicada.</p>
       ) : (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data">
             <thead>
               <tr>

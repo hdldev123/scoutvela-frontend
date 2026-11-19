@@ -313,7 +313,7 @@ function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
         )}
       </dl>
       {completo ? (
-        <div className="table-scroll" style={{ marginTop: 12 }}>
+        <div className="table-scroll" tabIndex={0} style={{ marginTop: 12 }}>
           <table className="data">
             <thead>
               <tr>
@@ -482,7 +482,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 </button>
               </div>
             )}
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data">
                 <thead>
                   <tr>

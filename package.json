@@ -41,6 +41,7 @@
     "vite-tsconfig-paths": "^6.0.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@lovable.dev/vite-tanstack-config": "2.27.0",
     "@playwright/test": "1.65.0",
