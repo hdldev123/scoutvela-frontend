@@ -54,7 +54,7 @@ O login tenta, nesta ordem: `VITE_LOGIN_VIDEO_URL`; o arquivo `src/assets/login-
 | `test`          | Vitest (uma execução)                                                           |
 | `e2e`           | Playwright                                                                      |
 | `format`        | Prettier                                                                        |
-| `api:tipos`     | regenera `src/lib/api/schema.d.ts` a partir de `../vela-back/openapi.yaml`      |
+| `api:tipos`     | regenera `src/lib/api/schema.d.ts` a partir de `../scoutvela-backend/openapi.yaml`      |
 | `api:verificar` | falha se `schema.d.ts` diferir do contrato; aceita `-- caminho/do/openapi.yaml` |
 
 O CI (`.github/workflows/ci.yml`) roda tipos, lint, testes, build e `bun audit`. Ele não roda `api:verificar`, porque o contrato está em outro repositório; rode localmente antes do PR.
