@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useRanking } from "@/lib/api/consultas";
 import { CommandPalette, type Visivel } from "./CommandPalette";
-import { textoDoStatus } from "./StatusPill";
+import { textoDoStatus } from "./status-gate";
 
 interface MeMinimo {
   usuario: { papel: string };

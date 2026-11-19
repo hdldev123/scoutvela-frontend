@@ -12,8 +12,9 @@ import { PlanoIndividual } from "./PlanoIndividual";
 import { ResultadoDialog, rotuloNivel } from "./ResultadoDialog";
 import { SemAcesso } from "./SemAcesso";
 import { SparkScore } from "./SparkScore";
-import { StatusPill, textoDoStatus } from "./StatusPill";
+import { StatusPill } from "./StatusPill";
 import { fmt0, fmt1, fmtData, rotuloCiclo } from "./formato";
+import { textoDoStatus } from "./status-gate";
 import { ErroApi, mensagemDeErro } from "@/lib/api/cliente";
 import {
   useFicha,
