@@ -2817,3 +2817,29 @@
   height: 72px;
   font-size: 22px;
 }
+.dialogo:has(.perfil) {
+  width: min(560px, 100%);
+}
+.perfil-id,
+.perfil-foto {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.perfil-dados {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+.perfil-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.perfil-linha dt {
+  color: var(--ink-2);
+}
+.perfil-linha dd {
+  margin: 0;
+  text-align: right;
+}
