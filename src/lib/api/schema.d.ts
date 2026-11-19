@@ -434,7 +434,7 @@ export interface paths {
         };
         /**
          * Remove a foto de perfil
-         * @description Sem foto, não faz nada.
+         * @description Idempotente: sem foto, também responde 204.
          */
         delete: {
             parameters: {
@@ -445,15 +445,13 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Default Response */
-                200: {
+                /** @description Foto removida */
+                204: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            fotoUrl: string | null;
-                        };
+                        "application/json": null;
                     };
                 };
                 /** @description Default Response */
