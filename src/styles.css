@@ -2817,6 +2817,20 @@
   height: 72px;
   font-size: 22px;
 }
+.side-user-btn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.side-user-btn:hover,
+.side-user-btn:focus-visible {
+  background: var(--avatar-bg);
+}
 .dialogo:has(.perfil) {
   width: min(560px, 100%);
 }

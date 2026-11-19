@@ -1,12 +1,14 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AvisoAmbiente } from "./AvisoAmbiente";
+import { Avatar } from "./Avatar";
+import { PerfilDialog } from "./PerfilDialog";
 import { PaletaDeAtletas } from "./PaletaDeAtletas";
-import { iniciais, itensDeNavegacao, ROTULO_PAPEL } from "@/lib/auth/navegacao";
+import { itensDeNavegacao, ROTULO_PAPEL } from "@/lib/auth/navegacao";
 
 interface ShellProps {
   me: {
-    usuario: { nome: string; papel: string };
+    usuario: { nome: string; papel: string; fotoUrl?: string | null };
     atleta: { id: string; nome: string } | null;
     telas: string[];
   } | null;
@@ -14,10 +16,37 @@ interface ShellProps {
   children: ReactNode;
 }
 
+function UsuarioDoShell({
+  me,
+  aoAbrirPerfil,
+}: {
+  me: NonNullable<ShellProps["me"]>;
+  aoAbrirPerfil: () => void;
+}) {
+  const conteudo = (
+    <>
+      <Avatar nome={me.usuario.nome} fotoUrl={me.usuario.fotoUrl} />
+      <span className="side-user-txt">
+        <b>{me.usuario.nome}</b>
+        <small>{ROTULO_PAPEL[me.usuario.papel] ?? me.usuario.papel}</small>
+      </span>
+    </>
+  );
+  // O IBVAR não tem perfil: o bloco continua só informativo.
+  if (me.usuario.papel === "ibvar") return <div className="side-user">{conteudo}</div>;
+  return (
+    <button type="button" className="side-user side-user-btn" onClick={aoAbrirPerfil}>
+      {conteudo}
+      <span className="sr-only">Abrir meu perfil</span>
+    </button>
+  );
+}
+
 export function Shell({ me, onSair, children }: ShellProps) {
   const itens = me ? itensDeNavegacao(me) : [];
   const [aberta, setAberta] = useState(false);
   const botao = useRef<HTMLButtonElement>(null);
+  const [perfilAberto, setPerfilAberto] = useState(false);
   const caminho = useRouterState({ select: (s) => s.location.pathname });
 
   // Fecha ao trocar de rota; o foco volta ao botão só se a gaveta estava aberta.
@@ -76,23 +105,14 @@ export function Shell({ me, onSair, children }: ShellProps) {
             ))}
           </nav>
           <div className="side-foot">
-            {me && (
-              <div className="side-user">
-                <span className="avatar" aria-hidden="true">
-                  {iniciais(me.usuario.nome)}
-                </span>
-                <span className="side-user-txt">
-                  <b>{me.usuario.nome}</b>
-                  <small>{ROTULO_PAPEL[me.usuario.papel] ?? me.usuario.papel}</small>
-                </span>
-              </div>
-            )}
+            {me && <UsuarioDoShell me={me} aoAbrirPerfil={() => setPerfilAberto(true)} />}
             <button className="side-logout" type="button" onClick={onSair}>
               <i className="ph ph-sign-out" aria-hidden="true" /> Sair
             </button>
           </div>
         </div>
       </aside>
+      {perfilAberto && <PerfilDialog aoFechar={() => setPerfilAberto(false)} />}
       {aberta && <div className="side-fundo" aria-hidden="true" onClick={() => setAberta(false)} />}
       <main className="wrap" id="app">
         {children}
