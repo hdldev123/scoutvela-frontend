@@ -28,7 +28,8 @@ vi.mock("@tanstack/react-router", () => ({
   }) => <a href={params ? to.replace("$id", params.id) : to}>{children}</a>,
 }));
 
-import { TelaCiclos, diasAtePrazo, sugestaoCiclo } from "@/components/scout/TelaCiclos";
+import { TelaCiclos } from "@/components/scout/TelaCiclos";
+import { diasAtePrazo, sugestaoCiclo } from "@/components/scout/ciclos-util";
 
 const ok = (data: unknown, status = 200) => ({ data, error: undefined, response: { status } });
 const falha = (status: number, erro: string, mensagem: string) => ({
