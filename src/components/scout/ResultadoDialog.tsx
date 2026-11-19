@@ -2,19 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
+import { NIVEIS } from "./niveis";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { lancarResultado, type CorpoResultado } from "@/lib/api/mutacoes-ficha";
-
-export const NIVEIS: { valor: CorpoResultado["nivel"]; rotulo: string }[] = [
-  { valor: "mundial", rotulo: "Mundial" },
-  { valor: "sul_americano", rotulo: "Sul-Americano" },
-  { valor: "continental", rotulo: "Continental" },
-  { valor: "internacional_aberto", rotulo: "Internacional aberto" },
-];
-
-/** Rótulo legível do nível (a API pode devolver o código ou o texto já pronto). */
-export const rotuloNivel = (nivel: string): string =>
-  NIVEIS.find((n) => n.valor === nivel)?.rotulo ?? nivel;
 
 const hojeISO = () => new Date().toISOString().slice(0, 10);
 
