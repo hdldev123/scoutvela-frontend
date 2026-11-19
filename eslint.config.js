@@ -44,7 +44,10 @@ export default tseslint.config(
           ],
         },
       ],
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true, extraHOCs: ["createFileRoute", "createRootRouteWithContext"] },
+      ],
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
