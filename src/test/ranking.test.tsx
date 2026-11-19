@@ -46,6 +46,7 @@ function item(
       idade: 20,
       genero: "F" as const,
       classe: { id: "c1", nome: evento, evento },
+      fotoUrl: null,
     },
     score: 80.25,
     faixa: { id: "f2", nome: "Alto potencial", nomeCurto: "Alto potencial" },

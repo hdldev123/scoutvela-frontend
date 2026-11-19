@@ -541,6 +541,8 @@ export interface paths {
                                         nome: string;
                                         evento: string;
                                     };
+                                    /** @description Link assinado curto da foto da conta do atleta; sempre nulo para o IBVAR */
+                                    fotoUrl: string | null;
                                 };
                                 score: number;
                                 faixa: {
