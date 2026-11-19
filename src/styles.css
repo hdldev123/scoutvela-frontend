@@ -2803,3 +2803,17 @@
   width: min(520px, 100%);
   box-shadow: 0 24px 48px -12px oklch(0 0 0 / 18%);
 }
+
+.scout .avatar {
+  overflow: hidden;
+}
+.scout .avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.scout .avatar-grande {
+  width: 72px;
+  height: 72px;
+  font-size: 22px;
+}
