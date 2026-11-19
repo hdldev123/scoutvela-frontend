@@ -100,6 +100,18 @@ describe("TelaRanking", () => {
     expect(within(linha).getByText("1.234")).toBeInTheDocument();
   });
 
+  it("a legenda não fala em ranking simulado", async () => {
+    GET.mockResolvedValue({
+      data: resposta([item(1, "Helena Vasques", "ILCA 6")]),
+      response: { status: 200 },
+    });
+    montar(<TelaRanking papel="gestor" filtros={{}} aoMudarFiltros={() => {}} />);
+    expect(
+      await screen.findByText(/vêm do ranking oficial, últimas 52 semanas/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/simulad/i)).not.toBeInTheDocument();
+  });
+
   it("treinador vê 'Meus atletas'", async () => {
     GET.mockResolvedValue({
       data: resposta([item(1, "Helena Vasques", "ILCA 6")]),
