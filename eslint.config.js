@@ -16,6 +16,7 @@ export default tseslint.config(
       ".vercel",
       "src/lib/api/schema.d.ts",
       "src/routeTree.gen.ts",
+      "trash",
     ],
   },
   {
