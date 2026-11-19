@@ -11,7 +11,7 @@ type Componente = CorpoFinanceiro["componentes"][number];
 type Perfil = CorpoFinanceiro["perfilSuporte"];
 type Linha = Omit<Componente, "componenteId">;
 
-export const PERFIS: { valor: Perfil; texto: string }[] = [
+const PERFIS: { valor: Perfil; texto: string }[] = [
   { valor: "A", texto: "A · Alta autonomia" },
   { valor: "B", texto: "B · Autonomia parcial" },
   { valor: "C", texto: "C · Alta dependência" },

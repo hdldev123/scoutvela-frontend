@@ -11,10 +11,8 @@ import { useParametros, useSalvarParametros, type Parametros } from "@/lib/api/p
 
 const POSICAO = { helm: "Timoneiro", crew: "Proeiro", ind: "Individual" } as const;
 
-export { formatarValor } from "./parametros-util";
-
 /** Aceita "82,8" ou "82.8"; devolve null quando não for número finito >= 0. */
-export function lerKg(texto: string): number | null {
+function lerKg(texto: string): number | null {
   const t = texto.trim().replace(",", ".");
   if (!/^\d+(\.\d+)?$/.test(t)) return null;
   const n = Number(t);
