@@ -15,11 +15,12 @@ Frontend do Scout Vela, o sistema de identificação e acompanhamento de talento
 
 Copie `.env.example` para `.env.local`. Nada de segredo aqui: o prefixo `VITE_` expõe o valor no navegador.
 
-| Variável                 | Para quê                             |
-| ------------------------ | ------------------------------------ |
-| `VITE_API_URL`           | URL da API do `vela-back`            |
-| `VITE_SUPABASE_URL`      | URL do projeto Supabase (só login)   |
-| `VITE_SUPABASE_ANON_KEY` | chave pública do Supabase (só login) |
+| Variável                 | Para quê                                                |
+| ------------------------ | ------------------------------------------------------- |
+| `VITE_API_URL`           | URL da API do `vela-back`                               |
+| `VITE_SUPABASE_URL`      | URL do projeto Supabase (só login)                      |
+| `VITE_SUPABASE_ANON_KEY` | chave pública do Supabase (só login)                    |
+| `VITE_AMBIENTE`          | opcional; `producao` esconde o aviso de dados fictícios |
 
 ## Rodar local junto com o vela-back
 
