@@ -4,7 +4,7 @@ import { CommandPalette, type Visivel } from "./CommandPalette";
 import { textoDoStatus } from "./status-gate";
 
 interface MeMinimo {
-  usuario: { papel: string };
+  usuario: { papel: string; fotoUrl?: string | null };
   atleta: { id: string; nome: string } | null;
   telas: string[];
 }
@@ -27,6 +27,7 @@ export function PaletaDeAtletas({ me }: { me: MeMinimo | null }) {
       score: i.score,
       faixa: i.faixa.nome,
       status: textoDoStatus(i.statusGates),
+      avatar: { nome: i.atleta.nome, fotoUrl: i.atleta.fotoUrl },
     }));
   } else if (me && me.usuario.papel === "atleta" && me.atleta) {
     itens = [
@@ -37,6 +38,7 @@ export function PaletaDeAtletas({ me }: { me: MeMinimo | null }) {
         score: null,
         faixa: "",
         status: "",
+        avatar: { nome: me.atleta.nome, fotoUrl: me.usuario.fotoUrl ?? null },
       },
     ];
   }

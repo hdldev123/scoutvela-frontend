@@ -1,5 +1,6 @@
 import { Command } from "cmdk";
 import { useEffect, useState } from "react";
+import { Avatar } from "./Avatar";
 import { fmt1 } from "./formato";
 
 export type Visivel = {
@@ -10,6 +11,8 @@ export type Visivel = {
   score: number | null;
   faixa: string;
   status: string;
+  /** Pessoa do avatar: foto ou iniciais. */
+  avatar: { nome: string; fotoUrl: string | null };
 };
 
 export interface CommandPaletteProps {
@@ -54,6 +57,7 @@ export function CommandPalette({ itens, aoSelecionar }: CommandPaletteProps) {
                     setOpen(false);
                   }}
                 >
+                  <Avatar nome={a.avatar.nome} fotoUrl={a.avatar.fotoUrl} />
                   <span className="cmdk-name">{a.nome}</span>
                   <span className="cmdk-meta">{a.classe}</span>
                   <span className="cmdk-meta">{a.status}</span>
