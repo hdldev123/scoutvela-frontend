@@ -107,6 +107,7 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
       clube: "Clube Náutico",
       cidade: "Florianópolis",
       uf: "SC",
+      fotoUrl: null,
       termoAceito: true,
       classe: { id: "c1", nome: "ILCA 6", evento: "ILCA 6", posicao: "ind" },
     },
@@ -302,6 +303,22 @@ describe("TelaFicha", () => {
     expect(
       screen.getByRole("img", { name: /Score nos últimos ciclos: 60,0, 66,0, 71,5/ }),
     ).toBeInTheDocument();
+  });
+
+  it("mostra a foto do atleta só quando fotoUrl vem preenchida", async () => {
+    const base = ficha();
+    montar("gestor", ficha({ atleta: { ...base.atleta, fotoUrl: "https://x.test/f.jpg" } }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(document.querySelector(".athlete-head img")).toHaveAttribute(
+      "src",
+      "https://x.test/f.jpg",
+    );
+  });
+
+  it("sem fotoUrl não renderiza imagem", async () => {
+    montar("gestor", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(document.querySelector(".athlete-head img")).toBeNull();
   });
 
   it("plano registrado mostra autor e data, sem usar a sugestão", async () => {

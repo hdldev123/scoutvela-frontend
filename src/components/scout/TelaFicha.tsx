@@ -1,3 +1,4 @@
+import { Avatar } from "./Avatar";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -392,6 +393,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
         </div>
       )}
       <div className="athlete-head">
+        {atleta.fotoUrl && <Avatar nome={atleta.nome} fotoUrl={atleta.fotoUrl} grande />}
         <div>
           <div className="eyebrow">
             Ficha individual{ficha.ciclo ? ` · ciclo de ${ficha.ciclo.nome}` : ""}
