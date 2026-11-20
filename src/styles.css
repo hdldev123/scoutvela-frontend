@@ -831,6 +831,8 @@
   }
   .table-scroll {
     overflow-x: auto;
+    position: relative;
+    max-width: 100%;
   }
   table.data {
     width: 100%;
@@ -3070,4 +3072,27 @@
   .perfil-senhas {
     grid-template-columns: 1fr;
   }
+}
+
+/* Correção de rolagem horizontal no celular (ficha e grades) */
+.grid-2 > *,
+.athlete-head > * {
+  min-width: 0;
+}
+.athlete-head h1 {
+  overflow-wrap: anywhere;
+}
+.athlete-head .facts {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.athlete-head .facts > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.panel table.data {
+  max-width: 100%;
+}
+.stack {
+  grid-template-columns: minmax(0, 1fr);
 }
