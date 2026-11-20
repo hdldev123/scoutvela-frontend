@@ -125,10 +125,40 @@ describe("TelaUsuarios", () => {
     montar();
     expect(screen.getByRole("heading", { level: 1, name: "Contas de acesso" })).toBeTruthy();
     expect(await screen.findByText("ana@cbvela.org")).toBeTruthy();
-    expect(screen.getByText("Convite pendente desde 03/11/2026")).toBeTruthy();
+    expect(screen.getByText("Convite enviado")).toBeTruthy();
+    expect(screen.getByText("em 03/11/2026")).toBeTruthy();
     expect(screen.getAllByText("Gestor CBVela").length).toBeGreaterThan(0);
     expect(screen.getByText("Inativa")).toBeTruthy();
-    expect(screen.getAllByText("Conta vinculada")).toHaveLength(2);
+    expect(screen.getAllByText("Vinculada")).toHaveLength(2);
+  });
+
+  it("mostra conta e situação em selos com o tom de cada estado", async () => {
+    usuarios.push(
+      usuario({ id: "u4", nome: "Sem Convite", email: "sc@cbvela.org", convidadoEm: null }),
+    );
+    montar();
+    await screen.findByText("ana@cbvela.org");
+    const classe = (texto: string) => screen.getAllByText(texto)[0]!.className;
+    expect(classe("Vinculada")).toContain("st-apto");
+    expect(classe("Convite enviado")).toContain("st-cond");
+    expect(classe("Sem convite")).toContain("st-alerta");
+    expect(classe("Ativa")).toContain("st-apto");
+    expect(classe("Inativa")).toContain("st-neutro");
+    const selos = Array.from(document.querySelectorAll(".pill.st-neutro")).map(
+      (e) => e.textContent,
+    );
+    expect(selos).toContain("Treinador");
+  });
+
+  it("os botões de ação ficam num grupo, e o da própria conta explica por que está desativado", async () => {
+    montar();
+    const reenviar = await screen.findByRole("button", {
+      name: "Reenviar convite para Ana Ribeiro",
+    });
+    expect(reenviar.closest(".acoes-grupo")).toBeTruthy();
+    expect(reenviar.className).toContain("sm");
+    const proprio = screen.getByRole("button", { name: "Desativar conta de Gil Gestor" });
+    expect(proprio.getAttribute("title")).toBe("Você não pode desativar a própria conta.");
   });
 
   it("conta de atleta: só ativos sem conta, inclusive quem não aceitou o termo", async () => {
@@ -156,6 +186,9 @@ describe("TelaUsuarios", () => {
       "Bruno LimaMG-T15ILCA 7Ana RibeiroBRA 1766AtivoAceitoSem conta",
     );
     expect(await linha("Carla Sem Termo")).toHaveTextContent("Pendente");
+    expect(within(await linha("Carla Sem Termo")).getByText("Pendente").className).toContain(
+      "st-cond",
+    );
     expect(await linha("Davi Inativo")).toHaveTextContent("—BRA 1766Inativo");
     expect(await linha("Eva Com Conta")).toHaveTextContent("Com conta");
     expect(GET).toHaveBeenCalledWith("/atletas", { params: { query: {} } });

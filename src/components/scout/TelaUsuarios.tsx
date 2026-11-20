@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
+import { EstadoVazio } from "./EstadoVazio";
 import { fmtData } from "./formato";
 import { useTreinadores } from "@/lib/api/cadastro";
 import { mensagemDeErro } from "@/lib/api/cliente";
@@ -104,7 +105,7 @@ function NovaConta() {
         <h2 id="ct-nova-t">Nova conta</h2>
       </div>
       <form className="stack" style={{ gap: 12 }} onSubmit={enviar}>
-        <div className="ct-form">
+        <div className={`ct-form${ehAtleta ? " com-atleta" : ""}`}>
           <label className="field" htmlFor={idNome}>
             Nome
             <input
@@ -163,6 +164,15 @@ function NovaConta() {
               </select>
             </label>
           )}
+          <div className="ct-form-acao">
+            <button
+              type="submit"
+              className="btn primary"
+              disabled={!nome.trim() || !email.trim() || (ehAtleta && !atletaId) || criar.isPending}
+            >
+              {criar.isPending ? "Criando…" : "Criar conta e enviar convite"}
+            </button>
+          </div>
         </div>
         {erro && (
           <div className="note" role="alert">
@@ -174,23 +184,22 @@ function NovaConta() {
             {resultado}
           </div>
         )}
-        <div className="btn-row">
-          <button
-            type="submit"
-            className="btn primary"
-            disabled={!nome.trim() || !email.trim() || (ehAtleta && !atletaId) || criar.isPending}
-          >
-            {criar.isPending ? "Criando…" : "Criar conta e enviar convite"}
-          </button>
-        </div>
       </form>
     </section>
   );
 }
 
-function situacaoConta(u: Usuario): string {
-  if (u.contaVinculada) return "Conta vinculada";
-  return u.convidadoEm ? `Convite pendente desde ${fmtData(u.convidadoEm)}` : "Sem convite";
+function SeloConta({ u }: { u: Usuario }) {
+  if (u.contaVinculada) return <span className="pill st-apto">Vinculada</span>;
+  if (u.convidadoEm) {
+    return (
+      <span className="ct-conta">
+        <span className="pill st-cond">Convite enviado</span>
+        <small className="ct-sub-txt">em {fmtData(u.convidadoEm)}</small>
+      </span>
+    );
+  }
+  return <span className="pill st-alerta">Sem convite</span>;
 }
 
 function ListaContas() {
@@ -249,19 +258,18 @@ function ListaContas() {
           {mensagemDeErro(usuarios.error)}
         </div>
       ) : usuarios.data.length === 0 ? (
-        <p className="muted">Nenhuma conta cadastrada.</p>
+        <EstadoVazio icone="users-three" titulo="Nenhuma conta cadastrada" />
       ) : (
         <div className="table-scroll" tabIndex={0}>
-          <table className="data">
+          <table className="data interativa ct-tabela">
             <thead>
               <tr>
                 <th>Nome</th>
-                <th>E-mail</th>
                 <th>Papel</th>
-                <th>Atleta</th>
+                <th className="ct-col-atleta">Atleta</th>
                 <th>Conta</th>
                 <th>Situação</th>
-                <th>
+                <th className="acoes">
                   <span className="ct-sr">Ações</span>
                 </th>
               </tr>
@@ -271,18 +279,28 @@ function ListaContas() {
                 const eu = me?.usuario.id === u.id;
                 return (
                   <tr key={u.id} className={u.ativo ? undefined : "ct-inativo"}>
-                    <td>{u.nome}</td>
-                    <td>{u.email}</td>
-                    <td>{PAPEIS[u.papel] ?? u.papel}</td>
-                    <td>{u.atleta?.nome ?? "—"}</td>
-                    <td>{situacaoConta(u)}</td>
-                    <td>{u.ativo ? "Ativa" : "Inativa"}</td>
-                    <td className="r">
-                      <div className="ct-acoes">
+                    <td className="ct-nome">
+                      <span className="ct-nome-txt">{u.nome}</span>
+                      <small className="ct-sub-txt">{u.email}</small>
+                    </td>
+                    <td className="nw">
+                      <span className="pill st-neutro">{PAPEIS[u.papel] ?? u.papel}</span>
+                    </td>
+                    <td className="nw ct-col-atleta">{u.atleta?.nome ?? "—"}</td>
+                    <td className="nw">
+                      <SeloConta u={u} />
+                    </td>
+                    <td className="nw">
+                      <span className={`pill ${u.ativo ? "st-apto" : "st-neutro"}`}>
+                        {u.ativo ? "Ativa" : "Inativa"}
+                      </span>
+                    </td>
+                    <td className="acoes">
+                      <div className="acoes-grupo">
                         {!u.contaVinculada && (
                           <button
                             type="button"
-                            className="btn"
+                            className="btn sm"
                             aria-label={`Reenviar convite para ${u.nome}`}
                             disabled={reenviar.isPending}
                             onClick={() => aoReenviar(u)}
@@ -292,7 +310,7 @@ function ListaContas() {
                         )}
                         <button
                           type="button"
-                          className="btn"
+                          className={`btn sm${u.ativo ? " perigo" : ""}`}
                           aria-label={`${u.ativo ? "Desativar" : "Ativar"} conta de ${u.nome}`}
                           disabled={alterar.isPending || (eu && u.ativo)}
                           title={
@@ -428,21 +446,25 @@ function AtletasDoPiloto() {
           {mensagemDeErro(atletas.error)}
         </div>
       ) : atletas.data.length === 0 ? (
-        <p className="muted">Nenhum atleta encontrado.</p>
+        <EstadoVazio
+          icone="magnifying-glass"
+          titulo="Nenhum atleta encontrado"
+          texto="Ajuste a busca ou os filtros."
+        />
       ) : (
         <div className="table-scroll" tabIndex={0}>
-          <table className="data">
+          <table className="data interativa">
             <thead>
               <tr>
                 <th>Atleta</th>
                 <th>VelaID</th>
                 <th>Classe</th>
-                <th>Treinador(a)</th>
-                <th>Nº de vela</th>
+                <th className="ct-col-treinador">Treinador(a)</th>
+                <th className="ct-col-vela">Nº de vela</th>
                 <th>Situação</th>
                 <th>Termo</th>
                 <th>Conta</th>
-                <th>
+                <th className="acoes">
                   <span className="ct-sr">Ação</span>
                 </th>
               </tr>
@@ -450,18 +472,30 @@ function AtletasDoPiloto() {
             <tbody>
               {atletas.data.map((a) => (
                 <tr key={a.id} className={a.ativo ? undefined : "ct-inativo"}>
-                  <td>{a.nome}</td>
-                  <td>{a.velaid}</td>
-                  <td>{a.classe.nome}</td>
-                  <td>{a.treinador?.nome ?? "—"}</td>
-                  <td>{a.numeroVela ?? "—"}</td>
-                  <td>{a.ativo ? "Ativo" : "Inativo"}</td>
-                  <td>{a.termoAceito ? "Aceito" : "Pendente"}</td>
-                  <td>{a.contaVinculada ? "Com conta" : "Sem conta"}</td>
-                  <td className="r">
+                  <td className="nw">{a.nome}</td>
+                  <td className="nw mono">{a.velaid}</td>
+                  <td className="nw">{a.classe.nome}</td>
+                  <td className="nw ct-col-treinador">{a.treinador?.nome ?? "—"}</td>
+                  <td className="nw ct-col-vela">{a.numeroVela ?? "—"}</td>
+                  <td className="nw">
+                    <span className={`pill ${a.ativo ? "st-apto" : "st-neutro"}`}>
+                      {a.ativo ? "Ativo" : "Inativo"}
+                    </span>
+                  </td>
+                  <td className="nw">
+                    <span className={`pill ${a.termoAceito ? "st-apto" : "st-cond"}`}>
+                      {a.termoAceito ? "Aceito" : "Pendente"}
+                    </span>
+                  </td>
+                  <td className="nw">
+                    <span className={`pill ${a.contaVinculada ? "st-apto" : "st-neutro"}`}>
+                      {a.contaVinculada ? "Com conta" : "Sem conta"}
+                    </span>
+                  </td>
+                  <td className="acoes">
                     <button
                       type="button"
-                      className="btn"
+                      className="btn sm ghost"
                       aria-label={`Editar ${a.nome}`}
                       onClick={() => setAlvo(a)}
                     >

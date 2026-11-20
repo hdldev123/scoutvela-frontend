@@ -4422,3 +4422,85 @@
     margin-left: 0;
   }
 }
+
+/* === Tela: Contas === */
+.scout .ct-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+.scout .ct-form.com-atleta {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.2fr) auto;
+}
+.scout .ct-form-acao {
+  align-self: end;
+}
+.scout .ct-form .field input,
+.scout .ct-form .field select {
+  min-height: 38px;
+}
+.scout .ct-form-acao .btn {
+  min-height: 38px;
+  white-space: nowrap;
+}
+.scout .ct-nome {
+  display: grid;
+  gap: 1px;
+  min-width: 10rem;
+}
+.scout .ct-nome-txt {
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.scout .ct-sub-txt {
+  color: var(--ink-2);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+.scout .ct-conta {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.scout .ct-filtros {
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  padding: 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.scout .ct-filtros .field input,
+.scout .ct-filtros .field select {
+  min-height: 36px;
+  background: var(--paper);
+}
+.scout table.data td.acoes .acoes-grupo {
+  justify-content: flex-end;
+}
+@media (max-width: 880px) {
+  .scout .ct-form,
+  .scout .ct-form.com-atleta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .scout .ct-form-acao {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 640px) {
+  .scout .ct-form,
+  .scout .ct-form.com-atleta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .scout .ct-form-acao .btn {
+    width: 100%;
+  }
+  .scout .ct-col-atleta,
+  .scout .ct-col-treinador,
+  .scout .ct-col-vela {
+    display: none;
+  }
+}
