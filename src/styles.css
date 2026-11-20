@@ -4521,6 +4521,10 @@
   gap: 16px;
   align-items: start;
 }
+/* Lado a lado na grade: o espaço vem do gap, não do .panel + .panel (que é para pilha). */
+.scout .par-duas > .panel + .panel {
+  margin-top: 0;
+}
 .scout .par-total {
   font-size: 0.95rem;
   padding: 4px 12px;
