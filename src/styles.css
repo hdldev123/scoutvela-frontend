@@ -3734,3 +3734,314 @@
   white-space: pre;
   overflow-wrap: normal;
 }
+
+/* === Tela: Ficha do atleta === */
+.scout .link-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  margin-left: -4px;
+  border-radius: 6px;
+  color: var(--ink-2);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.scout .link-voltar:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+.scout .link-voltar:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+
+/* Cabeçalho */
+.scout .athlete-head {
+  align-items: center;
+  gap: 16px 32px;
+}
+.scout .athlete-id {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1 1 24rem;
+}
+.scout .athlete-txt {
+  min-width: 0;
+}
+.scout .athlete-head h1 {
+  margin: 2px 0 0;
+}
+.scout .athlete-head .facts {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+.scout .athlete-head .facts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.scout .athlete-head .facts li > i {
+  color: var(--ink-2);
+  font-size: 1.05rem;
+}
+.scout .athlete-head .fato-rot {
+  color: var(--ink-2);
+}
+.scout .athlete-head .facts code {
+  font-family: var(--f-mono);
+  font-size: 0.85rem;
+  background: var(--surface-2);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+.scout .bigscore {
+  flex: 0 0 auto;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.scout .bigscore .val {
+  line-height: 1;
+}
+
+/* Colunas */
+.scout .ficha-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.scout .ficha-col {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.scout .ficha-grid .panel + .panel {
+  margin-top: 0;
+}
+@media (max-width: 880px) {
+  .scout .ficha-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .scout .ficha-col {
+    display: contents;
+  }
+  .scout .ordem-pilares {
+    order: 1;
+  }
+  .scout .ordem-gates {
+    order: 2;
+  }
+  .scout .ordem-classfit {
+    order: 3;
+  }
+  .scout .ordem-historico {
+    order: 4;
+  }
+  .scout .ordem-financeiro {
+    order: 5;
+  }
+  .scout .ordem-plano {
+    order: 6;
+  }
+  .scout .ordem-evidencias {
+    order: 7;
+  }
+}
+
+/* Cabeçalho de cartão: título à esquerda, ação ou info à direita */
+.scout .ficha-grid .panel-head {
+  align-items: center;
+  gap: 8px 10px;
+  margin-bottom: 8px;
+}
+.scout .ficha-grid .panel-head h2 {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.scout .panel-info {
+  font-size: 0.85rem;
+}
+.scout .panel-dica {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.scout .ficha-grid .panel-dica:last-child {
+  margin: 10px 0 0;
+}
+
+/* Pilares */
+.scout .pilar-btn {
+  grid-template-columns: minmax(0, 1fr) 140px 5.2rem 1rem;
+  border-radius: 6px;
+}
+.scout .pilar-btn:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 1px;
+}
+.scout .pilar-btn .nm {
+  display: block;
+  min-width: 0;
+}
+.scout .pilar-btn .nm .peso {
+  display: inline;
+  margin-left: 4px;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+.scout .pilar-btn .nm .nm-extra {
+  display: block;
+  margin: 2px 0 0;
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+.scout .pilar-btn .contrib {
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .scout .pilar-btn {
+    grid-template-columns: minmax(0, 1fr) auto 1rem;
+    grid-template-areas:
+      "nm nm nm"
+      "meter contrib chev";
+    gap: 8px 12px;
+    padding: 12px 2px;
+  }
+  .scout .pilar-btn .nm {
+    grid-area: nm;
+  }
+  .scout .pilar-btn .meter {
+    grid-area: meter;
+  }
+  .scout .pilar-btn .contrib {
+    grid-area: contrib;
+  }
+  .scout .pilar-btn .chev {
+    grid-area: chev;
+  }
+}
+
+/* Histórico competitivo */
+.scout .pts-total {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+.scout .pts-total b {
+  font-family: var(--f-mono);
+  font-size: 1.15rem;
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.scout .tabela-hist td.nw,
+.scout .tabela-hist th {
+  white-space: nowrap;
+}
+.scout .tabela-hist td:first-child {
+  font-family: var(--f-mono);
+  font-size: 0.85rem;
+}
+.scout .tabela-hist td {
+  vertical-align: middle;
+}
+.scout .tabela-hist td:nth-child(2) {
+  min-width: 9rem;
+}
+.scout .tabela-hist th,
+.scout .tabela-hist td {
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.scout .tabela-hist .sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+.scout .tabela-hist a.pill {
+  text-decoration: none;
+  gap: 4px;
+}
+.scout .tabela-hist a.pill:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+
+/* Sustentabilidade e plano */
+.scout .kv-fin,
+.scout .kv-plano {
+  grid-template-columns: minmax(7.5rem, max-content) minmax(0, 1fr);
+  gap: 8px 16px;
+  align-items: baseline;
+}
+.scout .kv-fin dt,
+.scout .kv-plano dt {
+  font-size: 0.85rem;
+}
+.scout .kv-plano dd {
+  overflow-wrap: anywhere;
+}
+.scout .tabela-fin td:not(:first-child),
+.scout .tabela-fin th:not(:first-child) {
+  white-space: nowrap;
+}
+.scout .tabela-fin td {
+  vertical-align: middle;
+}
+.scout .aviso-plano {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+.scout .aviso-plano .pill {
+  gap: 4px;
+}
+
+/* Gates e evidências */
+.scout .gate select {
+  min-width: 7.5rem;
+  min-height: 32px;
+}
+.scout .vazio-compacto .estado-vazio {
+  padding: 12px 8px;
+}
+.scout .vazio-compacto .estado-vazio-icone {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+
+@media (max-width: 640px) {
+  .scout .athlete-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .scout .athlete-id {
+    flex-basis: auto;
+  }
+  .scout .bigscore .val {
+    font-size: 2.8rem;
+  }
+}

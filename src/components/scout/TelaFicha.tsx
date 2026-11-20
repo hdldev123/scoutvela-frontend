@@ -17,6 +17,7 @@ import { StatusPill } from "./StatusPill";
 import { fmt0, fmt1, fmtData, rotuloCiclo } from "./formato";
 import { rotuloNivelHistorico } from "./niveis";
 import { textoDoStatus } from "./status-gate";
+import { seloApoio, seloAutonomia } from "./financeiro-util";
 import { ErroApi, mensagemDeErro } from "@/lib/api/cliente";
 import {
   useFicha,
@@ -211,14 +212,20 @@ function BlocoPilar({
         aria-controls={painel}
       >
         <span className="nm">
-          {pilar.nome}
-          <small>
-            {pilar.peso} pts
-            {pilar.preenchidos < pilar.total
-              ? ` · ${pilar.preenchidos} de ${pilar.total} indicadores`
-              : ""}
-            {maiorPerda ? " · maior perda de pontos" : ""}
-          </small>
+          <span className="nm-t">{pilar.nome}</span>{" "}
+          <small className="peso">{pilar.peso} pts</small>
+          {(pilar.preenchidos < pilar.total || maiorPerda) && (
+            <small className="nm-extra">
+              {[
+                pilar.preenchidos < pilar.total
+                  ? `${pilar.preenchidos} de ${pilar.total} indicadores`
+                  : null,
+                maiorPerda ? "maior perda de pontos" : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </small>
+          )}
         </span>
         <span className={`meter ${nota != null && nota < 3 ? "low" : ""}`}>
           <span style={{ width: `${nota == null ? 0 : (nota / 5) * 100}%` }} />
@@ -289,6 +296,10 @@ function LinhaGate({
   );
 }
 
+function SeloNivelFin({ selo }: { selo: ReturnType<typeof seloAutonomia> }) {
+  return <span className={`pill ${selo.classe}`}>{selo.rotulo}</span>;
+}
+
 function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
   if (!fin)
     return <div className="lock">Financeiro da campanha: visível só para o atleta e o gestor.</div>;
@@ -298,7 +309,7 @@ function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
     "patrocinioPrivado" in fin && fin.patrocinioPrivado ? PATROCINIO[fin.patrocinioPrivado] : "—";
   return (
     <>
-      <dl className="kv">
+      <dl className="kv kv-fin">
         <dt>Perfil de suporte</dt>
         <dd>
           <b>{SUPORTE[fin.perfilSuporte]}</b>
@@ -314,7 +325,7 @@ function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
       </dl>
       {completo ? (
         <div className="table-scroll" tabIndex={0} style={{ marginTop: 12 }}>
-          <table className="data">
+          <table className="data tabela-fin">
             <thead>
               <tr>
                 <th>Componente</th>
@@ -326,8 +337,12 @@ function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
               {fin.componentes.map((c) => (
                 <tr key={c.id}>
                   <td>{c.nome}</td>
-                  <td>{c.autonomia}</td>
-                  <td>{c.apoioCbvela}</td>
+                  <td>
+                    <SeloNivelFin selo={seloAutonomia(c.autonomia)} />
+                  </td>
+                  <td>
+                    <SeloNivelFin selo={seloApoio(c.apoioCbvela)} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -383,42 +398,64 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
     { rotulo: rotuloCiclo(ficha.ciclo?.nome ?? "Atual"), score: ficha.score },
   ];
 
+  const local = [
+    atleta.clube,
+    atleta.cidade && atleta.uf ? `${atleta.cidade}/${atleta.uf}` : (atleta.cidade ?? atleta.uf),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <div className="stack">
+    <div className="stack ficha">
       {papel !== "atleta" && (
         <div>
-          <Link to="/ranking" className="muted">
-            ← {papel === "treinador" ? "Meus atletas" : "Ranking"}
+          <Link to="/ranking" className="link-voltar">
+            <i className="ph ph-arrow-left" aria-hidden="true" />
+            {papel === "treinador" ? "Meus atletas" : "Ranking"}
           </Link>
         </div>
       )}
       <div className="athlete-head">
-        {atleta.fotoUrl && <Avatar nome={atleta.nome} fotoUrl={atleta.fotoUrl} grande />}
-        <div>
-          <div className="eyebrow">
-            Ficha individual{ficha.ciclo ? ` · ciclo de ${ficha.ciclo.nome}` : ""}
-          </div>
-          <h1>{atleta.nome}</h1>
-          <div className="facts">
-            {atleta.numeroVela && <span className="sail">{atleta.numeroVela}</span>}
-            <span>
-              <code>{atleta.velaid}</code> VelaID
-            </span>
-            <span>
-              {atleta.classe.nome} · {atleta.funcao}
-            </span>
-            <span>{atleta.idade} anos</span>
-            <span>
-              {[
-                atleta.clube,
-                atleta.cidade && atleta.uf
-                  ? `${atleta.cidade}/${atleta.uf}`
-                  : (atleta.cidade ?? atleta.uf),
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </span>
-            {ficha.contato?.treinador && <span>Treinador(a): {ficha.contato.treinador.nome}</span>}
+        <div className="athlete-id">
+          {atleta.fotoUrl && <Avatar nome={atleta.nome} fotoUrl={atleta.fotoUrl} grande />}
+          <div className="athlete-txt">
+            <div className="eyebrow">
+              Ficha individual{ficha.ciclo ? ` · ciclo de ${ficha.ciclo.nome}` : ""}
+            </div>
+            <h1>{atleta.nome}</h1>
+            <ul className="facts">
+              {atleta.numeroVela && (
+                <li>
+                  <span className="sail" title="Número de vela">
+                    {atleta.numeroVela}
+                  </span>
+                </li>
+              )}
+              <li>
+                <i className="ph ph-identification-card" aria-hidden="true" />
+                <span className="fato-rot">VelaID</span> <code>{atleta.velaid}</code>
+              </li>
+              <li>
+                <i className="ph ph-sailboat" aria-hidden="true" />
+                {atleta.classe.nome} · {atleta.funcao}
+              </li>
+              <li>
+                <i className="ph ph-cake" aria-hidden="true" />
+                {atleta.idade} anos
+              </li>
+              {local && (
+                <li>
+                  <i className="ph ph-map-pin" aria-hidden="true" />
+                  {local}
+                </li>
+              )}
+              {ficha.contato?.treinador && (
+                <li>
+                  <i className="ph ph-user" aria-hidden="true" />
+                  <span className="fato-rot">Treinador(a)</span> {ficha.contato.treinador.nome}
+                </li>
+              )}
+            </ul>
           </div>
         </div>
         <BigScore score={ficha.score} faixa={ficha.faixa} parcial={!ficha.completo}>
@@ -430,15 +467,26 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
           Aguardando aceite do termo: o atleta ainda não entra no ranking.
         </p>
       )}
-      <div className="grid-2">
-        <div className="stack">
-          <section className="panel">
+      <div className="ficha-grid">
+        <div className="ficha-col">
+          <section className="panel ordem-pilares">
             <div className="panel-head">
               <h2>Os 9 pilares</h2>
-              <span className="muted" style={{ fontSize: "0.85rem" }}>
-                Toque num pilar para ver por que a nota é essa
-              </span>
+              {papel === "atleta" && (
+                <button type="button" className="btn sm" onClick={() => setPedindoRevisao(true)}>
+                  Pedir revisão de uma nota
+                </button>
+              )}
+              {podeLancar && (
+                <Link to="/avaliar" search={{ atleta: atleta.id }} className="btn sm primary">
+                  Lançar avaliação
+                </Link>
+              )}
             </div>
+            <p className="panel-dica">
+              Toque num pilar para ver por que a nota é essa.
+              {papel === "atleta" ? " Pedir revisão é um direito previsto na LGPD (art. 20)." : ""}
+            </p>
             {pilares.map((p) => (
               <BlocoPilar
                 key={p.id}
@@ -449,48 +497,27 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 atletaId={ficha.atleta.id}
               />
             ))}
-            {papel === "atleta" && (
-              <div className="btn-row" style={{ marginTop: 12 }}>
-                <button type="button" className="btn" onClick={() => setPedindoRevisao(true)}>
-                  Pedir revisão de uma nota
-                </button>
-                <span className="muted" style={{ fontSize: "0.82rem" }}>
-                  Direito previsto na LGPD (art. 20)
-                </span>
-              </div>
-            )}
-            {(papel === "gestor" || papel === "treinador") && (
-              <div className="btn-row" style={{ marginTop: 12 }}>
-                <Link to="/avaliar" search={{ atleta: atleta.id }} className="btn primary">
-                  Lançar avaliação
-                </Link>
-              </div>
-            )}
           </section>
-          <section className="panel">
+          <section className="panel ordem-historico">
             <div className="panel-head">
               <h2>Histórico competitivo</h2>
-              <span className="num">
-                <b>{fmt0(ficha.pontosCbvela)}</b>{" "}
-                <span className="muted">pts no Ranking CBVela</span>
-              </span>
-            </div>
-            {podeLancar && (
-              <div className="btn-row" style={{ marginBottom: 10 }}>
-                <button type="button" className="btn" onClick={() => setLancandoResultado(true)}>
+              {podeLancar && (
+                <button type="button" className="btn sm" onClick={() => setLancandoResultado(true)}>
                   Lançar resultado internacional
                 </button>
-              </div>
-            )}
+              )}
+            </div>
+            <p className="pts-total">
+              <b>{fmt0(ficha.pontosCbvela)}</b> pts no Ranking CBVela
+            </p>
             <div className="table-scroll" tabIndex={0}>
-              <table className="data">
+              <table className="data tabela-hist">
                 <thead>
                   <tr>
                     <th>Data</th>
                     <th>Evento</th>
-                    <th>Nível</th>
                     <th className="r">Posição</th>
-                    <th className="r">Pts CBVela</th>
+                    <th className="r">Pts</th>
                     <th>Fonte</th>
                   </tr>
                 </thead>
@@ -499,27 +526,33 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                     const link = linkSeguro(r.linkOficial);
                     return (
                       <tr key={`${r.data}-${r.evento}-${i}`}>
-                        <td className="num">{fmtData(r.data)}</td>
-                        <td>{r.evento}</td>
-                        <td>{rotuloNivelHistorico(r.nivel)}</td>
-                        <td className="r">
+                        <td className="nw">{fmtData(r.data)}</td>
+                        <td>
+                          {r.evento}
+                          <small className="sub">{rotuloNivelHistorico(r.nivel)}</small>
+                        </td>
+                        <td className="r nw">
                           {r.posicao}º de {r.tamanhoFrota}
                         </td>
-                        <td className="r">{r.pontosCbvela == null ? "—" : fmt0(r.pontosCbvela)}</td>
-                        <td>
+                        <td className="r num">
+                          {r.pontosCbvela == null ? "—" : fmt0(r.pontosCbvela)}
+                        </td>
+                        <td className="nw">
                           {r.fonte === "ranking_cbvela" ? (
-                            <span className="src-tag">Ranking CBVela</span>
+                            <span className="pill st-info">Ranking CBVela</span>
                           ) : link ? (
                             <a
-                              className="src-tag man"
+                              className="pill st-neutro"
                               href={link}
                               target="_blank"
                               rel="noopener noreferrer"
+                              aria-label="Lançado + link oficial"
                             >
-                              Lançado + link oficial
+                              Lançado
+                              <i className="ph ph-arrow-square-out" aria-hidden="true" />
                             </a>
                           ) : (
-                            <span className="src-tag man">Lançado + link oficial</span>
+                            <span className="pill st-neutro">Lançado</span>
                           )}
                         </td>
                       </tr>
@@ -528,14 +561,22 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 </tbody>
               </table>
             </div>
-            <p className="muted" style={{ fontSize: "0.82rem", margin: "10px 0 0" }}>
+            <p className="panel-dica">
               Resultados nacionais chegam do Ranking CBVela pelo código VelaID. Internacionais são
               lançados com o link do resultado oficial.
             </p>
           </section>
+          {papel !== "ibvar" && (
+            <EvidenciasSecao
+              atletaId={atleta.id}
+              papel={papel}
+              indicadores={indicadoresEvidencia}
+              className="ordem-evidencias"
+            />
+          )}
         </div>
-        <div className="stack">
-          <section className="panel">
+        <div className="ficha-col">
+          <section className="panel ordem-gates">
             <div className="panel-head">
               <h2>Gates aos 18</h2>
               <StatusPill status={gates.statusFinal} ponto />
@@ -549,19 +590,17 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 aoAlterar={(status) => alterarGate.mutate({ gate: g.gate, status })}
               />
             ))}
-            <p className="muted" style={{ fontSize: "0.8rem", margin: "8px 0 0" }}>
+            <p className="panel-dica">
               Sugestão automática por regra provisória (P7).{" "}
               {papel === "gestor"
                 ? "O gestor confirma ou ajusta cada gate."
                 : "Quem decide é o gestor."}
             </p>
           </section>
-          <section className="panel">
+          <section className="panel ordem-classfit">
             <div className="panel-head">
               <h2>Class Fit</h2>
-              <span className="muted" style={{ fontSize: "0.85rem" }}>
-                {atleta.classe.nome}
-              </span>
+              <span className="muted panel-info">{atleta.classe.nome}</span>
             </div>
             {classFit ? (
               <>
@@ -573,7 +612,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                   classe={atleta.classe.nome}
                   status={g1?.sugestaoAutomatica ?? "condicional"}
                 />
-                <p className="muted" style={{ fontSize: "0.82rem", margin: "6px 0 0" }}>
+                <p className="panel-dica">
                   Faixa de peso de referência da classe (parâmetro da metodologia).
                   {classFit.alturaCm != null ? ` Altura: ${classFit.alturaCm} cm.` : ""}
                 </p>
@@ -584,25 +623,22 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               </div>
             )}
           </section>
-          <section className="panel">
+          <section className="panel ordem-financeiro">
             <div className="panel-head">
               <h2>Sustentabilidade da campanha</h2>
               {papel === "gestor" && (
-                <button type="button" className="btn" onClick={() => setEditandoFinanceiro(true)}>
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() => setEditandoFinanceiro(true)}
+                >
                   Atualizar financeiro
                 </button>
               )}
             </div>
             <BlocoFinanceiro fin={ficha.financeiro} />
           </section>
-          <PlanoIndividual ficha={ficha} papel={papel} />
-          {papel !== "ibvar" && (
-            <EvidenciasSecao
-              atletaId={atleta.id}
-              papel={papel}
-              indicadores={indicadoresEvidencia}
-            />
-          )}
+          <PlanoIndividual ficha={ficha} papel={papel} className="ordem-plano" />
         </div>
       </div>
       {lancandoResultado && (

@@ -1,7 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { CampoArquivo } from "./CampoArquivo";
 import { Dialogo } from "./Dialogo";
+import { EstadoVazio } from "./EstadoVazio";
 import { fmtData } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import {
@@ -102,15 +104,14 @@ function AnexarDialogo({
         <p className="muted ficha-dica">
           PDF, JPG ou PNG, até 5 MB. O arquivo fica em área privada.
         </p>
-        <label className="field" htmlFor="evid-arquivo">
-          Arquivo
-          <input
-            id="evid-arquivo"
-            type="file"
-            accept={ACEITA_ARQUIVO}
-            onChange={(e) => escolher(e.target.files?.[0] ?? null)}
-          />
-        </label>
+        <CampoArquivo
+          id="evid-arquivo"
+          rotulo="Arquivo"
+          accept={ACEITA_ARQUIVO}
+          arquivo={arquivo}
+          dica="Nenhum arquivo escolhido"
+          aoEscolher={(a) => escolher(a ?? null)}
+        />
         <label className="field" htmlFor="evid-indicador">
           Indicador (opcional)
           <select
@@ -149,10 +150,12 @@ export function EvidenciasSecao({
   atletaId,
   papel,
   indicadores,
+  className = "",
 }: {
   atletaId: string;
   papel: string;
   indicadores: OpcaoIndicador[];
+  className?: string;
 }) {
   const [anexando, setAnexando] = useState(false);
   const { data, isPending, error } = useEvidencias(atletaId);
@@ -160,11 +163,11 @@ export function EvidenciasSecao({
   const nomeDe = (id: string | null) => indicadores.find((i) => i.id === id)?.nome ?? "Geral";
 
   return (
-    <section className="panel">
+    <section className={`panel ${className}`.trim()}>
       <div className="panel-head">
         <h2>Evidências anexadas</h2>
         {podeAnexar && (
-          <button type="button" className="btn" onClick={() => setAnexando(true)}>
+          <button type="button" className="btn sm" onClick={() => setAnexando(true)}>
             Anexar arquivo
           </button>
         )}
@@ -175,7 +178,11 @@ export function EvidenciasSecao({
           {mensagemDeErro(error)}
         </p>
       )}
-      {data && data.anexos.length === 0 && <p className="muted">Nenhuma evidência anexada.</p>}
+      {data && data.anexos.length === 0 && (
+        <div className="vazio-compacto">
+          <EstadoVazio icone="paperclip" titulo="Nenhuma evidência anexada" />
+        </div>
+      )}
       {data && data.anexos.length > 0 && (
         <ul className="ficha-evidencias">
           {data.anexos.map((a) => (
@@ -190,6 +197,7 @@ export function EvidenciasSecao({
                 id={a.id}
                 nomeArquivo={a.nomeArquivo}
                 rotulo={`Abrir ${a.nomeArquivo}`}
+                className="btn sm"
               >
                 Abrir
               </AbrirEvidencia>

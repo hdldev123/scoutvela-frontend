@@ -98,7 +98,15 @@ function PlanoDialogo({
  * Plano individual: mostra o plano registrado por uma pessoa ou, na falta dele, a sugestão da API.
  * Não calcula nada no navegador. Some quando a API não devolve plano nem sugestão (IBVAR).
  */
-export function PlanoIndividual({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
+export function PlanoIndividual({
+  ficha,
+  papel,
+  className = "",
+}: {
+  ficha: FichaAtleta;
+  papel: string;
+  className?: string;
+}) {
   const [editando, setEditando] = useState(false);
   const { plano, sugestaoPlano } = ficha;
   const podeRegistrar = papel === "gestor" || papel === "treinador";
@@ -106,23 +114,31 @@ export function PlanoIndividual({ ficha, papel }: { ficha: FichaAtleta; papel: s
 
   const exibido = plano ?? sugestaoPlano;
   return (
-    <section className="panel">
+    <section className={`panel ${className}`.trim()}>
       <div className="panel-head">
         <h2>Plano individual</h2>
         {podeRegistrar && (
-          <button type="button" className="btn" onClick={() => setEditando(true)}>
+          <button type="button" className="btn sm" onClick={() => setEditando(true)}>
             Registrar plano
           </button>
         )}
       </div>
       {exibido ? (
         <>
-          <p className="muted ficha-dica">
-            {plano
-              ? `Registrado por ${plano.registradoPor.nome} em ${fmtData(plano.registradoEm)}`
-              : "Sugestão automática, ainda não registrada"}
-          </p>
-          <dl className="kv">
+          {plano ? (
+            <p className="panel-dica">
+              Registrado por {plano.registradoPor.nome} em {fmtData(plano.registradoEm)}
+            </p>
+          ) : (
+            <p className="aviso-plano">
+              <span className="pill st-info">
+                <i className="ph ph-lightbulb" aria-hidden="true" />
+                Sugestão automática
+              </span>
+              <span>Ainda não registrada por uma pessoa.</span>
+            </p>
+          )}
+          <dl className="kv kv-plano">
             <dt>Forças</dt>
             <dd>{exibido.forcas}</dd>
             <dt>Lacunas</dt>

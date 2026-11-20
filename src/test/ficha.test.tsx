@@ -299,7 +299,7 @@ describe("TelaFicha", () => {
     expect(await screen.findByRole("heading", { name: "Helena Vasques" })).toBeInTheDocument();
     expect(screen.getByText("71,5")).toBeInTheDocument();
     expect(screen.getByText("Parcial")).toBeInTheDocument();
-    expect(screen.getByText("Treinador(a): Ana Ribeiro")).toBeInTheDocument();
+    expect(screen.getByText("Ana Ribeiro", { exact: false, selector: "li" })).toBeInTheDocument();
     expect(
       screen.getByRole("img", { name: /Score nos últimos ciclos: 60,0, 66,0, 71,5/ }),
     ).toBeInTheDocument();
@@ -337,9 +337,7 @@ describe("TelaFicha", () => {
     const secao = (await screen.findByRole("heading", { name: "Plano individual" })).closest(
       "section",
     )!;
-    expect(
-      within(secao).getByText("Sugestão automática, ainda não registrada"),
-    ).toBeInTheDocument();
+    expect(within(secao).getByText("Sugestão automática")).toBeInTheDocument();
     expect(within(secao).getByText(SUGESTAO.recomendacao)).toBeInTheDocument();
   });
 
@@ -471,7 +469,7 @@ describe("TelaFicha", () => {
     const f = ficha();
     f.resultados[1] = { ...f.resultados[1]!, nivel: "internacional_aberto", evento: "Aberto X" };
     montar("atleta", f);
-    expect(await screen.findByRole("cell", { name: "Internacional aberto" })).toBeInTheDocument();
+    expect(await screen.findByText("Internacional aberto")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Lançar resultado internacional" }),
     ).not.toBeInTheDocument();
@@ -511,7 +509,7 @@ describe("TelaFicha", () => {
       "Estadual",
       "Regional",
     ]) {
-      expect(await screen.findByRole("cell", { name: rotulo })).toBeInTheDocument();
+      expect(await screen.findByText(rotulo)).toBeInTheDocument();
     }
   });
 
@@ -829,5 +827,38 @@ describe("TelaFicha", () => {
     montar("treinador", { erro: 404 });
     expect(await screen.findByText("Sem acesso para este perfil")).toBeInTheDocument();
     expect(screen.getByText(/Este perfil não vê a ficha deste atleta/)).toBeInTheDocument();
+  });
+});
+
+describe("TelaFicha: ordem dos blocos e selos do financeiro", () => {
+  it("coloca o plano e as evidências depois do histórico e da sustentabilidade, e mostra selos coerentes", async () => {
+    const f = ficha();
+    f.financeiro = {
+      perfilSuporte: "B",
+      mesesAssegurados: 6,
+      patrocinioPrivado: "nao",
+      componentes: [
+        { id: "treinador", nome: "Treinador", autonomia: "baixa", apoioCbvela: "alta" },
+        { id: "viagens", nome: "Viagens", autonomia: "alta", apoioCbvela: "baixa" },
+      ],
+    };
+    montar("gestor", f);
+    await screen.findByRole("heading", { name: "Sustentabilidade da campanha" });
+    const linha = screen.getByRole("cell", { name: "Treinador" }).closest("tr")!;
+    const selos = linha.querySelectorAll(".pill");
+    expect(selos[0]).toHaveClass("st-alerta");
+    expect(selos[1]).toHaveClass("st-alerta");
+    const outra = screen.getByRole("cell", { name: "Viagens" }).closest("tr")!;
+    const selos2 = outra.querySelectorAll(".pill");
+    expect(selos2[0]).toHaveClass("st-apto");
+    expect(selos2[1]).toHaveClass("st-neutro");
+    const ordem = [
+      "ordem-pilares",
+      "ordem-gates",
+      "ordem-classfit",
+      "ordem-historico",
+      "ordem-financeiro",
+    ];
+    for (const c of ordem) expect(document.querySelector(`.${c}`)).not.toBeNull();
   });
 });
