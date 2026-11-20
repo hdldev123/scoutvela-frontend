@@ -54,10 +54,12 @@ O login tenta, nesta ordem: `VITE_LOGIN_VIDEO_URL`; o arquivo `src/assets/login-
 | `test`          | Vitest (uma execução)                                                           |
 | `e2e`           | Playwright                                                                      |
 | `format`        | Prettier                                                                        |
-| `api:tipos`     | regenera `src/lib/api/schema.d.ts` a partir de `../scoutvela-backend/openapi.yaml`      |
+| `api:tipos`     | regenera `src/lib/api/schema.d.ts` a partir do `openapi.yaml` do back           |
 | `api:verificar` | falha se `schema.d.ts` diferir do contrato; aceita `-- caminho/do/openapi.yaml` |
 
-O CI (`.github/workflows/ci.yml`) roda tipos, lint, testes, build e `bun audit`. Ele não roda `api:verificar`, porque o contrato está em outro repositório; rode localmente antes do PR.
+O back é localizado por `scripts/caminho-back.mjs`, nesta ordem: variável `VELA_BACK_DIR`, `../vela-back`, `../scoutvela-backend`. Vale para `api:tipos`, `api:verificar` e para o E2E.
+
+O CI (`.github/workflows/ci.yml`) tem dois jobs. `verificar` roda tipos, lint, testes, build e `bun audit`. `e2e` baixa o `scoutvela-backend` (a mesma branch do PR, ou a base, ou `staging`), roda `api:verificar` e o E2E. Dispara para `main`, `staging` e `release-*`.
 
 ## Deploy na Vercel
 

@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "api:tipos": "openapi-typescript ../scoutvela-backend/openapi.yaml -o src/lib/api/schema.d.ts",
+    "api:tipos": "node scripts/api-tipos.mjs",
     "typecheck": "tsc --noEmit",
     "api:verificar": "node scripts/api-verificar.mjs"
   },
