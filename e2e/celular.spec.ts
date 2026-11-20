@@ -1,7 +1,16 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { entrar, CONTAS } from "./apoio";
 
-test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+const LARGURA = 390;
+
+// Com isMobile o Chrome alarga a janela de layout quando o conteúdo estoura, e innerWidth
+// cresce junto. Por isso a comparação é sempre com o valor fixo, nunca com innerWidth.
+test.use({ viewport: { width: LARGURA, height: 844 }, hasTouch: true, isMobile: true });
+
+async function semRolagemHorizontal(page: Page, rotulo: string) {
+  const doc = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(doc, rotulo).toBeLessThanOrEqual(LARGURA);
+}
 
 const TELAS = {
   gestor: [
@@ -27,17 +36,37 @@ for (const [conta, rotas] of Object.entries(TELAS)) {
       await page.goto(`/${rota}`);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await page.waitForLoadState("networkidle");
-      const largura = await page.evaluate(() => ({
-        doc: document.documentElement.scrollWidth,
-        vis: window.innerWidth,
-      }));
-      expect(largura.doc, `/${rota}`).toBeLessThanOrEqual(largura.vis);
+      await semRolagemHorizontal(page, `/${rota}`);
       if (process.env.E2E_CAPTURAS) {
         await page.screenshot({ path: info.outputPath(`${conta}-${rota}.png`), fullPage: true });
       }
     }
   });
 }
+
+test("gestor: ficha do atleta sem rolagem horizontal a 390 px", async ({ page }) => {
+  await entrar(page, "gestor");
+  await page.goto("/ranking");
+  await page.waitForLoadState("networkidle");
+  await page.locator("a.rank-row").first().click();
+  await expect(page).toHaveURL(/\/atletas\//);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  await semRolagemHorizontal(page, "ficha (gestor)");
+});
+
+test("atleta: Minha ficha sem rolagem horizontal a 390 px", async ({ page }) => {
+  await entrar(page, "atleta");
+  await page.getByRole("button", { name: /menu/i }).first().click();
+  await page
+    .getByRole("navigation", { name: "Telas" })
+    .getByRole("link", { name: "Minha ficha", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/atletas\//);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  await semRolagemHorizontal(page, "ficha (atleta)");
+});
 
 test("gaveta abre pelo botão e o menu leva à tela", async ({ page }) => {
   await entrar(page, "gestor");
