@@ -4850,3 +4850,21 @@
     flex: none;
   }
 }
+
+/* ================= Sobreposições em portal (filhas diretas do body) =================
+   Busca e diálogos saem de `aside.side` e de qualquer contexto de empilhamento. Levam a classe
+   `scout` para continuar herdando os estilos `.scout …` (painel, botão, campo, fonte), e aqui
+   neutralizamos o que `.scout` faz como casca da página (grade de 240 px, fundo, altura). */
+.scout.cmdk-overlay,
+.scout.dialogo-overlay {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  background-image: none;
+}
+.scout.cmdk-overlay {
+  background-color: oklch(0.208 0.042 265.755 / 25%);
+}
+.scout.dialogo-overlay {
+  background-color: oklch(0.208 0.042 265.755 / 35%);
+}

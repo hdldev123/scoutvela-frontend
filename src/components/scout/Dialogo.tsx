@@ -51,7 +51,7 @@ export function Dialogo({ titulo, aoFechar, children }: DialogoProps) {
   // Portal no body: o diálogo não depende do contexto de empilhamento de quem o renderiza.
   if (typeof document === "undefined") return null;
   return createPortal(
-    <div className="dialogo-overlay" onClick={() => aoFechar()}>
+    <div className="dialogo-overlay scout" onClick={() => aoFechar()}>
       <div
         ref={caixa}
         className="dialogo panel"

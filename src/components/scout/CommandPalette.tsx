@@ -46,7 +46,7 @@ export function CommandPalette({ itens, aoSelecionar }: CommandPaletteProps) {
       {open &&
         typeof document !== "undefined" &&
         createPortal(
-          <div className="cmdk-overlay" onClick={() => setOpen(false)}>
+          <div className="cmdk-overlay scout" onClick={() => setOpen(false)}>
             <Command
               className="cmdk"
               label="Central de comando"
