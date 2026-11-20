@@ -4849,7 +4849,7 @@
     display: contents;
   }
   .scout .rank-row .who-txt {
-    grid-template-columns: minmax(0, max-content) auto;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "nome selo"
       "meta meta";
@@ -4998,7 +4998,7 @@
   .scout .rank-row .who-txt {
     flex: 1 1 0;
     min-width: 0;
-    grid-template-columns: minmax(0, max-content) auto;
+    grid-template-columns: minmax(0, 1fr);
   }
   .scout .rank-row .who .meta-txt {
     overflow: hidden;
