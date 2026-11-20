@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import {
@@ -34,11 +34,29 @@ function Erro({ texto }: { texto: string }) {
   ) : null;
 }
 
-function Linha({ rotulo, valor }: { rotulo: string; valor: string | null | undefined }) {
+type Tom = "ok" | "atencao" | "neutro";
+const CLASSE_TOM: Record<Tom, string> = { ok: "st-apto", atencao: "st-cond", neutro: "st-neutro" };
+
+function Selo({ tom, children }: { tom: Tom; children: ReactNode }) {
+  return <span className={`pill ${CLASSE_TOM[tom]}`}>{children}</span>;
+}
+
+/** Bloco com título discreto e um cartão de linhas separadas por fio. */
+function Secao({ id, titulo, children }: { id: string; titulo: string; children: ReactNode }) {
   return (
-    <div className="perfil-linha">
+    <section className="perfil-secao" aria-labelledby={id}>
+      <h3 id={id}>{titulo}</h3>
+      <div className="perfil-cartao">{children}</div>
+    </section>
+  );
+}
+
+/** Linha só de leitura (rótulo à esquerda, valor à direita). Use dentro de <dl>. */
+function Linha({ rotulo, valor }: { rotulo: string; valor: ReactNode }) {
+  return (
+    <div className="perfil-item">
       <dt>{rotulo}</dt>
-      <dd>{valor || "—"}</dd>
+      <dd>{valor === null || valor === undefined || valor === "" ? "—" : valor}</dd>
     </div>
   );
 }
@@ -49,7 +67,9 @@ interface Previa {
   url: string;
 }
 
-function SecaoFoto({ perfil }: { perfil: Perfil }) {
+/** Topo do modal: foto (ou iniciais), nome, papel e e-mail, com as ações da foto. */
+function Cabecalho({ perfil }: { perfil: Perfil }) {
+  const entrada = useRef<HTMLInputElement>(null);
   const [previa, setPrevia] = useState<Previa | null>(null);
   const [erro, setErro] = useState("");
   const enviar = useEnviarFoto();
@@ -71,84 +91,106 @@ function SecaoFoto({ perfil }: { perfil: Perfil }) {
     }
   }
 
+  function salvarFoto() {
+    if (!previa) return;
+    enviar.mutate(
+      { tipoMime: previa.tipoMime, conteudoBase64: previa.conteudoBase64 },
+      {
+        onSuccess: () => {
+          setPrevia(null);
+          toast("Foto atualizada");
+        },
+        onError: (e) => setErro(mensagemDeErro(e, "Não foi possível enviar a foto.")),
+      },
+    );
+  }
+
+  function removerFoto() {
+    setErro("");
+    remover.mutate(undefined, {
+      onSuccess: () => toast("Foto removida"),
+      onError: (e) => setErro(mensagemDeErro(e, "Não foi possível remover a foto.")),
+    });
+  }
+
   return (
-    <section className="stack" style={{ gap: 8 }} aria-labelledby="perfil-foto">
-      <h3 id="perfil-foto">Foto</h3>
-      <div className="perfil-foto">
+    <div className="perfil-cabecalho">
+      <div className={previa ? "perfil-foto perfil-foto-previa" : "perfil-foto"}>
         <Avatar nome={perfil.nome} fotoUrl={previa?.url ?? perfil.fotoUrl} grande />
-        <div className="stack" style={{ gap: 6 }}>
-          <label className="field" htmlFor="perfil-arquivo">
-            Escolher foto
-            <input
-              id="perfil-arquivo"
-              type="file"
-              accept="image/jpeg,image/png"
-              onChange={(e) => {
-                void escolher(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
-          </label>
-          {previa && (
-            <div className="row" style={{ gap: 6 }}>
+      </div>
+      <div className="perfil-identidade">
+        <p className="perfil-nome">{perfil.nome}</p>
+        <p className="perfil-sub">
+          <span className="pill st-neutro">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</span>
+        </p>
+        <input
+          ref={entrada}
+          id="perfil-arquivo"
+          className="sr-only"
+          type="file"
+          accept="image/jpeg,image/png"
+          aria-label="Escolher foto"
+          tabIndex={-1}
+          onChange={(e) => {
+            void escolher(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+        <div className="perfil-acoes">
+          {previa ? (
+            <>
               <button
                 type="button"
                 className="btn primary"
                 disabled={enviar.isPending}
-                onClick={() =>
-                  enviar.mutate(
-                    { tipoMime: previa.tipoMime, conteudoBase64: previa.conteudoBase64 },
-                    {
-                      onSuccess: () => {
-                        setPrevia(null);
-                        toast("Foto atualizada");
-                      },
-                      onError: (e) => setErro(mensagemDeErro(e, "Não foi possível enviar a foto.")),
-                    },
-                  )
-                }
+                onClick={salvarFoto}
               >
-                Salvar foto
+                {enviar.isPending ? "Enviando…" : "Salvar foto"}
               </button>
               <button type="button" className="btn" onClick={() => setPrevia(null)}>
                 Cancelar
               </button>
-            </div>
-          )}
-          {perfil.fotoUrl && !previa && (
-            <div>
-              <button
-                type="button"
-                className="btn"
-                disabled={remover.isPending}
-                onClick={() =>
-                  remover.mutate(undefined, {
-                    onSuccess: () => toast("Foto removida"),
-                    onError: (e) => setErro(mensagemDeErro(e, "Não foi possível remover a foto.")),
-                  })
-                }
-              >
-                Remover foto
+            </>
+          ) : (
+            <>
+              <button type="button" className="btn" onClick={() => entrada.current?.click()}>
+                <i className="ph ph-camera" aria-hidden="true" />{" "}
+                {perfil.fotoUrl ? "Trocar foto" : "Enviar foto"}
               </button>
-            </div>
+              {perfil.fotoUrl && (
+                <button
+                  type="button"
+                  className="btn btn-discreto"
+                  disabled={remover.isPending}
+                  onClick={removerFoto}
+                >
+                  Remover foto
+                </button>
+              )}
+            </>
           )}
         </div>
+        <p className="perfil-nota">
+          {previa
+            ? "Pré-visualização do recorte quadrado. Salve para aplicar."
+            : perfil.atleta
+              ? "Opcional. JPG ou PNG, até 2 MB. Visível para você, a gestão técnica e seu treinador. O IBVAR não vê."
+              : "Opcional. JPG ou PNG, até 2 MB. Aparece no seu menu lateral."}
+        </p>
+        <Erro texto={erro} />
       </div>
-      <p className="muted" style={{ fontSize: 12 }}>
-        A foto é opcional (JPG ou PNG, até 2 MB, recortada em quadrado). Ela aparece para você, para
-        a gestão técnica da CBVela e, no caso de atletas, para o treinador do atleta. O IBVAR não a
-        vê.
-      </p>
-      <Erro texto={erro} />
-    </section>
+    </div>
   );
 }
 
-function SecaoEdicao({ perfil }: { perfil: Perfil }) {
+/** Campo editável da conta: nome (gestor e treinador) ou e-mail de contato (atleta). */
+function CampoEditavel({ perfil }: { perfil: Perfil }) {
   const atleta = perfil.atleta;
   const salvar = useSalvarPerfil();
-  const [valor, setValor] = useState(atleta ? (atleta.emailContato ?? "") : perfil.nome);
+  const inicial = atleta ? (atleta.emailContato ?? "") : perfil.nome;
+  const [valor, setValor] = useState(inicial);
   const [erro, setErro] = useState("");
+  const alterado = valor.trim() !== inicial.trim();
 
   function submeter(e: FormEvent) {
     e.preventDefault();
@@ -158,33 +200,37 @@ function SecaoEdicao({ perfil }: { perfil: Perfil }) {
     }
     setErro("");
     salvar.mutate(atleta ? { emailContato: texto === "" ? null : texto } : { nome: texto }, {
-      onSuccess: () => toast("Perfil atualizado"),
+      onSuccess: () => toast(atleta ? "E-mail de contato atualizado" : "Nome atualizado"),
       onError: (err) => setErro(mensagemDeErro(err, "Não foi possível salvar o perfil.")),
     });
   }
 
   return (
-    <form className="stack" style={{ gap: 8 }} onSubmit={submeter} noValidate>
-      <label className="field" htmlFor="perfil-editavel">
-        {atleta ? "E-mail de contato" : "Nome"}
+    <form className="perfil-item perfil-item-form" onSubmit={submeter} noValidate>
+      <label htmlFor="perfil-editavel">{atleta ? "E-mail de contato" : "Nome"}</label>
+      <div className="perfil-inline">
         <input
           id="perfil-editavel"
           type={atleta ? "email" : "text"}
+          autoComplete={atleta ? "email" : "name"}
           value={valor}
           onChange={(e) => setValor(e.target.value)}
         />
-      </label>
-      <Erro texto={erro} />
-      <div>
-        <button type="submit" className="btn primary" disabled={salvar.isPending}>
-          Salvar
+        <button type="submit" className="btn primary" disabled={!alterado || salvar.isPending}>
+          {salvar.isPending ? "Salvando…" : "Salvar"}
         </button>
       </div>
+      {atleta && (
+        <p className="perfil-desc">
+          Usado pela CBVela para falar com você. O e-mail de login não muda.
+        </p>
+      )}
+      <Erro texto={erro} />
     </form>
   );
 }
 
-function SecaoCorrecao() {
+function PedidoCorrecao() {
   const criar = useCriarPedidoTitular();
   const [aberto, setAberto] = useState(false);
   const [descricao, setDescricao] = useState("Corrigir no meu cadastro: ");
@@ -192,9 +238,12 @@ function SecaoCorrecao() {
 
   if (!aberto) {
     return (
-      <div>
+      <div className="perfil-item">
+        <p className="perfil-desc">
+          Esses dados vêm do VelaID e não são editados aqui. Algo errado?
+        </p>
         <button type="button" className="btn" onClick={() => setAberto(true)}>
-          Pedir correção dos dados do VelaID
+          Pedir correção
         </button>
       </div>
     );
@@ -220,20 +269,18 @@ function SecaoCorrecao() {
   }
 
   return (
-    <form className="stack" style={{ gap: 8 }} onSubmit={submeter} noValidate>
-      <label className="field" htmlFor="perfil-correcao">
-        O que precisa ser corrigido?
-        <textarea
-          id="perfil-correcao"
-          rows={3}
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-        />
-      </label>
+    <form className="perfil-item perfil-item-form" onSubmit={submeter} noValidate>
+      <label htmlFor="perfil-correcao">O que precisa ser corrigido?</label>
+      <textarea
+        id="perfil-correcao"
+        rows={3}
+        value={descricao}
+        onChange={(e) => setDescricao(e.target.value)}
+      />
       <Erro texto={erro} />
-      <div className="row" style={{ gap: 6 }}>
+      <div className="perfil-acoes">
         <button type="submit" className="btn primary" disabled={criar.isPending}>
-          Enviar pedido
+          {criar.isPending ? "Enviando…" : "Enviar pedido"}
         </button>
         <button type="button" className="btn" onClick={() => setAberto(false)}>
           Cancelar
@@ -243,14 +290,74 @@ function SecaoCorrecao() {
   );
 }
 
-function SecaoSenha() {
+/** Verificação em duas etapas: diz se há app autenticador cadastrado e se a sessão passou por ele. */
+function ItemMfa({ mfaAtivo, aoFechar }: { mfaAtivo: boolean; aoFechar: () => void }) {
+  const fatores = useQuery({
+    queryKey: ["mfa-fatores"],
+    queryFn: async () => {
+      const { data, error } = await getSupabase().auth.mfa.listFactors();
+      if (error) throw error;
+      return (data?.totp?.length ?? 0) > 0;
+    },
+    retry: false,
+  });
+
+  let selo: ReactNode;
+  let desc: string;
+  let acao: string | null = null;
+  if (fatores.isPending) {
+    selo = <Selo tom="neutro">Carregando…</Selo>;
+    desc = "Consultando o app autenticador.";
+  } else if (fatores.isError) {
+    selo = mfaAtivo ? (
+      <Selo tom="ok">Ativa nesta sessão</Selo>
+    ) : (
+      <Selo tom="neutro">Não verificada nesta sessão</Selo>
+    );
+    desc = "Não foi possível consultar o app autenticador agora.";
+  } else if (!fatores.data) {
+    selo = <Selo tom="atencao">Não cadastrada</Selo>;
+    desc = "Proteja a conta com um código do app autenticador, além da senha.";
+    acao = "Configurar";
+  } else if (mfaAtivo) {
+    selo = <Selo tom="ok">Ativa</Selo>;
+    desc = "App autenticador cadastrado e verificado nesta sessão.";
+  } else {
+    selo = <Selo tom="atencao">Cadastrada</Selo>;
+    desc = "App autenticador cadastrado, mas esta sessão ainda não passou por ele.";
+    acao = "Verificar agora";
+  }
+
+  return (
+    <div className="perfil-item">
+      <div className="perfil-item-texto">
+        <span className="perfil-rotulo">Verificação em duas etapas</span>
+        <span className="perfil-desc">{desc}</span>
+      </div>
+      <div className="perfil-item-lado">
+        {selo}
+        {acao && (
+          <Link to="/verificacao" className="btn" onClick={aoFechar}>
+            {acao}
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ItemSenha() {
   const [aberto, setAberto] = useState(false);
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
 
   if (!aberto) {
     return (
-      <div>
+      <div className="perfil-item">
+        <div className="perfil-item-texto">
+          <span className="perfil-rotulo">Senha</span>
+          <span className="perfil-desc">Use ao menos {SENHA_MINIMA} caracteres.</span>
+        </div>
         <button type="button" className="btn" onClick={() => setAberto(true)}>
           Trocar senha
         </button>
@@ -276,19 +383,27 @@ function SecaoSenha() {
   }
 
   return (
-    <form className="stack" style={{ gap: 8 }} onSubmit={(e) => void submeter(e)} noValidate>
-      <label className="field" htmlFor="perfil-senha">
-        Nova senha
-        <input id="perfil-senha" name="senha" type="password" autoComplete="new-password" />
-      </label>
-      <label className="field" htmlFor="perfil-senha2">
-        Confirmar nova senha
-        <input id="perfil-senha2" name="confirmacao" type="password" autoComplete="new-password" />
-      </label>
+    <form className="perfil-item perfil-item-form" onSubmit={(e) => void submeter(e)} noValidate>
+      <span className="perfil-rotulo">Trocar senha</span>
+      <div className="perfil-senhas">
+        <label className="field" htmlFor="perfil-senha">
+          Nova senha
+          <input id="perfil-senha" name="senha" type="password" autoComplete="new-password" />
+        </label>
+        <label className="field" htmlFor="perfil-senha2">
+          Confirmar nova senha
+          <input
+            id="perfil-senha2"
+            name="confirmacao"
+            type="password"
+            autoComplete="new-password"
+          />
+        </label>
+      </div>
       <Erro texto={erro} />
-      <div className="row" style={{ gap: 6 }}>
+      <div className="perfil-acoes">
         <button type="submit" className="btn primary" disabled={enviando}>
-          Salvar senha
+          {enviando ? "Salvando…" : "Salvar senha"}
         </button>
         <button type="button" className="btn" onClick={() => setAberto(false)}>
           Cancelar
@@ -298,85 +413,80 @@ function SecaoSenha() {
   );
 }
 
-/** Linha da verificação em duas etapas: diz se há app autenticador cadastrado, além do estado da sessão. */
-function LinhaMfa({ mfaAtivo }: { mfaAtivo: boolean }) {
-  const fatores = useQuery({
-    queryKey: ["mfa-fatores"],
-    queryFn: async () => {
-      const { data, error } = await getSupabase().auth.mfa.listFactors();
-      if (error) throw error;
-      return (data?.totp?.length ?? 0) > 0;
-    },
-    retry: false,
-  });
-  let valor: string;
-  if (fatores.isPending) valor = "Carregando…";
-  else if (fatores.isError) valor = mfaAtivo ? "Ativa nesta sessão" : "Não verificada nesta sessão";
-  else if (!fatores.data) valor = "Não cadastrada";
-  else
-    valor = mfaAtivo
-      ? "Cadastrada · verificada nesta sessão"
-      : "Cadastrada · não verificada nesta sessão";
-  return <Linha rotulo="Verificação em duas etapas" valor={valor} />;
-}
-
 function Corpo({ perfil, aoFechar }: { perfil: Perfil; aoFechar: () => void }) {
   const a = perfil.atleta;
   return (
-    <div className="stack perfil">
-      <div className="perfil-id">
-        <Avatar nome={perfil.nome} fotoUrl={perfil.fotoUrl} grande />
-        <div>
-          <b>{perfil.nome}</b>
-          <div className="muted">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</div>
-        </div>
-      </div>
-      <dl className="perfil-dados">
-        <Linha rotulo="E-mail de login" valor={perfil.email} />
-        <LinhaMfa mfaAtivo={perfil.mfaAtivo} />
-        {perfil.treinador && (
-          <Linha
-            rotulo="Atletas sob sua responsabilidade"
-            valor={String(perfil.treinador.quantidadeAtletas)}
-          />
-        )}
-      </dl>
+    <div className="perfil">
+      <Cabecalho perfil={perfil} />
+
+      <Secao id="perfil-conta" titulo="Conta">
+        <CampoEditavel perfil={perfil} />
+        <dl>
+          <Linha rotulo="E-mail de login" valor={perfil.email} />
+          {perfil.treinador && (
+            <Linha
+              rotulo="Atletas sob sua responsabilidade"
+              valor={String(perfil.treinador.quantidadeAtletas)}
+            />
+          )}
+        </dl>
+      </Secao>
+
       {a && (
         <>
-          <h3>Dados do VelaID</h3>
-          <dl className="perfil-dados">
-            <Linha rotulo="VelaID" valor={a.velaid} />
-            <Linha rotulo="Classe" valor={a.classe.nome} />
-            <Linha rotulo="Número de vela" valor={a.numeroVela} />
-            <Linha rotulo="Idade" valor={`${idade(a.dataNascimento)} anos`} />
-            <Linha rotulo="Clube" valor={a.clube} />
-            <Linha rotulo="Cidade/UF" valor={[a.cidade, a.uf].filter(Boolean).join("/") || null} />
-            <Linha rotulo="Treinador" valor={a.treinador?.nome} />
-          </dl>
-          <SecaoCorrecao />
-          <h3>Termo e consentimento</h3>
-          <dl className="perfil-dados">
-            <Linha
-              rotulo="Aceite do termo"
-              valor={a.termoAceitoEm ? `Aceito em ${fmtData(a.termoAceitoEm)}` : "Ainda não aceito"}
-            />
-            <Linha
-              rotulo="Compartilhamento com o IBVAR"
-              valor={a.compartilharIbvar ? "Ativado" : "Desativado"}
-            />
-          </dl>
-          <div>
-            <Link to="/painel" className="btn" onClick={aoFechar}>
-              Gerenciar no painel
-            </Link>
-          </div>
+          <Secao id="perfil-velaid" titulo="Cadastro no VelaID">
+            <dl className="perfil-grade">
+              <Linha rotulo="VelaID" valor={<code>{a.velaid}</code>} />
+              <Linha rotulo="Classe" valor={a.classe.nome} />
+              <Linha rotulo="Número de vela" valor={a.numeroVela} />
+              <Linha rotulo="Idade" valor={`${idade(a.dataNascimento)} anos`} />
+              <Linha rotulo="Clube" valor={a.clube} />
+              <Linha
+                rotulo="Cidade/UF"
+                valor={[a.cidade, a.uf].filter(Boolean).join("/") || null}
+              />
+              <Linha rotulo="Treinador" valor={a.treinador?.nome} />
+            </dl>
+            <PedidoCorrecao />
+          </Secao>
+
+          <Secao id="perfil-consentimento" titulo="Termo e consentimento">
+            <dl>
+              <Linha
+                rotulo="Termo do piloto"
+                valor={
+                  a.termoAceitoEm ? (
+                    <Selo tom="ok">Aceito em {fmtData(a.termoAceitoEm)}</Selo>
+                  ) : (
+                    <Selo tom="atencao">Ainda não aceito</Selo>
+                  )
+                }
+              />
+              <Linha
+                rotulo="Compartilhamento com o IBVAR"
+                valor={
+                  a.compartilharIbvar ? (
+                    <Selo tom="ok">Ativado</Selo>
+                  ) : (
+                    <Selo tom="neutro">Desativado</Selo>
+                  )
+                }
+              />
+            </dl>
+            <div className="perfil-item">
+              <p className="perfil-desc">O aceite e o consentimento são geridos no seu painel.</p>
+              <Link to="/painel" className="btn" onClick={aoFechar}>
+                Gerenciar no painel
+              </Link>
+            </div>
+          </Secao>
         </>
       )}
-      <SecaoFoto perfil={perfil} />
-      <h3>Editar</h3>
-      <SecaoEdicao perfil={perfil} />
-      <h3>Senha</h3>
-      <SecaoSenha />
+
+      <Secao id="perfil-seguranca" titulo="Segurança">
+        <ItemMfa mfaAtivo={perfil.mfaAtivo} aoFechar={aoFechar} />
+        <ItemSenha />
+      </Secao>
     </div>
   );
 }
@@ -386,7 +496,11 @@ export function PerfilDialog({ aoFechar }: { aoFechar: () => void }) {
   const perfil = usePerfil();
   return (
     <Dialogo titulo="Meu perfil" aoFechar={aoFechar}>
-      {perfil.isPending && <p role="status">Carregando…</p>}
+      {perfil.isPending && (
+        <p role="status" className="muted">
+          Carregando…
+        </p>
+      )}
       {perfil.error && (
         <Erro texto={mensagemDeErro(perfil.error, "Não foi possível carregar o perfil.")} />
       )}
