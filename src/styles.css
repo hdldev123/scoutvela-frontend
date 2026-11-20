@@ -4741,3 +4741,67 @@
     display: flex;
   }
 }
+
+/* === Tela: Painel do atleta === */
+.scout .modules .module {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.scout .modules .module .mh {
+  align-items: center;
+}
+.scout .modules .module .contagem {
+  font-family: var(--f-body);
+  font-variant-numeric: tabular-nums;
+}
+.scout .modules .module .modulo-rodape {
+  margin-top: auto;
+  padding-top: 4px;
+}
+.scout .painel-consent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding: 4px 0 14px;
+}
+.scout .painel-consent-texto {
+  display: grid;
+  gap: 3px;
+  flex: 1 1 22rem;
+  min-width: 0;
+}
+.scout .painel-consent-ajuda {
+  color: var(--ink-2);
+  font-size: 0.84rem;
+}
+.scout .painel-consent .interruptor {
+  flex: none;
+}
+.scout .panel .switch {
+  border-top: 1px solid var(--line);
+}
+.scout .ped-pedido,
+.scout .painel-revisao {
+  padding: 12px 0;
+  margin-top: 0;
+}
+.scout .ped-pedido p {
+  margin: 4px 0;
+}
+.scout .panel > form.stack + .vazio-compacto,
+.scout .panel > form.stack ~ .vazio-compacto {
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 640px) {
+  .scout .painel-consent .interruptor {
+    align-items: flex-start;
+  }
+}
+.scout #painel-lgpd ~ form.stack,
+.scout section[aria-labelledby="painel-lgpd"] > form.stack {
+  margin-bottom: 14px;
+}

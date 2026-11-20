@@ -182,8 +182,8 @@ describe("TelaPainel", () => {
   it("lista pendências e módulos com situação", async () => {
     montar(painel());
     expect(await screen.findByText(/faltam suas respostas em Ambiente/)).toBeInTheDocument();
-    expect(screen.getByText("Sua vez")).toBeInTheDocument();
-    expect(screen.getByText("Completo")).toBeInTheDocument();
+    expect(screen.getByText("Sua vez").className).toContain("st-cond");
+    expect(screen.getByText("Completo").className).toContain("st-apto");
     expect(screen.getByText("Você responde · treinador pontua · 10 pts")).toBeInTheDocument();
     expect(screen.getByText("Treinador avalia · 15 pts")).toBeInTheDocument();
     expect(screen.getByText(/1 de 2 respostas suas/)).toBeInTheDocument();
@@ -215,7 +215,8 @@ describe("TelaPainel", () => {
     });
     montar(painel());
     const chave = await screen.findByRole("switch", { name: /Compartilhar meu score com o IBVAR/ });
-    expect(chave).not.toBeChecked();
+    expect(chave).toHaveAttribute("aria-checked", "false");
+    expect(chave.className).toContain("interruptor-botao");
     expect(screen.getByText("Desativado")).toBeInTheDocument();
     expect(screen.getByText(/aceito em 14\/10\/2026/)).toBeInTheDocument();
     expect(screen.getByText(/Última decisão em 15\/10\/2026/)).toBeInTheDocument();
@@ -223,6 +224,9 @@ describe("TelaPainel", () => {
     await waitFor(() =>
       expect(PUT).toHaveBeenCalledWith("/consentimento", { body: { compartilharIbvar: true } }),
     );
+    expect(
+      screen.getByRole("button", { name: /Abrir questionário de Ambiente/ }).className,
+    ).toContain("sm");
     await waitFor(() =>
       expect(toastFn).toHaveBeenCalledWith("IBVAR passa a ver seu score e seus gates"),
     );

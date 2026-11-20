@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import "@/styles/contas.css";
 import "@/styles/painel.css";
 import { BigScore } from "./BigScore";
+import { EstadoVazio } from "./EstadoVazio";
+import { Interruptor } from "./Interruptor";
 import { NotaRevisao } from "./NotaRevisao";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
 import { fmtData, primeiroNome } from "./formato";
@@ -30,7 +32,7 @@ import {
 } from "@/lib/api/titular";
 
 const SITUACAO = {
-  sua_vez: { rotulo: "Sua vez", classe: "st-parcial" },
+  sua_vez: { rotulo: "Sua vez", classe: "st-cond" },
   com_treinador: { rotulo: "Com o treinador", classe: "st-lock" },
   completo: { rotulo: "Completo", classe: "st-apto" },
 } as const;
@@ -122,15 +124,15 @@ function Modulo({
       >
         <span style={{ width: `${m.total ? (m.preenchidos / m.total) * 100 : 0}%` }} />
       </span>
-      <span className="who-fills num">
+      <span className="who-fills contagem">
         {m.preenchidos} de {m.total} indicadores
         {temPerguntas ? ` · ${m.respostasFeitas} de ${m.respostasTotal} respostas suas` : ""}
       </span>
       {temPerguntas && (
-        <div className="btn-row">
+        <div className="btn-row modulo-rodape">
           <button
             type="button"
-            className="btn"
+            className="btn sm"
             aria-expanded={aberto}
             aria-label={`${aberto ? "Fechar" : "Abrir"} questionário de ${m.nome}`}
             onClick={aoAlternar}
@@ -200,26 +202,23 @@ function Consentimento({ c }: { c: ConsentimentoPainel }) {
             : ""}
         </span>
       </div>
-      <label className="switch" htmlFor="c-ibvar">
-        <span>
-          Compartilhar meu score com o IBVAR
-          <br />
-          <span className="muted" style={{ fontSize: ".82rem" }}>
+      <div className="painel-consent">
+        <div className="painel-consent-texto">
+          <b>Compartilhar meu score com o IBVAR</b>
+          <span className="painel-consent-ajuda">
             Sem o consentimento, o IBVAR vê só números agregados. Você pode mudar a qualquer
             momento.
-            {c.atualizadoEm ? ` Última decisão em ${fmtData(c.atualizadoEm)}.` : ""}
           </span>
-        </span>
-        <input
+        </div>
+        <Interruptor
           id="c-ibvar"
-          type="checkbox"
-          role="switch"
-          checked={c.compartilharIbvar}
-          disabled={alterar.isPending}
-          onChange={(e) => alterar.mutate(e.target.checked)}
+          ligado={c.compartilharIbvar}
+          aoMudar={(v) => alterar.mutate(v)}
+          rotulo="Compartilhar meu score com o IBVAR"
+          descricao={c.atualizadoEm ? `Última decisão em ${fmtData(c.atualizadoEm)}.` : undefined}
+          desabilitado={alterar.isPending}
         />
-        <span aria-hidden="true">{c.compartilharIbvar ? "Ativado" : "Desativado"}</span>
-      </label>
+      </div>
       <div className="switch">
         <span>
           Peso, perfil mental e finanças
@@ -392,13 +391,19 @@ function PedidosTitular() {
         </p>
       )}
       {pedidos.data && pedidos.data.length === 0 && (
-        <p className="muted">Você ainda não fez nenhum pedido sobre seus dados.</p>
+        <div className="vazio-compacto">
+          <EstadoVazio
+            icone="shield-check"
+            titulo="Nenhum pedido ainda"
+            texto="Você ainda não fez nenhum pedido sobre seus dados."
+          />
+        </div>
       )}
       {pedidos.data?.map((p) => (
         <div key={p.id} className="ped-pedido">
           <span className="mh">
             <b>{TIPOS_PEDIDO[p.tipo]}</b>{" "}
-            <span className={`pill ${p.status === "aberto" ? "st-parcial" : "st-apto"}`}>
+            <span className={`pill ${p.status === "aberto" ? "st-cond" : "st-apto"}`}>
               {p.status === "aberto" ? "Aberto" : "Respondido"}
             </span>
           </span>
@@ -446,7 +451,7 @@ function Revisoes({ atletaId }: { atletaId: string }) {
     <section className="panel" aria-labelledby="painel-rev">
       <div className="panel-head">
         <h2 id="painel-rev">Pedidos de revisão</h2>
-        <button type="button" className="btn" onClick={() => setPedindo(true)}>
+        <button type="button" className="btn sm" onClick={() => setPedindo(true)}>
           Pedir revisão de nota
         </button>
       </div>
@@ -461,7 +466,13 @@ function Revisoes({ atletaId }: { atletaId: string }) {
         </p>
       )}
       {data && data.length === 0 && (
-        <p className="muted">Você ainda não pediu revisão de nenhuma nota.</p>
+        <div className="vazio-compacto">
+          <EstadoVazio
+            icone="chat-circle-dots"
+            titulo="Nenhuma revisão pedida"
+            texto="Você ainda não pediu revisão de nenhuma nota."
+          />
+        </div>
       )}
       {data?.map((r) => (
         <div key={r.id} className="painel-revisao">
@@ -470,7 +481,7 @@ function Revisoes({ atletaId }: { atletaId: string }) {
               {r.pilar?.nomeCurto ?? "Nota"}
               {r.indicador ? ` · ${r.indicador.nome}` : ""}
             </b>{" "}
-            <span className={`pill ${r.status === "aberto" ? "st-parcial" : "st-apto"}`}>
+            <span className={`pill ${r.status === "aberto" ? "st-cond" : "st-apto"}`}>
               {r.status === "aberto" ? "Aberto" : "Respondido"}
             </span>
           </span>
