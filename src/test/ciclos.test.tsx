@@ -29,7 +29,7 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 import { TelaCiclos } from "@/components/scout/TelaCiclos";
-import { diasAtePrazo, sugestaoCiclo } from "@/components/scout/ciclos-util";
+import { diasAtePrazo, progressoCiclo, sugestaoCiclo } from "@/components/scout/ciclos-util";
 
 const ok = (data: unknown, status = 200) => ({ data, error: undefined, response: { status } });
 const falha = (status: number, erro: string, mensagem: string) => ({
@@ -107,6 +107,15 @@ describe("helpers", () => {
     expect(diasAtePrazo("2026-11-12", new Date(2026, 10, 9))).toBe(3);
     expect(diasAtePrazo("2026-11-08", new Date(2026, 10, 9))).toBe(-1);
   });
+  it("calcula o progresso do tempo do ciclo", () => {
+    expect(progressoCiclo("2026-11-01", "2026-11-30", new Date(2026, 10, 15))).toEqual({
+      passados: 14,
+      total: 29,
+      pct: 48,
+    });
+    expect(progressoCiclo("2026-11-01", "2026-11-30", new Date(2026, 11, 20)).pct).toBe(100);
+    expect(progressoCiclo("2026-11-01", "2026-11-30", new Date(2026, 9, 1)).pct).toBe(0);
+  });
 });
 
 describe("TelaCiclos", () => {
@@ -150,7 +159,15 @@ describe("TelaCiclos", () => {
     PUT.mockResolvedValue(ok({ ...aberto, prazo: "2026-12-05" }));
     montar();
     expect(await screen.findByText(/Ciclo aberto: Novembro de 2026/)).toBeTruthy();
-    expect(screen.getByLabelText("Nome").matches(":disabled")).toBe(true);
+    expect(screen.queryByLabelText("Nome")).toBeNull();
+    expect(
+      screen.getByText(
+        "Só um ciclo fica aberto por vez. Feche o ciclo de Novembro de 2026 para abrir o próximo.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Abrir ciclo" })).toBeNull();
+    const barra = screen.getByRole("progressbar", { name: "Tempo decorrido do ciclo" });
+    expect(barra.getAttribute("aria-valuemax")).toBe("29");
 
     fireEvent.click(screen.getByRole("button", { name: "Ajustar prazo" }));
     fireEvent.change(screen.getByLabelText("Novo prazo"), { target: { value: "2026-12-05" } });
@@ -180,20 +197,24 @@ describe("TelaCiclos", () => {
     const totais = within(bloco).getByText("Treinadores com pendência").closest("dl")!;
     expect(totais).toHaveTextContent("Treinadores com pendência1");
     expect(totais).toHaveTextContent("Atletas com questionário pendente1");
-    expect(totais).toHaveTextContent("faltam 24 dias");
+    expect(totais).toHaveTextContent("Indicadores a lançar4");
+    expect(totais).not.toHaveTextContent("Prazo");
 
-    expect(within(bloco).getByText(/2 atletas pendentes/)).toBeTruthy();
-    expect(within(bloco).getByRole("link", { name: "Lívia Arruda" })).toHaveAttribute(
-      "href",
-      "/atletas/a1",
-    );
-    expect(within(bloco).getByText(/faltam 3 indicadores/)).toBeTruthy();
-    expect(within(bloco).getByText(/faltam 1 indicador$/)).toBeTruthy();
-    expect(within(bloco).getByRole("link", { name: "Helena Vasques" })).toHaveAttribute(
+    expect(within(bloco).getByText("2 atletas pendentes")).toBeTruthy();
+    const grupo = within(bloco).getByRole("table", { name: "Atletas pendentes de Ana Ribeiro" });
+    const linhaLivia = within(grupo).getByRole("link", { name: "Lívia Arruda" }).closest("tr")!;
+    expect(within(linhaLivia).getByRole("link")).toHaveAttribute("href", "/atletas/a1");
+    expect(linhaLivia).toHaveTextContent("3");
+    const linhaBianca = within(grupo).getByRole("link", { name: "Bianca Lemos" }).closest("tr")!;
+    expect(linhaBianca).toHaveTextContent("1");
+    const quest = within(bloco).getByRole("table", { name: "Atletas com questionário pendente" });
+    expect(within(quest).getByRole("link", { name: "Helena Vasques" })).toHaveAttribute(
       "href",
       "/atletas/a7",
     );
-    expect(within(bloco).getByText(/2 perguntas sem resposta/)).toBeTruthy();
+    expect(
+      within(quest).getByRole("link", { name: "Helena Vasques" }).closest("tr"),
+    ).toHaveTextContent("2");
   });
 
   it("bloco Pendências: listas vazias e prazo vencido", async () => {
@@ -206,7 +227,25 @@ describe("TelaCiclos", () => {
     montar();
     expect(await screen.findByText("Nenhum treinador com avaliação pendente.")).toBeTruthy();
     expect(screen.getByText("Nenhum atleta com questionário pendente.")).toBeTruthy();
-    expect(screen.getByText("atrasado há 2 dias")).toBeTruthy();
+  });
+
+  it("o selo de prazo fica em atenção quando faltam 5 dias ou menos", async () => {
+    const hoje = new Date();
+    const em = (dias: number) => {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + dias);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+    itens = [{ ...aberto, inicio: em(-10), prazo: em(3) }];
+    montar();
+    const selo = await screen.findByText("faltam 3 dias");
+    expect(selo.className).toContain("st-cond");
+  });
+
+  it("histórico usa selos de status Aberto e Fechado", async () => {
+    itens = [aberto, fechado];
+    montar();
+    expect((await screen.findByText("Aberto")).className).toContain("st-info");
+    expect(screen.getByText("Fechado").className).toContain("st-neutro");
   });
 
   it("fecha o ciclo só após confirmar e mostra quantos foram congelados", async () => {

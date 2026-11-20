@@ -4331,3 +4331,94 @@
 .scout .aviso-alerta > i {
   color: var(--warn);
 }
+
+/* === Tela: Ciclos === */
+.scout .cic-aberto-corpo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+.scout .cic-aberto-info {
+  flex: 1 1 22rem;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.scout .cic-aberto-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.scout .cic-aberto-titulo h2 {
+  margin: 0;
+}
+.scout .cic-datas {
+  margin: 0;
+  color: var(--ink-2);
+}
+.scout .cic-progresso {
+  max-width: 520px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  overflow: hidden;
+}
+.scout .cic-progresso span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--sea);
+}
+.scout .cic-progresso-txt {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.82rem;
+}
+.scout .cic-aberto-acoes {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.scout .cic-aberto-acoes .cic-form {
+  justify-content: flex-end;
+}
+.scout .cic-grupos {
+  display: grid;
+  gap: 10px;
+}
+.scout .cic-grupo {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.scout .cic-grupo > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  cursor: pointer;
+  list-style: none;
+}
+.scout .cic-grupo > summary::-webkit-details-marker {
+  display: none;
+}
+.scout .cic-seta {
+  color: var(--ink-2);
+  transition: transform 0.15s;
+}
+.scout .cic-grupo:not([open]) .cic-seta {
+  transform: rotate(-90deg);
+}
+.scout .cic-grupo .table-scroll {
+  padding: 0 14px 6px;
+}
+@media (max-width: 640px) {
+  .scout .cic-aberto-acoes {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+}

@@ -14,12 +14,6 @@
   margin: 0;
   min-width: 0;
 }
-.cic-campos:disabled {
-  opacity: 0.55;
-}
-.cic-aberto {
-  border-left: 4px solid var(--c-accent, #0b5fa5);
-}
 .cic-totais {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));

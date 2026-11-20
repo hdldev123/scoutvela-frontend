@@ -33,3 +33,10 @@ export function diasAtePrazo(prazo: string, hoje = new Date()): number {
   const base = Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
   return Math.round((alvo - base) / 86400000);
 }
+
+/** Tempo decorrido do ciclo: dias passados, total e percentual (0 a 100). */
+export function progressoCiclo(inicio: string, prazo: string, hoje = new Date()) {
+  const total = Math.max(1, diasAtePrazo(prazo, hoje) - diasAtePrazo(inicio, hoje));
+  const passados = Math.min(total, Math.max(0, -diasAtePrazo(inicio, hoje)));
+  return { passados, total, pct: Math.round((passados / total) * 100) };
+}

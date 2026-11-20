@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
-import { diasAtePrazo, sugestaoCiclo } from "./ciclos-util";
+import { EstadoVazio } from "./EstadoVazio";
+import { diasAtePrazo, progressoCiclo, sugestaoCiclo } from "./ciclos-util";
 import { fmtData } from "./formato";
 import {
   useAbrirCiclo,
@@ -67,7 +68,17 @@ export function TelaCiclos() {
               />
             )}
             {aberto && <PendenciasDoCiclo cicloId={aberto.id} />}
-            <AbrirCiclo bloqueado={!!aberto} />
+            {aberto ? (
+              <div className="aviso aviso-info">
+                <i className="ph ph-lock-simple" aria-hidden="true" />
+                <div>
+                  Só um ciclo fica aberto por vez. Feche o ciclo de {aberto.nome} para abrir o
+                  próximo.
+                </div>
+              </div>
+            ) : (
+              <AbrirCiclo />
+            )}
             <TabelaCiclos itens={ciclos.data} />
           </>
         )}
@@ -118,64 +129,89 @@ function CicloAberto({
     });
   };
 
+  const { passados, total, pct } = progressoCiclo(ciclo.inicio, ciclo.prazo);
+  const tomPrazo = dias < 0 ? "st-alerta" : dias <= 5 ? "st-cond" : "st-apto";
+
   return (
     <section className="panel cic-aberto" aria-labelledby="cic-aberto-t">
-      <div className="panel-head">
-        <h2 id="cic-aberto-t">Ciclo aberto: {ciclo.nome}</h2>
-        <span className={`pill ${dias < 0 ? "st-alerta" : "st-apto"}`}>{textoPrazo(dias)}</span>
-      </div>
-      <p>
-        Início em {fmtData(ciclo.inicio)}. Prazo em {fmtData(ciclo.prazo)}.
-      </p>
-      {erro && !confirmando && (
-        <div className="note" role="alert">
-          {erro}
-        </div>
-      )}
-      {editando ? (
-        <form className="cic-form" onSubmit={salvarPrazo}>
-          <label className="field" htmlFor="cic-novo-prazo">
-            Novo prazo
-            <input
-              id="cic-novo-prazo"
-              type="date"
-              value={prazo}
-              onChange={(e) => setPrazo(e.target.value)}
-              required
-            />
-          </label>
-          <div className="btn-row">
-            <button type="submit" className="btn primary" disabled={ajustar.isPending}>
-              {ajustar.isPending ? "Salvando…" : "Salvar prazo"}
-            </button>
-            <button type="button" className="btn" onClick={() => setEditando(false)}>
-              Cancelar
-            </button>
+      <div className="cic-aberto-corpo">
+        <div className="cic-aberto-info">
+          <div className="cic-aberto-titulo">
+            <h2 id="cic-aberto-t">Ciclo aberto: {ciclo.nome}</h2>
+            <span className={`pill ${tomPrazo}`}>{textoPrazo(dias)}</span>
           </div>
-        </form>
-      ) : (
-        <div className="btn-row">
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              setErro("");
-              setPrazo(ciclo.prazo);
-              setEditando(true);
-            }}
+          <p className="cic-datas">
+            Início em <span className="nw">{fmtData(ciclo.inicio)}</span>. Prazo em{" "}
+            <span className="nw">{fmtData(ciclo.prazo)}</span>.
+          </p>
+          <div
+            className="cic-progresso"
+            role="progressbar"
+            aria-label="Tempo decorrido do ciclo"
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={passados}
+            aria-valuetext={`${passados} de ${total} dias`}
           >
-            Ajustar prazo
-          </button>
-          <button
-            type="button"
-            className="btn primary"
-            onClick={() => {
-              setErro("");
-              setConfirmando(true);
-            }}
-          >
-            Fechar ciclo
-          </button>
+            <span style={{ width: `${pct}%` }} />
+          </div>
+          <p className="cic-progresso-txt">
+            <span className="num">{passados}</span> de <span className="num">{total}</span> dias
+            decorridos
+          </p>
+        </div>
+        <div className="cic-aberto-acoes">
+          {editando ? (
+            <form className="cic-form" onSubmit={salvarPrazo}>
+              <label className="field" htmlFor="cic-novo-prazo">
+                Novo prazo
+                <input
+                  id="cic-novo-prazo"
+                  type="date"
+                  value={prazo}
+                  onChange={(e) => setPrazo(e.target.value)}
+                  required
+                />
+              </label>
+              <div className="btn-row">
+                <button type="submit" className="btn primary" disabled={ajustar.isPending}>
+                  {ajustar.isPending ? "Salvando…" : "Salvar prazo"}
+                </button>
+                <button type="button" className="btn" onClick={() => setEditando(false)}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="btn-row">
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setErro("");
+                  setPrazo(ciclo.prazo);
+                  setEditando(true);
+                }}
+              >
+                Ajustar prazo
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => {
+                  setErro("");
+                  setConfirmando(true);
+                }}
+              >
+                Fechar ciclo
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      {erro && !confirmando && (
+        <div className="note" role="alert" style={{ marginTop: 12 }}>
+          {erro}
         </div>
       )}
       {confirmando && (
@@ -238,6 +274,10 @@ function PendenciasDoCiclo({ cicloId }: { cicloId: string }) {
 
 function ListaPendencias({ p }: { p: PendenciasCiclo }) {
   const { totais } = p;
+  const indicadoresEmFalta = p.treinadores.reduce(
+    (soma, t) => soma + t.atletasPendentes.reduce((n, a) => n + a.faltam, 0),
+    0,
+  );
   return (
     <div className="stack" style={{ gap: 14 }}>
       <dl className="cic-totais">
@@ -250,70 +290,94 @@ function ListaPendencias({ p }: { p: PendenciasCiclo }) {
           <dd>{totais.atletasComPendencia}</dd>
         </div>
         <div>
-          <dt>Prazo</dt>
-          <dd>{textoPrazo(totais.diasParaPrazo)}</dd>
+          <dt>Indicadores a lançar</dt>
+          <dd>{indicadoresEmFalta}</dd>
         </div>
       </dl>
 
       <div>
         <h3 className="cic-pend-titulo">Avaliações dos treinadores</h3>
         {p.treinadores.length === 0 ? (
-          <p className="muted">Nenhum treinador com avaliação pendente.</p>
+          <div className="vazio-compacto">
+            <EstadoVazio icone="check-circle" titulo="Nenhum treinador com avaliação pendente." />
+          </div>
         ) : (
-          <ul className="cic-pend-lista">
+          <div className="cic-grupos">
             {p.treinadores.map((t) => (
-              <li key={t.id}>
-                <b>{t.nome}</b>{" "}
-                <span className="muted">
-                  · {plural(t.atletasPendentes.length, "atleta pendente", "atletas pendentes")}
-                </span>
-                <ul>
-                  {t.atletasPendentes.map((a) => (
-                    <li key={a.id}>
-                      <Link to="/atletas/$id" params={{ id: a.id }}>
-                        {a.nome}
-                      </Link>{" "}
-                      <span className="muted">
-                        · faltam {plural(a.faltam, "indicador", "indicadores")}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </li>
+              <details key={t.id} className="cic-grupo" open>
+                <summary>
+                  <i className="ph ph-caret-down cic-seta" aria-hidden="true" />
+                  <b>{t.nome}</b>
+                  <span className="pill st-cond">
+                    {plural(t.atletasPendentes.length, "atleta pendente", "atletas pendentes")}
+                  </span>
+                </summary>
+                <div className="table-scroll" tabIndex={0}>
+                  <table className="data">
+                    <caption className="cic-sr">Atletas pendentes de {t.nome}</caption>
+                    <thead>
+                      <tr>
+                        <th>Atleta</th>
+                        <th className="num">Indicadores em falta</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {t.atletasPendentes.map((a) => (
+                        <tr key={a.id}>
+                          <td>
+                            <Link to="/atletas/$id" params={{ id: a.id }}>
+                              {a.nome}
+                            </Link>
+                          </td>
+                          <td className="num nw">{a.faltam}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
             ))}
-          </ul>
+          </div>
         )}
       </div>
 
       <div>
         <h3 className="cic-pend-titulo">Questionário dos atletas</h3>
         {p.atletas.length === 0 ? (
-          <p className="muted">Nenhum atleta com questionário pendente.</p>
+          <div className="vazio-compacto">
+            <EstadoVazio icone="check-circle" titulo="Nenhum atleta com questionário pendente." />
+          </div>
         ) : (
-          <ul className="cic-pend-lista">
-            {p.atletas.map((a) => (
-              <li key={a.id}>
-                <Link to="/atletas/$id" params={{ id: a.id }}>
-                  {a.nome}
-                </Link>{" "}
-                <span className="muted">
-                  ·{" "}
-                  {plural(
-                    a.perguntasSemResposta,
-                    "pergunta sem resposta",
-                    "perguntas sem resposta",
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="table-scroll" tabIndex={0}>
+            <table className="data">
+              <caption className="cic-sr">Atletas com questionário pendente</caption>
+              <thead>
+                <tr>
+                  <th>Atleta</th>
+                  <th className="num">Perguntas sem resposta</th>
+                </tr>
+              </thead>
+              <tbody>
+                {p.atletas.map((a) => (
+                  <tr key={a.id}>
+                    <td>
+                      <Link to="/atletas/$id" params={{ id: a.id }}>
+                        {a.nome}
+                      </Link>
+                    </td>
+                    <td className="num nw">{a.perguntasSemResposta}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-function AbrirCiclo({ bloqueado }: { bloqueado: boolean }) {
+function AbrirCiclo() {
   const abrir = useAbrirCiclo();
   const [sug] = useState(() => sugestaoCiclo());
   const [nome, setNome] = useState(sug.nome);
@@ -339,9 +403,8 @@ function AbrirCiclo({ bloqueado }: { bloqueado: boolean }) {
         <h2 id="cic-abrir-t">Abrir ciclo</h2>
         <span className="muted cic-sub">Só um ciclo fica aberto por vez</span>
       </div>
-      {bloqueado && <p className="muted">Feche o ciclo aberto para abrir o próximo.</p>}
       <form className="cic-form" onSubmit={enviar}>
-        <fieldset className="cic-campos" disabled={bloqueado || abrir.isPending}>
+        <fieldset className="cic-campos" disabled={abrir.isPending}>
           <legend className="cic-sr">Dados do novo ciclo</legend>
           <label className="field" htmlFor="cic-nome">
             Nome
@@ -394,7 +457,9 @@ function TabelaCiclos({ itens }: { itens: Ciclo[] }) {
         <h2 id="cic-hist-t">Histórico de ciclos</h2>
       </div>
       {itens.length === 0 ? (
-        <p className="muted">Nenhum ciclo cadastrado.</p>
+        <div className="vazio-compacto">
+          <EstadoVazio icone="calendar-blank" titulo="Nenhum ciclo cadastrado." />
+        </div>
       ) : (
         <div className="table-scroll" tabIndex={0}>
           <table className="data">
@@ -404,7 +469,7 @@ function TabelaCiclos({ itens }: { itens: Ciclo[] }) {
                 <th>Início</th>
                 <th>Prazo</th>
                 <th>Status</th>
-                <th className="r">Atletas com score congelado</th>
+                <th className="num">Atletas com score congelado</th>
                 <th>Fechado em</th>
               </tr>
             </thead>
@@ -412,15 +477,15 @@ function TabelaCiclos({ itens }: { itens: Ciclo[] }) {
               {itens.map((c) => (
                 <tr key={c.id}>
                   <td>{c.nome}</td>
-                  <td>{fmtData(c.inicio)}</td>
-                  <td>{fmtData(c.prazo)}</td>
+                  <td className="nw">{fmtData(c.inicio)}</td>
+                  <td className="nw">{fmtData(c.prazo)}</td>
                   <td>
-                    <span className={`pill ${c.status === "aberto" ? "st-apto" : "st-lock"}`}>
+                    <span className={`pill ${c.status === "aberto" ? "st-info" : "st-neutro"}`}>
                       {c.status === "aberto" ? "Aberto" : "Fechado"}
                     </span>
                   </td>
-                  <td className="r">{c.status === "aberto" ? "—" : c.atletasComScore}</td>
-                  <td>{c.fechadoEm ? fmtData(c.fechadoEm) : "—"}</td>
+                  <td className="num">{c.status === "aberto" ? "—" : c.atletasComScore}</td>
+                  <td className="nw">{c.fechadoEm ? fmtData(c.fechadoEm) : "—"}</td>
                 </tr>
               ))}
             </tbody>
