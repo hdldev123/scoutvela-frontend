@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, paraErroApi } from "./cliente";
+import { invalidarNotificacoes } from "./notificacoes";
 import type { paths } from "./schema";
 
 /** Versões do termo de consentimento (gestor), tipadas pelo contrato. */
@@ -35,6 +36,7 @@ export function usePublicarTermo() {
       Promise.all([
         qc.invalidateQueries({ queryKey: ["termos"] }),
         qc.invalidateQueries({ queryKey: ["termo"] }),
+        invalidarNotificacoes(qc),
         qc.invalidateQueries({ queryKey: ["atletas", "pendentes"] }),
       ]),
   });

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { mensagemDeErro } from "@/lib/api/cliente";
+import { invalidarNotificacoes } from "@/lib/api/notificacoes";
 import { criarRevisao, type CorpoRevisao } from "@/lib/api/mutacoes-ficha";
 import { Dialogo } from "./Dialogo";
 
@@ -34,7 +35,10 @@ export function PedirRevisaoDialog({
     mutationFn: (corpo: CorpoRevisao) => criarRevisao(corpo),
     onSuccess: async () => {
       toast("Pedido de revisão enviado ao gestor da CBVela");
-      await queryClient.invalidateQueries({ queryKey: ["revisoes"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["revisoes"] }),
+        invalidarNotificacoes(queryClient),
+      ]);
       aoFechar();
     },
     onError: (e) => setErro(mensagemDeErro(e, "Não foi possível enviar o pedido.")),

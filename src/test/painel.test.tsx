@@ -179,6 +179,24 @@ describe("TelaPainel", () => {
     expect(screen.queryByRole("link", { name: "Minha ficha" })).not.toBeInTheDocument();
   });
 
+  it("marca o painel como visto uma vez, depois de carregar", async () => {
+    PUT.mockResolvedValue({ response: { status: 204 } });
+    montar(painel());
+    await screen.findByRole("heading", { level: 1, name: "Olá, Helena" });
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/me/notificacoes/vistas", { body: { chave: "painel" } }),
+    );
+    expect(PUT).toHaveBeenCalledTimes(1);
+  });
+
+  it("segue normal se marcar como visto falhar", async () => {
+    PUT.mockRejectedValue(new Error("rede"));
+    montar(painel());
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Olá, Helena" }),
+    ).toBeInTheDocument();
+  });
+
   it("lista pendências e módulos com situação", async () => {
     montar(painel());
     expect(await screen.findByText(/faltam suas respostas em Ambiente/)).toBeInTheDocument();

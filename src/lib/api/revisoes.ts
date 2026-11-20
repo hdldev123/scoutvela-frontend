@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, paraErroApi } from "./cliente";
+import { invalidarNotificacoes } from "./notificacoes";
 import type { paths } from "./schema";
 
 /** Pedidos de revisão de nota e pedidos do titular (LGPD), tipados pelo contrato. */
@@ -84,7 +85,8 @@ export function useResponderRevisao() {
   return useMutation({
     mutationFn: (v: { id: string; resposta: string; avaliacaoId?: string }) =>
       responderRevisao(v.id, v.resposta, v.avaliacaoId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["revisoes"] }),
+    onSuccess: () =>
+      Promise.all([qc.invalidateQueries({ queryKey: ["revisoes"] }), invalidarNotificacoes(qc)]),
   });
 }
 
@@ -92,6 +94,10 @@ export function useResponderPedidoTitular() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (v: { id: string; resposta: string }) => responderPedidoTitular(v.id, v.resposta),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pedidos-titular"] }),
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ["pedidos-titular"] }),
+        invalidarNotificacoes(qc),
+      ]),
   });
 }

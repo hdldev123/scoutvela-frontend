@@ -4,7 +4,14 @@ import { AvisoAmbiente } from "./AvisoAmbiente";
 import { Avatar } from "./Avatar";
 import { PerfilDialog } from "./PerfilDialog";
 import { PaletaDeAtletas } from "./PaletaDeAtletas";
-import { itensDeNavegacao, ROTULO_PAPEL } from "@/lib/auth/navegacao";
+import { useNotificacoes } from "@/lib/api/notificacoes";
+import {
+  contagemDaTela,
+  itensDeNavegacao,
+  ROTULO_PAPEL,
+  textoDoBalao,
+  textoPendentes,
+} from "@/lib/auth/navegacao";
 
 interface ShellProps {
   me: {
@@ -44,6 +51,10 @@ function UsuarioDoShell({
 
 export function Shell({ me, onSair, children }: ShellProps) {
   const itens = me ? itensDeNavegacao(me) : [];
+  // Sem sessão (me nulo) ou como IBVAR não há balões; erro de rede só some com eles.
+  const notificacoes = useNotificacoes(!!me && me.usuario.papel !== "ibvar");
+  const contagens = notificacoes.data?.contagens;
+  const total = notificacoes.data?.total ?? 0;
   const [aberta, setAberta] = useState(false);
   const botao = useRef<HTMLButtonElement>(null);
   const [perfilAberto, setPerfilAberto] = useState(false);
@@ -86,23 +97,42 @@ export function Shell({ me, onSair, children }: ShellProps) {
             onClick={() => setAberta((v) => !v)}
           >
             <i className={`ph ph-${aberta ? "x" : "list"}`} aria-hidden="true" />
-            <span className="sr-only">{aberta ? "Fechar menu" : "Abrir menu"}</span>
+            <span className="sr-only">
+              {aberta ? "Fechar menu" : "Abrir menu"}
+              {total > 0 && ` (${textoPendentes(total)})`}
+            </span>
+            {total > 0 && !aberta && (
+              <span className="balao balao-toggle" aria-hidden="true">
+                {textoDoBalao(total)}
+              </span>
+            )}
           </button>
         </div>
         <div id="menu-lateral" className="side-body" data-aberta={aberta}>
           <PaletaDeAtletas me={me} />
           <nav className="tabs" aria-label="Telas">
-            {itens.map((i) => (
-              <Link
-                key={i.tela}
-                to={i.to}
-                {...(i.params ? { params: i.params } : {})}
-                activeProps={{ "aria-current": "page" }}
-              >
-                <i className={`ph ph-${i.icone}`} aria-hidden="true" />
-                {i.rotulo}
-              </Link>
-            ))}
+            {itens.map((i) => {
+              const n = contagemDaTela(i.tela, contagens);
+              return (
+                <Link
+                  key={i.tela}
+                  to={i.to}
+                  {...(i.params ? { params: i.params } : {})}
+                  activeProps={{ "aria-current": "page" }}
+                >
+                  <i className={`ph ph-${i.icone}`} aria-hidden="true" />
+                  {i.rotulo}
+                  {n > 0 && (
+                    <>
+                      <span className="balao" aria-hidden="true">
+                        {textoDoBalao(n)}
+                      </span>
+                      <span className="sr-only">, {textoPendentes(n)}</span>
+                    </>
+                  )}
+                </Link>
+              );
+            })}
           </nav>
           <div className="side-foot">
             {me && <UsuarioDoShell me={me} aoAbrirPerfil={() => setPerfilAberto(true)} />}

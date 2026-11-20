@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, paraErroApi } from "./cliente";
+import { invalidarNotificacoes } from "./notificacoes";
 import type { paths } from "./schema";
 
 /** Cadastro de atleta, termos pendentes e importação de CSV, tipados pelo contrato. */
@@ -96,7 +97,11 @@ export function useCadastrarAtleta() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: cadastrarAtleta,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["atletas", "pendentes"] }),
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ["atletas", "pendentes"] }),
+        invalidarNotificacoes(qc),
+      ]),
   });
 }
 
@@ -108,6 +113,7 @@ export function useRegistrarTermo() {
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["atletas", "pendentes"] }),
         qc.invalidateQueries({ queryKey: ["ranking"] }),
+        invalidarNotificacoes(qc),
       ]);
     },
   });

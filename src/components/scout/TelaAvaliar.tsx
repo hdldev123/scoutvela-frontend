@@ -16,6 +16,7 @@ import {
   type Parametros,
 } from "@/lib/api/avaliacao";
 import { mensagemDeErro } from "@/lib/api/cliente";
+import { invalidarNotificacoes } from "@/lib/api/notificacoes";
 import { ACEITA_ARQUIVO, enviarEvidencia, validarArquivo } from "@/lib/api/evidencias";
 import { useFicha, useRanking, type FichaAtleta } from "@/lib/api/consultas";
 
@@ -254,6 +255,7 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
       void qc.invalidateQueries({ queryKey: ["atleta", id] });
       void qc.invalidateQueries({ queryKey: ["ranking"] });
       void qc.invalidateQueries({ queryKey: ["investimento"] });
+      void invalidarNotificacoes(qc);
       void qc.invalidateQueries({ queryKey: ["evidencias", id] });
       limpar();
     },

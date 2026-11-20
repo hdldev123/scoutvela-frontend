@@ -11,6 +11,7 @@ import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
 import { fmtData, primeiroNome } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useFicha } from "@/lib/api/consultas";
+import { invalidarNotificacoes, marcarPainelVisto } from "@/lib/api/notificacoes";
 import {
   alterarConsentimento,
   responderPergunta,
@@ -57,6 +58,7 @@ function Pergunta({ p, atletaId }: { p: PerguntaPainel; atletaId: string }) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["painel"] }),
         queryClient.invalidateQueries({ queryKey: ["atleta", atletaId] }),
+        invalidarNotificacoes(queryClient),
       ]);
     },
     onError: (e) => toast.error(mensagemDeErro(e, "Não foi possível salvar a resposta.")),
@@ -510,7 +512,12 @@ function Revisoes({ atletaId }: { atletaId: string }) {
 }
 
 function Conteudo({ painel }: { painel: PainelAtleta }) {
+  const queryClient = useQueryClient();
   const [aberto, setAberto] = useState<string | null>(null);
+  // Painel carregado: marca as respostas novas como vistas (uma vez por montagem; falha em silêncio).
+  useEffect(() => {
+    void marcarPainelVisto(queryClient);
+  }, [queryClient]);
   const modulo = painel.modulos.find((m) => m.pilarId === aberto);
   const prazo = painel.ciclo ? fmtData(painel.ciclo.prazo) : null;
   return (

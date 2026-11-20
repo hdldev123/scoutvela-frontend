@@ -64,3 +64,26 @@ export function iniciais(nome: string): string {
 export function rotaDaTelaInicial(telaInicial: string): string {
   return ITENS[telaInicial] && telaInicial !== "ficha" ? ITENS[telaInicial]!.to : "/ranking";
 }
+
+/** Telas do menu que têm balão; a chave de `/me/notificacoes` tem o mesmo nome da tela. */
+const TELAS_COM_BALAO = new Set(["revisoes", "cadastro", "avaliar", "painel"]);
+
+/** Contagem do balão de uma tela (0 quando a tela não tem balão ou nada pede atenção). */
+export function contagemDaTela(
+  tela: string,
+  contagens: Record<string, number> | undefined,
+): number {
+  if (!TELAS_COM_BALAO.has(tela)) return 0;
+  const n = contagens?.[tela] ?? 0;
+  return n > 0 ? n : 0;
+}
+
+/** Texto do selo: "9+" acima de 9. */
+export function textoDoBalao(n: number): string {
+  return n > 9 ? "9+" : String(n);
+}
+
+/** Texto para leitor de tela, ex.: "3 pendentes". */
+export function textoPendentes(n: number): string {
+  return `${n} ${n === 1 ? "pendente" : "pendentes"}`;
+}

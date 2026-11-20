@@ -5005,3 +5005,33 @@
     text-overflow: ellipsis;
   }
 }
+
+/* === Balões de notificação no menu === */
+.balao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--sea);
+  color: #fff;
+  font-family: var(--f-body);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.scout .tabs a .balao {
+  margin-left: auto;
+}
+.side-toggle {
+  position: relative;
+}
+.balao-toggle {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+}

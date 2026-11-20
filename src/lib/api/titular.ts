@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, paraErroApi } from "./cliente";
+import { invalidarNotificacoes } from "./notificacoes";
 import type { paths } from "./schema";
 
 /** Termo vigente, aceite, exportação de dados e pedidos do titular (LGPD). */
@@ -41,6 +42,7 @@ export function useAceitarTermo() {
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["painel"] }),
         qc.invalidateQueries({ queryKey: ["me"] }),
+        invalidarNotificacoes(qc),
       ]);
     },
   });
@@ -86,7 +88,11 @@ export function useCriarPedidoTitular() {
       if (error || !data) throw paraErroApi(response.status, error);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pedidos-titular"] }),
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ["pedidos-titular"] }),
+        invalidarNotificacoes(qc),
+      ]),
   });
 }
 
@@ -112,6 +118,7 @@ export function useAnonimizarAtleta() {
         qc.invalidateQueries({ queryKey: ["atleta"] }),
         qc.invalidateQueries({ queryKey: ["ranking"] }),
         qc.invalidateQueries({ queryKey: ["investimento"] }),
+        invalidarNotificacoes(qc),
       ]),
   });
 }
