@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 export interface DialogoProps {
   titulo: string;
@@ -47,7 +48,9 @@ export function Dialogo({ titulo, aoFechar, children }: DialogoProps) {
     };
   }, []);
 
-  return (
+  // Portal no body: o diálogo não depende do contexto de empilhamento de quem o renderiza.
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div className="dialogo-overlay" onClick={() => aoFechar()}>
       <div
         ref={caixa}
@@ -65,6 +68,7 @@ export function Dialogo({ titulo, aoFechar, children }: DialogoProps) {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

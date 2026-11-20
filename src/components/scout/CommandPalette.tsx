@@ -1,5 +1,6 @@
 import { Command } from "cmdk";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Avatar } from "./Avatar";
 import { fmt1 } from "./formato";
 
@@ -42,32 +43,39 @@ export function CommandPalette({ itens, aoSelecionar }: CommandPaletteProps) {
         <span>Buscar atleta…</span>
         <kbd>⌘K</kbd>
       </button>
-      {open && (
-        <div className="cmdk-overlay" onClick={() => setOpen(false)}>
-          <Command className="cmdk" label="Central de comando" onClick={(e) => e.stopPropagation()}>
-            <Command.Input autoFocus placeholder="Nome, classe ou status do gate…" />
-            <Command.List>
-              <Command.Empty>Nenhum atleta visível para este perfil.</Command.Empty>
-              {itens.map((a) => (
-                <Command.Item
-                  key={a.id}
-                  value={`${a.nome} ${a.classe} ${a.status} ${a.faixa}`}
-                  onSelect={() => {
-                    aoSelecionar(a.id);
-                    setOpen(false);
-                  }}
-                >
-                  <Avatar nome={a.avatar.nome} fotoUrl={a.avatar.fotoUrl} />
-                  <span className="cmdk-name">{a.nome}</span>
-                  <span className="cmdk-meta">{a.classe}</span>
-                  <span className="cmdk-meta">{a.status}</span>
-                  <span className="cmdk-score">{a.score == null ? "" : fmt1(a.score)}</span>
-                </Command.Item>
-              ))}
-            </Command.List>
-          </Command>
-        </div>
-      )}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="cmdk-overlay" onClick={() => setOpen(false)}>
+            <Command
+              className="cmdk"
+              label="Central de comando"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Command.Input autoFocus placeholder="Nome, classe ou status do gate…" />
+              <Command.List>
+                <Command.Empty>Nenhum atleta visível para este perfil.</Command.Empty>
+                {itens.map((a) => (
+                  <Command.Item
+                    key={a.id}
+                    value={`${a.nome} ${a.classe} ${a.status} ${a.faixa}`}
+                    onSelect={() => {
+                      aoSelecionar(a.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Avatar nome={a.avatar.nome} fotoUrl={a.avatar.fotoUrl} />
+                    <span className="cmdk-name">{a.nome}</span>
+                    <span className="cmdk-meta">{a.classe}</span>
+                    <span className="cmdk-meta">{a.status}</span>
+                    <span className="cmdk-score">{a.score == null ? "" : fmt1(a.score)}</span>
+                  </Command.Item>
+                ))}
+              </Command.List>
+            </Command>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

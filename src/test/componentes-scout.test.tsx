@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { Dialogo } from "@/components/scout/Dialogo";
 import { FaixaPill } from "@/components/scout/FaixaPill";
 import { fmt0, fmt1, fmtData, fmtDelta, rotuloCiclo } from "@/components/scout/formato";
 import { PilaresStrip } from "@/components/scout/PilaresStrip";
@@ -55,5 +56,30 @@ describe("pills e strip", () => {
     );
     expect(container.querySelectorAll("i")).toHaveLength(2);
     expect(container.querySelector("i.empty")).toHaveAttribute("title", "B: sem nota");
+  });
+});
+
+describe("Dialogo", () => {
+  it("renderiza a sobreposição como filha direta do body e devolve o foco", () => {
+    const aoFechar = vi.fn();
+    const { container } = render(
+      <div style={{ position: "sticky" }}>
+        <button type="button">Abrir</button>
+      </div>,
+    );
+    const abrir = screen.getByRole("button", { name: "Abrir" });
+    abrir.focus();
+    const dialogo = render(
+      <Dialogo titulo="Teste" aoFechar={aoFechar}>
+        <button type="button">Dentro</button>
+      </Dialogo>,
+    );
+    const overlay = document.body.querySelector(".dialogo-overlay");
+    expect(overlay?.parentElement).toBe(document.body);
+    expect(container.querySelector(".dialogo-overlay")).toBeNull();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(aoFechar).toHaveBeenCalled();
+    dialogo.unmount();
+    expect(abrir).toHaveFocus();
   });
 });

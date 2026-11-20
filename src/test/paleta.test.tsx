@@ -72,12 +72,12 @@ describe("Busca de atletas", () => {
       },
       response: { status: 200 },
     });
-    const container = montar(
+    montar(
       <PaletaDeAtletas me={{ usuario: { papel: "gestor" }, atleta: null, telas: ["ranking"] }} />,
     );
     abrir();
     expect(await screen.findByText("Helena Vasques")).toBeInTheDocument();
-    const fotos = container.querySelectorAll(".cmdk .avatar img");
+    const fotos = document.body.querySelectorAll(".cmdk .avatar img");
     expect(fotos).toHaveLength(1);
     expect(fotos[0]).toHaveAttribute("src", FOTO);
     expect(screen.getByText("ML")).toBeInTheDocument();
@@ -92,18 +92,18 @@ describe("Busca de atletas", () => {
       },
       response: { status: 200 },
     });
-    const container = montar(
+    montar(
       <PaletaDeAtletas me={{ usuario: { papel: "gestor" }, atleta: null, telas: ["ranking"] }} />,
     );
     abrir();
     await screen.findByText("Helena Vasques");
-    fireEvent.error(container.querySelector(".cmdk .avatar img")!);
-    expect(container.querySelector(".cmdk .avatar img")).toBeNull();
+    fireEvent.error(document.body.querySelector(".cmdk .avatar img")!);
+    expect(document.body.querySelector(".cmdk .avatar img")).toBeNull();
     expect(screen.getByText("HV")).toBeInTheDocument();
   });
 
   it('atleta vê a própria foto em "Minha ficha", sem chamar o ranking', () => {
-    const container = montar(
+    montar(
       <PaletaDeAtletas
         me={{
           usuario: { papel: "atleta", fotoUrl: FOTO },
@@ -114,7 +114,25 @@ describe("Busca de atletas", () => {
     );
     abrir();
     expect(screen.getByText("Minha ficha")).toBeInTheDocument();
-    expect(container.querySelector(".cmdk .avatar img")).toHaveAttribute("src", FOTO);
+    expect(document.body.querySelector(".cmdk .avatar img")).toHaveAttribute("src", FOTO);
     expect(GET).not.toHaveBeenCalled();
+  });
+
+  it("a sobreposição é filha direta do body, fora de qualquer contexto de empilhamento", () => {
+    const container = montar(
+      <aside style={{ position: "sticky" }}>
+        <PaletaDeAtletas
+          me={{
+            usuario: { papel: "atleta", fotoUrl: null },
+            atleta: { id: "a1", nome: "Helena Vasques" },
+            telas: ["painel"],
+          }}
+        />
+      </aside>,
+    );
+    abrir();
+    const overlay = document.body.querySelector(".cmdk-overlay");
+    expect(overlay?.parentElement).toBe(document.body);
+    expect(container.querySelector(".cmdk-overlay")).toBeNull();
   });
 });
