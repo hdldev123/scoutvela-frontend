@@ -121,6 +121,161 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/notificacoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Contagens dos balões do menu lateral (itens que pedem atenção)
+         * @description Só as chaves do papel, sempre presentes (0 quando nada pede atenção). Gestor: `revisoes` (pedidos de revisão e do titular abertos) e `cadastro` (atletas ativos sem aceite da versão vigente do termo). Treinador: `revisoes` (pedidos de revisão abertos dos próprios atletas) e `avaliar` (próprios atletas com indicadores pendentes no ciclo aberto; 0 sem ciclo aberto). Atleta: `painel` (perguntas sem resposta no ciclo aberto + 1 se o termo vigente está pendente + respostas a pedidos de revisão e do titular dadas depois da última marcação de visto). IBVAR: objeto vazio. `total` é a soma. Feito para consulta a cada 60 s.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            contagens: {
+                                [key: string]: number;
+                            };
+                            total: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/notificacoes/vistas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Marca uma tela como vista (zera as respostas novas do balão)
+         * @description Grava o instante atual como última visita à tela. Por enquanto só o atleta marca `painel`; qualquer outra combinação de papel e chave responde 400. Não gera auditoria: é dado de interface, não de decisão.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        chave: "painel" | "revisoes" | "cadastro" | "avaliar";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": null;
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/perfil": {
         parameters: {
             query?: never;
@@ -760,6 +915,20 @@ export interface paths {
                                 pesoMaxKg: number;
                                 deltaKg: number;
                                 distanciaRelativa: number;
+                                /** @description Altura de referência da classe. O IBVAR não recebe (classFit inteiro nulo) */
+                                altura: {
+                                    /** @description Altura do atleta; nula se não medida */
+                                    cm: number | null;
+                                    /** @description Faixa de referência da classe; nula se não definida */
+                                    minCm: number | null;
+                                    mediaCm: number | null;
+                                    maxCm: number | null;
+                                    /**
+                                     * @description Nula se faltar a altura ou a faixa. Só informativa: não entra no score nem nos gates
+                                     * @enum {string|null}
+                                     */
+                                    situacao: "dentro" | "abaixo" | "acima" | null;
+                                };
                             } | null;
                             resultados: {
                                 data: string;
@@ -3092,6 +3261,10 @@ export interface paths {
                                 pesoMinKg: number;
                                 pesoMedioKg: number;
                                 pesoMaxKg: number;
+                                /** @description Altura de referência (informativa); nula se não definida */
+                                alturaMinCm: number | null;
+                                alturaMediaCm: number | null;
+                                alturaMaxCm: number | null;
                             }[];
                             rubricas: {
                                 /** @description Nulo = escala geral de 0 a 5 */
@@ -3182,6 +3355,10 @@ export interface paths {
                             pesoMinKg?: number;
                             pesoMedioKg?: number;
                             pesoMaxKg?: number;
+                            /** @description Altura de referência da classe, só informativa (não entra no score nem nos gates). Informe as três (min, média, max; 120 a 230 cm, min <= média <= max) ou as três nulas para limpar */
+                            alturaMinCm?: number | null;
+                            alturaMediaCm?: number | null;
+                            alturaMaxCm?: number | null;
                             /** @description Não dá para desativar classe com atleta ativo */
                             ativa?: boolean;
                         }[];
@@ -3227,6 +3404,10 @@ export interface paths {
                                 pesoMinKg: number;
                                 pesoMedioKg: number;
                                 pesoMaxKg: number;
+                                /** @description Altura de referência (informativa); nula se não definida */
+                                alturaMinCm: number | null;
+                                alturaMediaCm: number | null;
+                                alturaMaxCm: number | null;
                             }[];
                             rubricas: {
                                 /** @description Nulo = escala geral de 0 a 5 */
