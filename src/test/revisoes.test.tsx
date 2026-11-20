@@ -192,6 +192,26 @@ describe("TelaRevisoes", () => {
     expect(GET).not.toHaveBeenCalledWith("/pedidos-titular");
   });
 
+  it("gestor tem duas abas, a de notas começa ativa e o teclado troca de aba", async () => {
+    montar("gestor");
+    await screen.findByRole("link", { name: "Helena Prado" });
+    const abas = screen.getAllByRole("tab");
+    expect(abas.map((t) => t.textContent)).toEqual([
+      "Revisões de nota",
+      "Pedidos do titular (LGPD)",
+    ]);
+    expect(abas[0]).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(abas[0]!, { key: "ArrowRight" });
+    expect(await screen.findByRole("heading", { name: "Pedidos do titular (LGPD)" })).toBeTruthy();
+    expect(screen.getAllByRole("tab")[1]).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("lista vazia de revisões mostra o estado vazio", async () => {
+    GET.mockImplementation(async () => ok([]));
+    montar("gestor");
+    expect(await screen.findByText("Nenhum pedido de revisão neste filtro.")).toBeTruthy();
+  });
+
   it("gestor responde pedido do titular e vê o aviso da exclusão", async () => {
     PUT.mockResolvedValue(ok({ ...pedido, status: "respondido", resposta: "Feito." }));
     const inv = montar("gestor");

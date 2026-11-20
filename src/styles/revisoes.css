@@ -1,11 +1,3 @@
-.rev-abas {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.rev-filtro {
-  font-size: 0.9rem;
-}
 .rev-texto {
   max-width: 24rem;
   overflow-wrap: anywhere;

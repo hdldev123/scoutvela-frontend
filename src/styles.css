@@ -3580,3 +3580,66 @@
     line-height: 1.25;
   }
 }
+
+/* === Tela: Revisões === */
+.scout .panel-head .filters.rev-filtro {
+  margin-bottom: 0;
+}
+.scout table.rev-tabela td {
+  vertical-align: top;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.scout table.rev-tabela .rev-pilar {
+  min-width: 8rem;
+}
+.scout table.rev-tabela .rev-pilar strong {
+  display: block;
+  font-weight: 600;
+}
+.scout table.rev-tabela .rev-pilar .muted {
+  font-size: 12px;
+}
+.scout table.rev-tabela .rev-texto {
+  min-width: 12rem;
+}
+.scout table.rev-tabela .rev-texto .muted {
+  font-size: 12px;
+}
+.scout table.rev-tabela td.acoes {
+  vertical-align: top;
+}
+.scout .stack > .abas {
+  align-self: flex-start;
+}
+.scout .panel .filters .field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 4px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: var(--shadow-xs);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.scout .panel .filters .field select {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  padding: 4px 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.scout table.rev-tabela .rev-texto {
+  max-width: 16rem;
+  min-width: 11rem;
+}
+.scout .stack > .abas {
+  justify-self: start;
+  align-self: flex-start;
+}

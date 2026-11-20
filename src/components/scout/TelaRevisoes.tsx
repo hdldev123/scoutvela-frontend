@@ -1,7 +1,9 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { Abas, PainelAba } from "./Abas";
 import { Dialogo } from "./Dialogo";
+import { EstadoVazio } from "./EstadoVazio";
 import { fmtData } from "./formato";
 import { NotaRevisao } from "./NotaRevisao";
 import { mensagemDeErro } from "@/lib/api/cliente";
@@ -55,41 +57,27 @@ export function TelaRevisoes({ papel }: { papel: string }) {
         </div>
       </div>
       <div className="stack">
-        {gestor && (
-          <div className="rev-abas" role="tablist" aria-label="Tipo de pedido">
-            <button
-              type="button"
-              role="tab"
-              id="rev-aba-notas"
-              aria-selected={aba === "notas"}
-              aria-controls="rev-painel"
-              className={`btn${aba === "notas" ? " primary" : ""}`}
-              onClick={() => setAba("notas")}
-            >
-              Revisões de nota
-            </button>
-            <button
-              type="button"
-              role="tab"
-              id="rev-aba-titular"
-              aria-selected={aba === "titular"}
-              aria-controls="rev-painel"
-              className={`btn${aba === "titular" ? " primary" : ""}`}
-              onClick={() => setAba("titular")}
-            >
-              Pedidos do titular (LGPD)
-            </button>
-          </div>
+        {gestor ? (
+          <>
+            <Abas
+              rotulo="Tipo de pedido"
+              itens={[
+                { id: "notas", rotulo: "Revisões de nota" },
+                { id: "titular", rotulo: "Pedidos do titular (LGPD)" },
+              ]}
+              ativa={aba}
+              aoMudar={(id) => setAba(id === "titular" ? "titular" : "notas")}
+            />
+            <PainelAba id="notas" ativa={aba === "notas"}>
+              <RevisoesNota gestor />
+            </PainelAba>
+            <PainelAba id="titular" ativa={aba === "titular"}>
+              <PedidosTitular />
+            </PainelAba>
+          </>
+        ) : (
+          <RevisoesNota gestor={false} />
         )}
-        <div
-          id="rev-painel"
-          role={gestor ? "tabpanel" : undefined}
-          aria-labelledby={
-            gestor ? (aba === "notas" ? "rev-aba-notas" : "rev-aba-titular") : undefined
-          }
-        >
-          {aba === "notas" || !gestor ? <RevisoesNota gestor={gestor} /> : <PedidosTitular />}
-        </div>
       </div>
     </>
   );
@@ -174,18 +162,20 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
     <section className="panel" aria-labelledby="rev-notas-t">
       <div className="panel-head">
         <h2 id="rev-notas-t">Revisões de nota</h2>
-        <label className="rev-filtro" htmlFor="rev-status">
-          Status{" "}
-          <select
-            id="rev-status"
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value as FiltroStatus)}
-          >
-            <option value="aberto">Abertos</option>
-            <option value="respondido">Respondidos</option>
-            <option value="todos">Todos</option>
-          </select>
-        </label>
+        <div className="filters rev-filtro">
+          <label className="field" htmlFor="rev-status">
+            Status
+            <select
+              id="rev-status"
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value as FiltroStatus)}
+            >
+              <option value="aberto">Abertos</option>
+              <option value="respondido">Respondidos</option>
+              <option value="todos">Todos</option>
+            </select>
+          </label>
+        </div>
       </div>
       {!gestor && (
         <p className="muted">
@@ -201,20 +191,28 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
           {mensagemDeErro(q.error)}
         </div>
       ) : q.data.length === 0 ? (
-        <p className="muted">Nenhum pedido de revisão neste filtro.</p>
+        <EstadoVazio
+          icone="chat-circle-text"
+          titulo="Nenhum pedido de revisão neste filtro."
+          texto={
+            filtro === "aberto"
+              ? "Quando um atleta pedir revisão de uma nota, o pedido aparece aqui para resposta."
+              : "Troque o filtro de status para ver outros pedidos."
+          }
+        />
       ) : (
         <div className="table-scroll" tabIndex={0}>
-          <table className="data">
+          <table className="data interativa rev-tabela">
             <thead>
               <tr>
                 <th>Atleta</th>
-                <th>Nota</th>
+                <th>Pilar</th>
                 <th>Motivo</th>
                 <th>Pedido em</th>
                 <th>Status</th>
                 <th>Resposta</th>
                 {gestor && (
-                  <th>
+                  <th className="acoes">
                     <span className="rev-sr">Ação</span>
                   </th>
                 )}
@@ -223,14 +221,14 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
             <tbody>
               {q.data.map((r) => (
                 <tr key={r.id}>
-                  <td>
+                  <td className="nw">
                     <Link to="/atletas/$id" params={{ id: r.atleta.id }}>
                       {r.atleta.nome}
                     </Link>
                   </td>
-                  <td>
-                    {r.pilar?.nomeCurto ?? "—"}
-                    {r.indicador && <span className="muted"> / {r.indicador.nome}</span>}
+                  <td className="rev-pilar">
+                    <strong>{r.pilar?.nomeCurto ?? "—"}</strong>
+                    {r.indicador && <span className="muted">{r.indicador.nome}</span>}
                   </td>
                   <td className="rev-texto">
                     {r.motivo}
@@ -241,8 +239,8 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                       </div>
                     )}
                   </td>
-                  <td>{fmtData(r.criadoEm)}</td>
-                  <td>
+                  <td className="nw">{fmtData(r.criadoEm)}</td>
+                  <td className="nw">
                     <Status status={r.status} />
                   </td>
                   <td className="rev-texto">
@@ -258,11 +256,11 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                     )}
                   </td>
                   {gestor && (
-                    <td className="r">
+                    <td className="acoes">
                       {r.status === "aberto" && (
                         <button
                           type="button"
-                          className="btn"
+                          className="btn sm"
                           onClick={() => {
                             setErro("");
                             setAvaliacaoId("");
@@ -389,10 +387,14 @@ function PedidosTitular() {
           {mensagemDeErro(q.error)}
         </div>
       ) : q.data.length === 0 ? (
-        <p className="muted">Nenhum pedido do titular.</p>
+        <EstadoVazio
+          icone="shield-check"
+          titulo="Nenhum pedido do titular."
+          texto="Pedidos de acesso, correção, exclusão ou revogação feitos pelos atletas aparecem aqui."
+        />
       ) : (
         <div className="table-scroll" tabIndex={0}>
-          <table className="data">
+          <table className="data interativa rev-tabela">
             <thead>
               <tr>
                 <th>Atleta</th>
@@ -401,7 +403,7 @@ function PedidosTitular() {
                 <th>Pedido em</th>
                 <th>Status</th>
                 <th>Resposta</th>
-                <th>
+                <th className="acoes">
                   <span className="rev-sr">Ação</span>
                 </th>
               </tr>
@@ -409,24 +411,24 @@ function PedidosTitular() {
             <tbody>
               {q.data.map((p) => (
                 <tr key={p.id}>
-                  <td>
+                  <td className="nw">
                     <Link to="/atletas/$id" params={{ id: p.atleta.id }}>
                       {p.atleta.nome}
                     </Link>
                   </td>
-                  <td>{ROTULO_TIPO[p.tipo]}</td>
+                  <td className="nw">{ROTULO_TIPO[p.tipo]}</td>
                   <td className="rev-texto">{p.descricao}</td>
-                  <td>{fmtData(p.criadoEm)}</td>
-                  <td>
+                  <td className="nw">{fmtData(p.criadoEm)}</td>
+                  <td className="nw">
                     <Status status={p.status} />
                   </td>
                   <td className="rev-texto">{p.resposta ?? "—"}</td>
-                  <td className="r">
-                    <div className="btn-row">
+                  <td className="acoes">
+                    <div className="acoes-grupo">
                       {p.tipo === "exclusao" && (p.status === "aberto" || anonimizado(p)) && (
                         <button
                           type="button"
-                          className="btn"
+                          className="btn sm"
                           aria-label={`${anonimizado(p) ? ROTULO_RETOMAR : ROTULO_ANONIMIZAR}: ${p.atleta.nome}`}
                           onClick={() => setAnonimizando(p)}
                         >
@@ -436,7 +438,7 @@ function PedidosTitular() {
                       {p.status === "aberto" && (
                         <button
                           type="button"
-                          className="btn"
+                          className="btn sm"
                           onClick={() => {
                             setErro("");
                             setAlvo(p);
