@@ -9,6 +9,7 @@ import {
   contagemDaTela,
   itensDeNavegacao,
   ROTULO_PAPEL,
+  nomeComPendencias,
   textoDoBalao,
   textoPendentes,
 } from "@/lib/auth/navegacao";
@@ -119,15 +120,19 @@ export function Shell({ me, onSair, children }: ShellProps) {
                   to={i.to}
                   {...(i.params ? { params: i.params } : {})}
                   activeProps={{ "aria-current": "page" }}
+                  // Nome acessível explícito, contendo o texto visível (WCAG 2.5.3): "Revisões 3"
+                  // na tela vira "Revisões 3 pendentes"; acima de 9, "Revisões 9+ (12 pendentes)".
+                  {...(n > 0 ? { "aria-label": nomeComPendencias(i.rotulo, n) } : {})}
                 >
                   <i className={`ph ph-${i.icone}`} aria-hidden="true" />
                   {i.rotulo}
                   {n > 0 && (
                     <>
+                      {/* Espaço real entre o rótulo e o número: o texto visível vira
+                          "Revisões 3", contido no nome acessível. */}{" "}
                       <span className="balao" aria-hidden="true">
                         {textoDoBalao(n)}
                       </span>
-                      <span className="sr-only">, {textoPendentes(n)}</span>
                     </>
                   )}
                 </Link>

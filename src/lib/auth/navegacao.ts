@@ -87,3 +87,13 @@ export function textoDoBalao(n: number): string {
 export function textoPendentes(n: number): string {
   return `${n} ${n === 1 ? "pendente" : "pendentes"}`;
 }
+
+/**
+ * Nome acessível do item do menu com balão. Contém o texto visível (rótulo + número do balão),
+ * como pede a WCAG 2.5.3: "Revisões 3 pendentes"; acima de 9, "Revisões 9+ (12 pendentes)".
+ */
+export function nomeComPendencias(rotulo: string, n: number): string {
+  return n > 9
+    ? `${rotulo} ${textoDoBalao(n)} (${textoPendentes(n)})`
+    : `${rotulo} ${textoPendentes(n)}`;
+}

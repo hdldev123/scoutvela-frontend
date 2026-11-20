@@ -88,29 +88,29 @@ describe("Balões do menu lateral", () => {
   it("gestor: números nos itens certos, com nome acessível", async () => {
     resposta({ revisoes: 3, cadastro: 2 });
     await montar(GESTOR);
-    const rev = await screen.findByRole("link", { name: "Revisões, 3 pendentes" });
+    const rev = await screen.findByRole("link", { name: "Revisões 3 pendentes" });
     expect(within(rev).getByText("3")).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getByRole("link", { name: "Cadastrar atleta, 2 pendentes" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Cadastrar atleta 2 pendentes" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Lançar avaliação" })).toBeInTheDocument();
   });
 
   it("treinador: revisões e lançar avaliação", async () => {
     resposta({ revisoes: 2, avaliar: 7 });
     await montar(TREINADOR);
-    expect(await screen.findByRole("link", { name: "Revisões, 2 pendentes" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Lançar avaliação, 7 pendentes" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Revisões 2 pendentes" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Lançar avaliação 7 pendentes" })).toBeInTheDocument();
   });
 
   it("atleta: Meu painel, singular com 1", async () => {
     resposta({ painel: 1 });
     await montar(ATLETA);
-    expect(await screen.findByRole("link", { name: "Meu painel, 1 pendente" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Meu painel 1 pendente" })).toBeInTheDocument();
   });
 
   it('mostra "9+" acima de 9, mas o nome acessível guarda o número real', async () => {
     resposta({ painel: 12 });
     await montar(ATLETA);
-    const link = await screen.findByRole("link", { name: "Meu painel, 12 pendentes" });
+    const link = await screen.findByRole("link", { name: "Meu painel 9+ (12 pendentes)" });
     expect(within(link).getByText("9+")).toBeInTheDocument();
   });
 
