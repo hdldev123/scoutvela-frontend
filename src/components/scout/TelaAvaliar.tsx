@@ -1,6 +1,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Avatar } from "./Avatar";
+import { CampoArquivo } from "./CampoArquivo";
 import { FaixaPill } from "./FaixaPill";
 import { textoDoStatus } from "./status-gate";
 import { fmt0, fmt1, fmtData } from "./formato";
@@ -51,6 +53,20 @@ function useAtrasado<T>(valor: T, ms: number): T {
   return v;
 }
 
+/** Segue uma media query (ex.: celular). Sem matchMedia, vale falso. */
+function useMedia(consulta: string): boolean {
+  const [vale, setVale] = useState(() => window.matchMedia?.(consulta).matches ?? false);
+  useEffect(() => {
+    const m = window.matchMedia?.(consulta);
+    if (!m) return;
+    const aoMudar = () => setVale(m.matches);
+    aoMudar();
+    m.addEventListener("change", aoMudar);
+    return () => m.removeEventListener("change", aoMudar);
+  }, [consulta]);
+  return vale;
+}
+
 export interface TelaAvaliarProps {
   atletaId?: string | undefined;
   aoEscolher: (id: string | undefined) => void;
@@ -77,12 +93,13 @@ export function TelaAvaliar({ atletaId, aoEscolher }: TelaAvaliarProps) {
             histórico mostra a evolução.
           </p>
         </div>
-        <label className="field" htmlFor="av-atleta">
+      </div>
+      {itens.length > 0 && (
+        <label className="field avaliar-campo" htmlFor="av-atleta">
           Atleta
           <select
             id="av-atleta"
             value={atletaId ?? ""}
-            disabled={ranking.isPending || itens.length === 0}
             onChange={(e) => aoEscolher(e.target.value || undefined)}
           >
             <option value="">Escolha um atleta</option>
@@ -94,7 +111,7 @@ export function TelaAvaliar({ atletaId, aoEscolher }: TelaAvaliarProps) {
             ))}
           </select>
         </label>
-      </div>
+      )}
       {ranking.isPending && <p className="muted">Carregando atletas…</p>}
       {ranking.isError && (
         <div className="note" role="alert">
@@ -110,10 +127,36 @@ export function TelaAvaliar({ atletaId, aoEscolher }: TelaAvaliarProps) {
         </div>
       )}
       {ranking.isSuccess && itens.length > 0 && !atletaId && (
-        <div className="panel empty-state">
-          <h2>Escolha um atleta</h2>
+        <section className="avaliar-grade-wrap" aria-labelledby="av-grade-titulo">
+          <h2 id="av-grade-titulo">Escolha um atleta</h2>
           <p className="muted">Selecione quem você vai avaliar neste ciclo.</p>
-        </div>
+          <ul className="avaliar-grade">
+            {itens.map((i) => (
+              <li key={i.atleta.id}>
+                <button
+                  type="button"
+                  className="avaliar-cartao"
+                  onClick={() => aoEscolher(i.atleta.id)}
+                >
+                  <Avatar nome={i.atleta.nome} fotoUrl={i.atleta.fotoUrl} />
+                  <span className="avaliar-cartao-txt">
+                    <strong>{i.atleta.nome}</strong>
+                    <span className="avaliar-cartao-meta">
+                      {i.atleta.classe.nome}
+                      {!i.completo && <span className="pill st-parcial">Pendente</span>}
+                    </span>
+                  </span>
+                  {i.score != null && (
+                    <span className="avaliar-cartao-score">
+                      <span className="sr-only">Score </span>
+                      {fmt1(i.score)}
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
       {atletaId && <FormAvaliacao key={atletaId} id={atletaId} />}
     </>
@@ -142,6 +185,8 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
   const [peso, setPeso] = useState<string | undefined>();
   const [altura, setAltura] = useState<string | undefined>();
   const [evMedida, setEvMedida] = useState("");
+  const celular = useMedia("(max-width: 880px)");
+  const abaAtiva = useRef<HTMLButtonElement>(null);
 
   const pilar = ficha.pilares.find((p) => p.id === pilarId) ?? ficha.pilares[0];
   const meta = params.pilares.find((p) => p.id === pilar?.id);
@@ -224,6 +269,9 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
     limpar();
     salvar.reset();
   };
+  useEffect(() => {
+    abaAtiva.current?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }, [pilarId]);
   const mudarRasc = (indId: string, parte: Partial<Rascunho>) =>
     setRasc((r) => ({ ...r, [indId]: { evidencia: "", ...r[indId], ...parte } }));
 
@@ -235,6 +283,21 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
     .sort((a, b) => a.nota - b.nota);
   const dep = previa.data?.depois;
   const ant = previa.data?.antes;
+  const acoes = (
+    <>
+      <button
+        type="button"
+        className="btn primary"
+        disabled={!pronto || salvar.isPending}
+        onClick={() => salvar.mutate()}
+      >
+        {salvar.isPending ? "Salvando…" : "Salvar avaliação"}
+      </button>
+      <button type="button" className="btn ghost" disabled={!mudou} onClick={descartar}>
+        Descartar
+      </button>
+    </>
+  );
 
   return (
     <>
@@ -244,6 +307,7 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
             key={p.id}
             type="button"
             className="ptab"
+            ref={p.id === pilar.id ? abaAtiva : undefined}
             aria-pressed={p.id === pilar.id}
             onClick={() => setPilarId(p.id)}
           >
@@ -266,9 +330,12 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
           <div className="editor">
             <div className="rubric">
               <b>{geral ? "Escala geral" : "Rubrica do pilar"}</b>
-              <ol start={0}>
+              <ol className="escala">
                 {escala.map((r) => (
-                  <li key={r.nota}>{r.descricao}</li>
+                  <li key={r.nota}>
+                    <span className="escala-nota">{r.nota}</span>
+                    <span>{r.descricao}</span>
+                  </li>
                 ))}
               </ol>
             </div>
@@ -301,19 +368,7 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
               {mensagemDeErro(salvar.error)}
             </div>
           )}
-          <div className="btn-row" style={{ marginTop: 14 }}>
-            <button
-              type="button"
-              className="btn primary"
-              disabled={!pronto || salvar.isPending}
-              onClick={() => salvar.mutate()}
-            >
-              {salvar.isPending ? "Salvando…" : "Salvar avaliação"}
-            </button>
-            <button type="button" className="btn" disabled={!mudou} onClick={descartar}>
-              Descartar
-            </button>
-          </div>
+          {!celular && <div className="avaliar-rodape">{acoes}</div>}
         </section>
         <aside className="panel preview avaliar-previa">
           <div className="eyebrow">Prévia do cálculo</div>
@@ -375,6 +430,25 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
           </p>
         </aside>
       </div>
+      {celular && mudou && (
+        <div className="avaliar-barra" role="region" aria-label="Resumo e ações da avaliação">
+          <span className="avaliar-barra-resumo">
+            {pronto && ant && dep ? (
+              <>
+                Score:{" "}
+                <b className="num">
+                  {fmt1(ant.score)} → {fmt1(dep.score)}
+                </b>
+              </>
+            ) : invalidos.size > 0 ? (
+              "Falta evidência"
+            ) : (
+              "Calculando…"
+            )}
+          </span>
+          <span className="avaliar-barra-acoes">{acoes}</span>
+        </div>
+      )}
     </>
   );
 }
@@ -481,11 +555,47 @@ function LinhaIndicador({
     );
   }
 
+  return (
+    <LinhaNota
+      ind={ind}
+      escala={escala}
+      evidenciaPadrao={evidenciaPadrao}
+      rascunho={rascunho}
+      invalido={invalido}
+      atletaId={atletaId}
+      aoMudar={aoMudar}
+    />
+  );
+}
+
+type PropsNota = Omit<LinhaProps, "medida">;
+
+function LinhaNota({
+  ind,
+  escala,
+  evidenciaPadrao,
+  rascunho,
+  invalido,
+  atletaId,
+  aoMudar,
+}: PropsNota) {
   const valor = rascunho?.valor ?? ind.nota ?? undefined;
   const sug = ind.sugestaoPendente;
   // Nota sugerida pelos pontos do Ranking CBVela (regra PERF_PONTOS). Só vale se o avaliador lançar.
   const pontos = ind.sugestaoPontos;
   const descricao = escala.find((r) => r.nota === valor)?.descricao;
+  const descricaoAtual = escala.find((r) => r.nota === ind.nota)?.descricao;
+  // Evidência e anexo só aparecem quando a nota muda ou já há algo digitado/anexado.
+  const mudouNota = valor !== undefined && valor !== (ind.nota ?? undefined);
+  const mostraEvidencia =
+    mudouNota || (rascunho?.evidencia.trim() ?? "") !== "" || !!rascunho?.anexoId;
+  const campoEvidencia = useRef<HTMLInputElement>(null);
+  const jaMostrava = useRef(mostraEvidencia);
+  useEffect(() => {
+    if (mostraEvidencia && !jaMostrava.current) campoEvidencia.current?.focus();
+    jaMostrava.current = mostraEvidencia;
+  }, [mostraEvidencia]);
+
   return (
     <div className="ed-row">
       <div className="lbl">
@@ -495,14 +605,16 @@ function LinhaIndicador({
             ? `Resposta do atleta: “${ind.resposta}”`
             : ind.tipo === "A"
               ? "Atleta ainda não respondeu"
-              : `Atual: ${ind.nota == null ? "sem nota" : ind.nota}`}
+              : `Atual: ${ind.nota == null ? "sem nota" : ind.nota}${
+                  descricaoAtual ? ` · ${descricaoAtual}` : ""
+                }`}
         </small>
         {sug && (
           <div className="avaliar-sugestao">
             <span>Sugestão pela resposta: {sug.valor}</span>
             <button
               type="button"
-              className="btn"
+              className="btn sm"
               onClick={() => aoMudar({ valor: sug.valor })}
               aria-label={`Usar sugestão ${sug.valor} em ${ind.nome}`}
             >
@@ -517,7 +629,7 @@ function LinhaIndicador({
             </span>
             <button
               type="button"
-              className="btn"
+              className="btn sm"
               onClick={() => aoMudar({ valor: pontos.nota })}
               aria-label={`Usar sugestão do Ranking CBVela (nota ${pontos.nota}) em ${ind.nome}`}
             >
@@ -540,39 +652,52 @@ function LinhaIndicador({
           </label>
         ))}
       </div>
-      {descricao && (
+      {mudouNota && descricao && (
         <div className="lbl" style={{ gridColumn: "1 / -1" }}>
           <small>
             Nota {valor}: {descricao}
           </small>
         </div>
       )}
-      <label className="field ev" htmlFor={`ev-${ind.id}`}>
-        Evidência (obrigatória)
-        <input
-          id={`ev-${ind.id}`}
-          maxLength={EVID_MAX}
-          placeholder={evidenciaPadrao}
-          value={rascunho?.evidencia ?? ""}
-          aria-invalid={invalido}
-          aria-describedby={invalido ? `ev-erro-${ind.id}` : undefined}
-          onChange={(e) => aoMudar({ evidencia: e.target.value })}
-        />
-      </label>
-      <AnexoDaNota
-        atletaId={atletaId}
-        indicador={ind}
-        anexoNome={rascunho?.anexoNome}
-        aoAnexar={(anexoId, anexoNome) => aoMudar({ anexoId, anexoNome })}
-      />
-      {invalido && (
-        <span
-          id={`ev-erro-${ind.id}`}
-          className="avaliar-erro-campo"
-          style={{ gridColumn: "1 / -1" }}
-        >
-          Informe a evidência, de {EVID_MIN} a {EVID_MAX} caracteres.
-        </span>
+      {mostraEvidencia && (
+        <div className="avaliar-evidencia">
+          <label className="field ev" htmlFor={`ev-${ind.id}`}>
+            Evidência (obrigatória)
+            <input
+              ref={campoEvidencia}
+              id={`ev-${ind.id}`}
+              maxLength={EVID_MAX}
+              placeholder={evidenciaPadrao ? `Ex.: ${evidenciaPadrao}` : ""}
+              value={rascunho?.evidencia ?? ""}
+              aria-invalid={invalido}
+              aria-describedby={invalido ? `ev-erro-${ind.id}` : undefined}
+              onChange={(e) => aoMudar({ evidencia: e.target.value })}
+            />
+          </label>
+          {evidenciaPadrao && (
+            <button
+              type="button"
+              className="btn sm ghost avaliar-usar-padrao"
+              onClick={() => {
+                aoMudar({ evidencia: evidenciaPadrao });
+                campoEvidencia.current?.focus();
+              }}
+            >
+              Usar «{evidenciaPadrao}»
+            </button>
+          )}
+          {invalido && (
+            <span id={`ev-erro-${ind.id}`} className="avaliar-erro-campo">
+              Informe a evidência, de {EVID_MIN} a {EVID_MAX} caracteres.
+            </span>
+          )}
+          <AnexoDaNota
+            atletaId={atletaId}
+            indicador={ind}
+            anexoNome={rascunho?.anexoNome}
+            aoAnexar={(anexoId, anexoNome) => aoMudar({ anexoId, anexoNome })}
+          />
+        </div>
       )}
     </div>
   );
@@ -610,36 +735,22 @@ function AnexoDaNota({
     enviar.mutate(arquivo);
   }
 
+  const arquivo = useMemo(() => (anexoNome ? new File([], anexoNome) : null), [anexoNome]);
+
   return (
-    <div className="ficha-anexo">
-      <label className="field" htmlFor={`anexo-${indicador.id}`}>
-        Anexar evidência (PDF, JPG ou PNG, até 5 MB)
-        <input
-          id={`anexo-${indicador.id}`}
-          type="file"
-          accept={ACEITA_ARQUIVO}
-          aria-label={`Anexar evidência de ${indicador.nome}`}
-          disabled={enviar.isPending}
-          onChange={(e) => {
-            escolher(e.target.files?.[0]);
-            e.target.value = "";
-          }}
-        />
-      </label>
+    <div className="avaliar-anexo">
+      <CampoArquivo
+        id={`anexo-${indicador.id}`}
+        rotulo={`Anexar evidência de ${indicador.nome}`}
+        accept={ACEITA_ARQUIVO}
+        textoBotao="Anexar evidência"
+        dica="PDF, JPG ou PNG, até 5 MB"
+        arquivo={arquivo}
+        desabilitado={enviar.isPending}
+        aoEscolher={(f) => (f ? escolher(f) : aoAnexar(undefined, undefined))}
+      />
       {enviar.isPending && <span className="muted">Enviando…</span>}
-      {anexoNome && !enviar.isPending && (
-        <span>
-          <i className="ph ph-paperclip" aria-hidden="true" /> {anexoNome} · segue junto da nota
-          <button
-            type="button"
-            className="btn"
-            onClick={() => aoAnexar(undefined, undefined)}
-            aria-label={`Remover anexo de ${indicador.nome}`}
-          >
-            Remover
-          </button>
-        </span>
-      )}
+      {anexoNome && !enviar.isPending && <span className="muted">Anexo segue junto da nota.</span>}
       {erro && (
         <span className="avaliar-erro-campo" role="alert">
           {erro}

@@ -4045,3 +4045,209 @@
     font-size: 2.8rem;
   }
 }
+
+/* === Tela: Lançar avaliação === */
+.scout .avaliar-campo {
+  display: grid;
+  height: auto;
+  width: 100%;
+  max-width: 480px;
+  padding: 0;
+  gap: 6px;
+  margin-bottom: 18px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 12.5px;
+}
+.scout .avaliar-campo select {
+  width: 100%;
+}
+.scout .avaliar-grade-wrap h2 {
+  font-size: 1.05rem;
+}
+.scout .avaliar-grade-wrap p {
+  margin: 4px 0 0;
+}
+.scout .avaliar-grade {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 10px;
+}
+.scout .avaliar-cartao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.scout .avaliar-cartao:hover {
+  border-color: var(--sea);
+  box-shadow: 0 0 0 3px var(--sea-soft);
+}
+.scout .avaliar-cartao-txt {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.scout .avaliar-cartao-txt strong {
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+.scout .avaliar-cartao-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}
+.scout .avaliar-cartao-score {
+  flex: none;
+  font-family: var(--f-mono);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.scout .ptabs {
+  padding: 3px;
+  margin-left: -3px;
+  margin-right: -3px;
+}
+.scout .ptab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.scout .escala {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, auto);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 24px;
+}
+.scout .escala li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.scout .escala-nota {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.scout .avaliar-evidencia {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.scout .avaliar-usar-padrao {
+  justify-self: start;
+  max-width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.scout .avaliar-anexo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 0.82rem;
+}
+.scout .avaliar-rodape {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 14px -18px -18px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 10px 10px;
+  background: var(--surface);
+}
+.scout .avaliar-previa {
+  position: sticky;
+  top: 16px;
+  margin-top: 0;
+}
+.scout .avaliar-barra {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin: 16px -16px 0;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 -6px 16px oklch(0.2 0.02 260 / 8%);
+}
+.scout .avaliar-barra-resumo {
+  font-size: 0.9rem;
+}
+.scout .avaliar-barra-acoes {
+  display: flex;
+  gap: 8px;
+}
+@media (max-width: 880px) {
+  .scout .avaliar-previa {
+    position: static;
+  }
+}
+@media (max-width: 640px) {
+  .scout .ptabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+  .scout .ptab {
+    scroll-snap-align: center;
+  }
+  .scout .escala {
+    grid-auto-flow: row;
+    grid-template-rows: none;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .scout .ed-row .seg-radio {
+    display: flex;
+    width: 100%;
+  }
+  .scout .ed-row .seg-radio label {
+    flex: 1;
+    width: auto;
+  }
+}

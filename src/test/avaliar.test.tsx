@@ -276,7 +276,69 @@ describe("TelaAvaliar", () => {
       params: { path: { id: "a07" } },
       body: { notas: [{ indicadorId: "tec_1", valor: 3, evidencia: "Regata de seleção" }] },
     });
-    await waitFor(() => expect(evidencia().value).toBe(""));
+    await waitFor(() => expect(screen.queryByLabelText(/Evidência \(obrigatória\)/)).toBeNull());
+  });
+
+  it("sem atleta escolhido mostra cartões clicáveis com classe e score", async () => {
+    preparar({
+      ranking: {
+        ...RANKING,
+        itens: RANKING.itens.map((i, n) => ({ ...i, score: n === 0 ? 71.5 : 80 })),
+      },
+    });
+    const aoEscolher = montar();
+    const cartao = await screen.findByRole("button", { name: /Helena Vasques.*ILCA 6.*71,5/ });
+    expect(cartao.textContent).toContain("Pendente");
+    expect(screen.getByRole("button", { name: /Bruno Lima.*ILCA 7.*80,0/ })).toBeTruthy();
+    fireEvent.click(cartao);
+    expect(aoEscolher).toHaveBeenCalledWith("a07");
+  });
+
+  it("com atleta escolhido não mostra a grade de cartões", async () => {
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    expect(screen.queryByRole("heading", { name: "Escolha um atleta" })).toBeNull();
+  });
+
+  it("evidência e anexo só aparecem quando a nota muda, e o campo recebe o foco", async () => {
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    expect(screen.getByText("Atual: 2 · Escala geral 2")).toBeTruthy();
+    expect(screen.queryByLabelText(/Evidência \(obrigatória\)/)).toBeNull();
+    expect(screen.queryByLabelText("Anexar evidência de Leitura de vento")).toBeNull();
+    nota("Leitura de vento", 4);
+    const campo = evidencia();
+    expect(campo.getAttribute("placeholder")).toBe("Ex.: Vídeo de treino");
+    await waitFor(() => expect(document.activeElement).toBe(campo));
+    expect(screen.getByLabelText("Anexar evidência de Leitura de vento")).toBeTruthy();
+    expect(screen.getByText("PDF, JPG ou PNG, até 5 MB")).toBeTruthy();
+    // Voltar à nota atual, sem texto, recolhe de novo.
+    nota("Leitura de vento", 2);
+    expect(screen.queryByLabelText(/Evidência \(obrigatória\)/)).toBeNull();
+  });
+
+  it("o botão «Usar …» preenche a evidência com o texto padrão do pilar", async () => {
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    fireEvent.click(screen.getByRole("button", { name: "Usar «Vídeo de treino»" }));
+    expect(evidencia().value).toBe("Vídeo de treino");
+  });
+
+  it("mostra a escala com os números de 0 a 5 visíveis", async () => {
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    const itens = screen.getByText("Escala geral").parentElement?.querySelectorAll("li") ?? [];
+    expect(itens).toHaveLength(6);
+    expect(Array.from(itens).map((li) => li.querySelector(".escala-nota")?.textContent)).toEqual([
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+    ]);
+    expect(itens[3]?.textContent).toContain("Escala geral 3");
   });
 
   it("usa a sugestão pendente e mostra a resposta do atleta", async () => {
@@ -384,6 +446,7 @@ describe("TelaAvaliar", () => {
   it("anexa evidência ao indicador e envia o anexoId junto da nota (prévia sem anexo)", async () => {
     montar("a07");
     await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 3);
     const campo = screen.getByLabelText("Anexar evidência de Leitura de vento");
 
     const grande = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "grande.pdf", {
@@ -407,9 +470,8 @@ describe("TelaAvaliar", () => {
         },
       }),
     );
-    expect(await screen.findByText(/regata\.pdf · segue junto da nota/)).toBeTruthy();
+    expect(await screen.findByText(/Anexo segue junto da nota/)).toBeTruthy();
 
-    nota("Leitura de vento", 3);
     fireEvent.change(evidencia(), { target: { value: "Regata de seleção" } });
     const salvar = screen.getByRole("button", { name: "Salvar avaliação" });
     await waitFor(() => expect(salvar.hasAttribute("disabled")).toBe(false));
