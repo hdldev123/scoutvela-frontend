@@ -117,3 +117,13 @@
   align-items: center;
   gap: 12px;
 }
+
+/* === Class Fit: peso e altura lado a lado === */
+.par-classes .par-grupo-col {
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+.par-classes .par-kg {
+  min-width: 4.25rem;
+  font-variant-numeric: tabular-nums;
+}

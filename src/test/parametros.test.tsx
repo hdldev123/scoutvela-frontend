@@ -45,6 +45,9 @@ const params: Parametros = {
       pesoMinKg: 82.8,
       pesoMedioKg: 85,
       pesoMaxKg: 87.2,
+      alturaMinCm: 182,
+      alturaMediaCm: 187,
+      alturaMaxCm: 192,
       ativa: true,
     },
     {
@@ -55,6 +58,9 @@ const params: Parametros = {
       pesoMinKg: 70,
       pesoMedioKg: 75,
       pesoMaxKg: 80,
+      alturaMinCm: null,
+      alturaMediaCm: null,
+      alturaMaxCm: null,
       ativa: true,
     },
   ],
@@ -161,12 +167,103 @@ describe("TelaParametros", () => {
     const max = await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
     irPara("Class Fit");
     fireEvent.change(max, { target: { value: "88,4" } });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas de peso" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
     await waitFor(() =>
       expect(PUT).toHaveBeenCalledWith("/parametros", {
         body: { classes: [{ id: "c1", pesoMinKg: 82.8, pesoMedioKg: 85, pesoMaxKg: 88.4 }] },
       }),
     );
+  });
+
+  describe("altura de referência", () => {
+    it("mostra os cabeçalhos agrupados e os valores atuais", async () => {
+      montar();
+      await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+      irPara("Class Fit");
+      expect(screen.getByRole("columnheader", { name: "Peso (kg)" })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: "Altura (cm)" })).toBeInTheDocument();
+      expect(screen.getByLabelText("Altura mínima de ILCA 7, Individual (cm)")).toHaveValue("182");
+      expect(screen.getByLabelText("Altura média de ILCA 7, Individual (cm)")).toHaveValue("187");
+      expect(screen.getByLabelText("Altura máxima de ILCA 7, Individual (cm)")).toHaveValue("192");
+      expect(screen.getByLabelText("Altura mínima de 470, Timoneiro (cm)")).toHaveValue("");
+      expect(
+        screen.getByText("A altura é informativa (não entra no score nem nos gates)."),
+      ).toBeInTheDocument();
+    });
+
+    it("envia os três campos de altura juntos, só da classe alterada", async () => {
+      PUT.mockResolvedValue({ data: params, response: { status: 200 } });
+      montar();
+      await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+      irPara("Class Fit");
+      fireEvent.change(screen.getByLabelText("Altura mínima de 470, Timoneiro (cm)"), {
+        target: { value: "170" },
+      });
+      fireEvent.change(screen.getByLabelText("Altura média de 470, Timoneiro (cm)"), {
+        target: { value: "175,5" },
+      });
+      fireEvent.change(screen.getByLabelText("Altura máxima de 470, Timoneiro (cm)"), {
+        target: { value: "180" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
+      await waitFor(() =>
+        expect(PUT).toHaveBeenCalledWith("/parametros", {
+          body: {
+            classes: [{ id: "c2", alturaMinCm: 170, alturaMediaCm: 175.5, alturaMaxCm: 180 }],
+          },
+        }),
+      );
+    });
+
+    it("vazio nos três envia null para limpar", async () => {
+      PUT.mockResolvedValue({ data: params, response: { status: 200 } });
+      montar();
+      await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+      irPara("Class Fit");
+      for (const r of ["mínima", "média", "máxima"]) {
+        fireEvent.change(screen.getByLabelText(`Altura ${r} de ILCA 7, Individual (cm)`), {
+          target: { value: "" },
+        });
+      }
+      fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
+      await waitFor(() =>
+        expect(PUT).toHaveBeenCalledWith("/parametros", {
+          body: {
+            classes: [{ id: "c1", alturaMinCm: null, alturaMediaCm: null, alturaMaxCm: null }],
+          },
+        }),
+      );
+    });
+
+    it("exige os três ou nenhum e bloqueia o envio", async () => {
+      montar();
+      await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+      irPara("Class Fit");
+      fireEvent.change(screen.getByLabelText("Altura mínima de 470, Timoneiro (cm)"), {
+        target: { value: "170" },
+      });
+      expect(
+        screen.getByText("Informe os três valores de altura ou deixe os três vazios."),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Salvar faixas da classe" })).toBeDisabled();
+      expect(PUT).not.toHaveBeenCalled();
+    });
+
+    it("valida o intervalo de 120 a 230 e a ordem mín. <= média <= máx.", async () => {
+      montar();
+      await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+      irPara("Class Fit");
+      const min = screen.getByLabelText("Altura mínima de ILCA 7, Individual (cm)");
+      const med = screen.getByLabelText("Altura média de ILCA 7, Individual (cm)");
+      fireEvent.change(min, { target: { value: "100" } });
+      expect(screen.getByText("A altura deve ficar entre 120 e 230 cm.")).toBeInTheDocument();
+      fireEvent.change(min, { target: { value: "190" } });
+      expect(screen.getByText("A altura mínima não pode passar da média.")).toBeInTheDocument();
+      fireEvent.change(min, { target: { value: "182" } });
+      fireEvent.change(med, { target: { value: "195" } });
+      expect(screen.getByText("A altura média não pode passar da máxima.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Salvar faixas da classe" })).toBeDisabled();
+    });
   });
 
   it("avisa quando mín. > média ou média > máx. e bloqueia o envio", async () => {
@@ -175,7 +272,7 @@ describe("TelaParametros", () => {
     irPara("Class Fit");
     fireEvent.change(min, { target: { value: "78" } });
     expect(screen.getByText("O mínimo não pode passar da média.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Salvar faixas de peso" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Salvar faixas da classe" })).toBeDisabled();
     fireEvent.change(min, { target: { value: "70" } });
     fireEvent.change(screen.getByLabelText("Média de 470, Timoneiro (kg)"), {
       target: { value: "81" },
@@ -346,7 +443,7 @@ describe("TelaParametros", () => {
     await screen.findByDisplayValue("Pódio mundial");
     irPara("Class Fit");
     fireEvent.click(await screen.findByRole("switch", { name: "Ativa: 470, Timoneiro" }));
-    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas de peso" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
     await waitFor(() =>
       expect(PUT).toHaveBeenCalledWith("/parametros", {
         body: { classes: [{ id: "c2", ativa: false }] },
@@ -372,12 +469,12 @@ describe("TelaParametros", () => {
       "true",
     );
     expect(screen.getByRole("button", { name: "Salvar pesos" })).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Salvar faixas de peso" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Salvar faixas da classe" })).toBeNull();
 
     fireEvent.change(screen.getByLabelText("Performance"), { target: { value: "55" } });
     irPara("Class Fit");
     expect(window.location.hash).toBe("#classes");
-    expect(screen.getByRole("button", { name: "Salvar faixas de peso" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Salvar faixas da classe" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Salvar pesos" })).toBeNull();
     irPara("Componentes de custo");
     expect(screen.getByText("Treinador")).toBeVisible();

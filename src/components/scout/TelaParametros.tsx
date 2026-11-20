@@ -6,7 +6,7 @@ import { fmt1 } from "./formato";
 import { SecaoFaixas, SecaoRubricas } from "./ParametrosFaixasRubricas";
 import { SecaoRegras } from "./ParametrosRegras";
 import { SecaoTermos } from "./ParametrosTermos";
-import { MSG_SALVO } from "./parametros-util";
+import { analisarAltura, MSG_SALVO } from "./parametros-util";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useParametros, useSalvarParametros, type Parametros } from "@/lib/api/parametros";
 
@@ -105,7 +105,10 @@ function ConteudoParametros({ dados, gestor }: { dados: Parametros; gestor: bool
       <PainelAba id="classes" ativa={ativa === "classes"} manter>
         <SecaoClasses
           key={dados.classes
-            .map((c) => `${c.pesoMinKg}/${c.pesoMedioKg}/${c.pesoMaxKg}/${c.ativa}`)
+            .map(
+              (c) =>
+                `${c.pesoMinKg}/${c.pesoMedioKg}/${c.pesoMaxKg}/${c.alturaMinCm}/${c.alturaMediaCm}/${c.alturaMaxCm}/${c.ativa}`,
+            )
             .join(",")}
           dados={dados}
         />
@@ -189,7 +192,10 @@ function SecaoPesos({ dados }: { dados: Parametros }) {
   );
 }
 
-type Linha = { min: string; med: string; max: string; ativa: boolean };
+type Campo = "min" | "med" | "max" | "aMin" | "aMed" | "aMax";
+type Linha = Record<Campo, string> & { ativa: boolean };
+
+const txtAltura = (v: number | null) => (v == null ? "" : String(v).replace(".", ","));
 
 function SecaoClasses({ dados }: { dados: Parametros }) {
   const salvar = useSalvarParametros();
@@ -201,6 +207,9 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
           min: fmt1(c.pesoMinKg),
           med: fmt1(c.pesoMedioKg),
           max: fmt1(c.pesoMaxKg),
+          aMin: txtAltura(c.alturaMinCm),
+          aMed: txtAltura(c.alturaMediaCm),
+          aMax: txtAltura(c.alturaMaxCm),
           ativa: c.ativa,
         },
       ]),
@@ -216,43 +225,60 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
     if (min === null || med === null || max === null) erro = "Informe os três valores em kg.";
     else if (min > med) erro = "O mínimo não pode passar da média.";
     else if (med > max) erro = "A média não pode passar do máximo.";
-    return { min, med, max, erro };
+    return { min, med, max, erro, h: analisarAltura(l.aMin, l.aMed, l.aMax) };
   };
 
   const resultado = dados.classes.map((c) => {
     const a = analisar(c.id);
     const pesoAlterado = a.min !== c.pesoMinKg || a.med !== c.pesoMedioKg || a.max !== c.pesoMaxKg;
+    const h = a.h;
+    const alturaAlterada =
+      h.erro !== null ||
+      h.min !== c.alturaMinCm ||
+      h.med !== c.alturaMediaCm ||
+      h.max !== c.alturaMaxCm;
     const ativaAlterada = linhas[c.id]!.ativa !== c.ativa;
-    return { c, a, pesoAlterado, ativaAlterada, alterada: pesoAlterado || ativaAlterada };
+    return {
+      c,
+      a,
+      pesoAlterado,
+      alturaAlterada,
+      ativaAlterada,
+      alterada: pesoAlterado || alturaAlterada || ativaAlterada,
+    };
   });
   const alteradas = resultado.filter((r) => r.alterada);
-  const comErro = alteradas.some((r) => r.a.erro);
+  const comErro = alteradas.some(
+    (r) => (r.pesoAlterado && r.a.erro) || (r.alturaAlterada && r.a.h.erro),
+  );
 
-  const mudar = (id: string, campo: "min" | "med" | "max", valor: string) =>
+  const mudar = (id: string, campo: Campo, valor: string) =>
     setLinhas((ls) => ({ ...ls, [id]: { ...ls[id]!, [campo]: valor } }));
 
   const enviar = (e: FormEvent) => {
     e.preventDefault();
     if (alteradas.length === 0 || comErro) return;
-    const classes = alteradas.map(({ c, a, pesoAlterado, ativaAlterada }) => ({
+    const classes = alteradas.map(({ c, a, pesoAlterado, alturaAlterada, ativaAlterada }) => ({
       id: c.id,
       ...(pesoAlterado ? { pesoMinKg: a.min!, pesoMedioKg: a.med!, pesoMaxKg: a.max! } : {}),
+      ...(alturaAlterada
+        ? { alturaMinCm: a.h.min, alturaMediaCm: a.h.med, alturaMaxCm: a.h.max }
+        : {}),
       ...(ativaAlterada ? { ativa: linhas[c.id]!.ativa } : {}),
     }));
     salvar.mutate({ classes }, { onSuccess: () => toast.success(MSG_SALVO) });
   };
 
-  const campo = (
-    c: Parametros["classes"][number],
-    k: "min" | "med" | "max",
-    rotulo: string,
-    erro: boolean,
-  ) => (
+  const campo = (c: Parametros["classes"][number], k: Campo, rotulo: string, erro: boolean) => (
     <input
       className="par-kg"
       type="text"
       inputMode="decimal"
-      aria-label={`${rotulo} de ${c.nome}, ${POSICAO[c.posicao]} (kg)`}
+      aria-label={
+        k.startsWith("a")
+          ? `Altura ${rotulo} de ${c.nome}, ${POSICAO[c.posicao]} (cm)`
+          : `${rotulo} de ${c.nome}, ${POSICAO[c.posicao]} (kg)`
+      }
       aria-invalid={erro}
       value={linhas[c.id]![k]}
       onChange={(e) => mudar(c.id, k, e.target.value)}
@@ -263,24 +289,38 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
     <section className="panel">
       <form onSubmit={enviar} noValidate>
         <div className="panel-head">
-          <h2>Class Fit · faixas de peso</h2>
+          <h2>Class Fit · faixas de peso e altura</h2>
           <span className="muted" style={{ fontSize: "0.85rem" }}>
-            kg · Word, seção 5
+            kg e cm · Word, seção 5
           </span>
         </div>
+        <p className="panel-dica">A altura é informativa (não entra no score nem nos gates).</p>
         <div className="table-scroll" tabIndex={0}>
           <table className="data interativa par-classes">
             <thead>
               <tr>
-                <th>Classe e posição</th>
-                <th className="num">Mín. (kg)</th>
-                <th className="num">Média (kg)</th>
-                <th className="num">Máx. (kg)</th>
-                <th className="par-col-ativa">Ativa</th>
+                <th rowSpan={2}>Classe e posição</th>
+                <th className="num par-grupo-col" colSpan={3} scope="colgroup">
+                  Peso (kg)
+                </th>
+                <th className="num par-grupo-col" colSpan={3} scope="colgroup">
+                  Altura (cm)
+                </th>
+                <th className="par-col-ativa" rowSpan={2}>
+                  Ativa
+                </th>
+              </tr>
+              <tr>
+                <th className="num">Mín.</th>
+                <th className="num">Média</th>
+                <th className="num">Máx.</th>
+                <th className="num">Mín.</th>
+                <th className="num">Média</th>
+                <th className="num">Máx.</th>
               </tr>
             </thead>
             <tbody>
-              {resultado.map(({ c, a, alterada, pesoAlterado }) => (
+              {resultado.map(({ c, a, alterada, pesoAlterado, alturaAlterada }) => (
                 <tr key={c.id} data-alterada={alterada || undefined}>
                   <td className="nw par-classe">
                     <span className="par-classe-nome">{c.nome}</span>
@@ -292,10 +332,18 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
                         {a.erro}
                       </div>
                     )}
+                    {a.h.erro && alturaAlterada && (
+                      <div className="par-erro" role="alert">
+                        {a.h.erro}
+                      </div>
+                    )}
                   </td>
                   <td className="num">{campo(c, "min", "Mínimo", !!a.erro)}</td>
                   <td className="num">{campo(c, "med", "Média", !!a.erro)}</td>
                   <td className="num">{campo(c, "max", "Máximo", !!a.erro)}</td>
+                  <td className="num">{campo(c, "aMin", "mínima", !!a.h.erro)}</td>
+                  <td className="num">{campo(c, "aMed", "média", !!a.h.erro)}</td>
+                  <td className="num">{campo(c, "aMax", "máxima", !!a.h.erro)}</td>
                   <td className="par-col-ativa">
                     <input
                       type="checkbox"
@@ -331,7 +379,7 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
               ? "Salvando…"
               : alteradas.length > 1
                 ? `Salvar ${alteradas.length} classes`
-                : "Salvar faixas de peso"}
+                : "Salvar faixas da classe"}
           </button>
         </div>
       </form>
