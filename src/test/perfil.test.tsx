@@ -115,13 +115,21 @@ describe("Modal Meu perfil", () => {
     montar(papel);
     await abrir();
     expect(await screen.findByText("ana@cbvela.org")).toBeInTheDocument();
-    expect(await screen.findByText("Cadastrada · verificada nesta sessão")).toBeInTheDocument();
+    expect(await screen.findByText("Ativa")).toBeInTheDocument();
+    expect(
+      screen.getByText("App autenticador cadastrado e verificado nesta sessão."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Configurar" })).toBeNull();
   });
 
   it("mostra a verificação em duas etapas cadastrada mas não verificada na sessão", async () => {
     montar("gestor", perfil("gestor", { mfaAtivo: false }));
     await abrir();
-    expect(await screen.findByText("Cadastrada · não verificada nesta sessão")).toBeInTheDocument();
+    expect(await screen.findByText("Cadastrada")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Verificar agora" })).toHaveAttribute(
+      "href",
+      "/verificacao",
+    );
   });
 
   it("mostra a verificação em duas etapas não cadastrada", async () => {
@@ -129,6 +137,10 @@ describe("Modal Meu perfil", () => {
     montar("gestor");
     await abrir();
     expect(await screen.findByText("Não cadastrada")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Configurar" })).toHaveAttribute(
+      "href",
+      "/verificacao",
+    );
   });
 
   it("cai no estado da sessão quando listFactors falha", async () => {
@@ -187,6 +199,18 @@ describe("Modal Meu perfil", () => {
     );
   });
 
+  it("só habilita Salvar quando o campo muda", async () => {
+    montar("gestor");
+    await abrir();
+    const campo = await screen.findByLabelText("Nome");
+    const salvar = screen.getByRole("button", { name: "Salvar" });
+    expect(salvar).toBeDisabled();
+    fireEvent.change(campo, { target: { value: "Ana Maria" } });
+    expect(salvar).toBeEnabled();
+    fireEvent.change(campo, { target: { value: "Ana Souza " } });
+    expect(salvar).toBeDisabled();
+  });
+
   it("mostra o erro da API ao salvar", async () => {
     montar("gestor");
     await abrir();
@@ -194,7 +218,7 @@ describe("Modal Meu perfil", () => {
       error: { erro: "requisicao_invalida", mensagem: "Nome inválido." },
       response: { status: 400 },
     });
-    await screen.findByLabelText("Nome");
+    fireEvent.change(await screen.findByLabelText("Nome"), { target: { value: "Ana S." } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Nome inválido.");
   });
