@@ -4504,3 +4504,240 @@
     display: none;
   }
 }
+
+/* === Tela: Parâmetros === */
+.scout .par-aviso {
+  margin-bottom: 16px;
+}
+.scout .par-grupos {
+  margin-top: 14px;
+}
+.scout .par-rubricas-edit textarea {
+  resize: vertical;
+}
+.scout .par-duas {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.scout .par-total {
+  font-size: 0.95rem;
+  padding: 4px 12px;
+  font-variant-numeric: tabular-nums;
+}
+.scout .par-total b {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.scout .par-dica {
+  margin: 10px 0 0;
+  color: var(--ink-2);
+  font-size: 0.84rem;
+}
+.scout .par-pesos {
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 12px;
+}
+.scout .par-pesos input {
+  min-height: 38px;
+  font-variant-numeric: tabular-nums;
+}
+.scout .par-faixas {
+  display: grid;
+}
+.scout .par-faixas .par-linha {
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.scout .par-faixas .par-linha:last-child {
+  border-bottom: 0;
+}
+.scout .par-faixas .par-kg {
+  width: 5rem;
+}
+.scout .par-kg {
+  min-width: 5.5rem;
+  min-height: 34px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.scout table.par-classes td {
+  vertical-align: middle;
+}
+.scout .par-classe {
+  min-width: 11rem;
+}
+.scout .par-classe-nome {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+}
+.scout .par-ajuda {
+  color: var(--ink-2);
+  font-size: 0.76rem;
+  font-weight: 400;
+}
+.scout .par-classe .par-ajuda {
+  display: block;
+}
+.scout .par-col-ativa {
+  text-align: center;
+  white-space: nowrap;
+}
+.scout .par-erro {
+  white-space: normal;
+  color: var(--bad);
+}
+.scout .par-grupos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+.scout .par-grupos .par-grupo {
+  margin: 0;
+  min-width: 0;
+}
+.scout .par-rubricas-edit li {
+  align-items: flex-start;
+}
+.scout .par-rubricas-edit .escala-nota {
+  margin-top: 6px;
+}
+.scout .par-cartoes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+.scout .par-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  min-width: 0;
+}
+.scout .par-cartao-largo {
+  grid-column: 1 / -1;
+}
+.scout .par-cartao-titulo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.98rem;
+}
+.scout .par-cod {
+  display: inline-block;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: var(--f-mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+.scout .par-resumo {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.85rem;
+}
+.scout .par-cartao .par-regra-campos {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 12px;
+}
+.scout .par-cartao .field {
+  align-content: start;
+}
+.scout .par-cartao .par-ajuda {
+  line-height: 1.35;
+}
+.scout .par-regra-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.scout .par-regra {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+}
+.scout .par-sub {
+  margin: 20px 0 8px;
+  font-size: 0.95rem;
+}
+.scout .par-leitura {
+  display: grid;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.scout .par-leitura-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.scout .par-leitura-item:last-child {
+  border-bottom: 0;
+}
+.scout .par-leitura dt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+}
+.scout .par-leitura dd {
+  margin: 0;
+  flex: none;
+}
+.scout .par-custos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 8px;
+}
+.scout .par-custos li {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 0.9rem;
+}
+@media (max-width: 880px) {
+  .scout .par-duas,
+  .scout .par-cartoes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .scout .par-cartao-largo {
+    grid-column: auto;
+  }
+}
+@media (max-width: 640px) {
+  .scout .par-grupos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .scout .par-pesos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .scout .abas {
+    display: flex;
+  }
+}

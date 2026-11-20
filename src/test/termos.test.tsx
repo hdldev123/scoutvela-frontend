@@ -81,6 +81,9 @@ describe("SecaoTermos", () => {
     expect(within(linhas[2]!).getByText("Vigente")).toBeTruthy();
     expect(within(linhas[2]!).getByText("12")).toBeTruthy();
     expect(within(linhas[3]!).getByText("Anterior")).toBeTruthy();
+    expect(within(linhas[1]!).getByText(/^Agendada/).className).toContain("st-info");
+    expect(within(linhas[2]!).getByText("Vigente").className).toContain("st-apto");
+    expect(within(linhas[3]!).getByText("Anterior").className).toContain("st-neutro");
   });
 
   it("publica passando pela confirmação, com vigência em ISO com offset", async () => {
@@ -149,6 +152,8 @@ describe("TelaParametros e o termo", () => {
   it("gestor vê a seção", async () => {
     GET.mockImplementation(roteado);
     montar(<TelaParametros papel="gestor" />);
+    fireEvent.click(await screen.findByRole("tab", { name: "Termo de consentimento" }));
     expect(await screen.findByRole("heading", { name: "Termo de consentimento" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Publicar nova versão" })).toBeTruthy();
   });
 });

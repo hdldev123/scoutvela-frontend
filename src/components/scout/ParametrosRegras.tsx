@@ -253,8 +253,31 @@ function dataBr(iso: string): string {
     : d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
 
+const NOMES_LEITURA: Record<string, string> = {
+  PERF_PONTOS: "Nota sugerida pelos pontos do Ranking CBVela",
+  TERMO_EXIGE_REACEITE: "Exigir aceite da versão vigente do termo",
+};
+
+function ValorLeitura({ valor }: { valor: unknown }) {
+  const ativa =
+    valor !== null && typeof valor === "object"
+      ? (valor as Record<string, unknown>)["ativa"]
+      : undefined;
+  if (typeof ativa === "boolean") {
+    return (
+      <span className={`pill ${ativa ? "st-apto" : "st-neutro"}`}>
+        {ativa ? "Ativa" : "Inativa"}
+      </span>
+    );
+  }
+  return <span className="pill st-neutro">{formatarValor(valor)}</span>;
+}
+
 export function SecaoRegras({ dados }: { dados: Parametros }) {
-  const editaveis = dados.regras.filter((r) => r.codigo in DEFINICOES);
+  const ORDEM = ["G1", "G2", "G3", "RANKING_CBVELA", "P3", "G4"];
+  const editaveis = dados.regras
+    .filter((r) => r.codigo in DEFINICOES)
+    .sort((a, b) => ORDEM.indexOf(a.codigo) - ORDEM.indexOf(b.codigo));
   const outras = dados.regras.filter((r) => !(r.codigo in DEFINICOES));
   return (
     <section className="panel">
@@ -264,26 +287,33 @@ export function SecaoRegras({ dados }: { dados: Parametros }) {
           à espera da CBVela
         </span>
       </div>
-      {editaveis.map((r) => (
-        <FormRegra
-          key={`${r.codigo}|${r.atualizadoEm}`}
-          codigo={r.codigo}
-          descricao={r.descricao}
-          valor={r.valor}
-          atualizadoEm={r.atualizadoEm}
-        />
-      ))}
+      <div className="par-cartoes">
+        {editaveis.map((r) => (
+          <FormRegra
+            key={`${r.codigo}|${r.atualizadoEm}`}
+            codigo={r.codigo}
+            descricao={r.descricao}
+            valor={r.valor}
+            atualizadoEm={r.atualizadoEm}
+          />
+        ))}
+      </div>
       {outras.length > 0 && (
         <>
-          <h3 style={{ fontSize: "0.95rem" }}>Somente leitura</h3>
-          <ul className="par-lista">
+          <h3 className="par-sub">Somente leitura</h3>
+          <dl className="par-leitura">
             {outras.map((r) => (
-              <li key={r.codigo}>
-                <b>{r.codigo}</b> · {r.descricao}{" "}
-                <span className="muted">({formatarValor(r.valor)})</span>
-              </li>
+              <div className="par-leitura-item" key={r.codigo}>
+                <dt>
+                  <span>{NOMES_LEITURA[r.codigo] ?? r.descricao}</span>
+                  <code className="par-cod">{r.codigo}</code>
+                </dt>
+                <dd>
+                  <ValorLeitura valor={r.valor} />
+                </dd>
+              </div>
             ))}
-          </ul>
+          </dl>
         </>
       )}
     </section>
@@ -314,11 +344,17 @@ function FormRegra(props: {
   };
 
   return (
-    <form onSubmit={enviar} noValidate className="par-regra" aria-label={def.titulo}>
-      <h3 style={{ fontSize: "0.95rem", marginBottom: 2 }}>{def.titulo}</h3>
-      <p className="muted" style={{ fontSize: "0.85rem", margin: "0 0 8px" }}>
-        {def.resumo}
-      </p>
+    <form
+      onSubmit={enviar}
+      noValidate
+      className={`par-regra par-cartao${codigo === "G4" || codigo === "P3" ? " par-cartao-largo" : ""}`}
+      aria-label={def.titulo}
+    >
+      <h3 className="par-cartao-titulo">
+        <code className="par-cod">{codigo}</code>
+        <span>{def.titulo.replace(/^[A-Z0-9]+ · /, "")}</span>
+      </h3>
+      <p className="par-resumo">{def.resumo}</p>
       <div className="par-regra-campos">
         {def.campos.map((c) => {
           const id = `regra-${codigo}-${c.chave}`;
@@ -349,7 +385,7 @@ function FormRegra(props: {
                   onChange={(e) => mudar(e.target.value)}
                 />
               )}
-              <small id={`${id}-ajuda`} className="muted">
+              <small id={`${id}-ajuda`} className="par-ajuda">
                 {c.ajuda}
               </small>
             </div>
@@ -366,17 +402,16 @@ function FormRegra(props: {
           {mensagemDeErro(salvar.error)}
         </p>
       )}
-      <div className="btn-row par-regra-rodape">
+      <div className="par-regra-rodape">
         <button
-          className="btn primary"
+          className="btn sm primary"
           type="submit"
+          aria-label={`Salvar ${def.titulo}`}
           disabled={"erro" in montada || !alterada || salvar.isPending}
         >
-          {salvar.isPending ? "Salvando…" : `Salvar ${codigo}`}
+          {salvar.isPending ? "Salvando…" : "Salvar"}
         </button>
-        <span className="muted" style={{ fontSize: "0.82rem" }}>
-          Atualizada em {dataBr(props.atualizadoEm)}
-        </span>
+        <span className="par-ajuda">Atualizada em {dataBr(props.atualizadoEm)}</span>
       </div>
     </form>
   );

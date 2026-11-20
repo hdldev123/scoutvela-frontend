@@ -55,10 +55,10 @@ export function SecaoFaixas({ dados }: { dados: Parametros }) {
             score mínimo (0 a 100)
           </span>
         </div>
-        <div className="stack" style={{ gap: 8 }}>
+        <div className="par-faixas">
           {dados.faixas.map((f) => (
             <div className="par-linha" key={f.id}>
-              <span>{f.nome}</span>
+              <span className="par-faixa-nome">{f.nome}</span>
               <input
                 className="par-kg"
                 type="text"
@@ -159,7 +159,9 @@ export function SecaoRubricas({ dados }: { dados: Parametros }) {
     const erro = alteradas.some((a) => a.pilarId === pilarId && a.nota === nota && !a.ok);
     return (
       <li key={k}>
-        <strong aria-hidden="true">{nota}</strong>
+        <span className="escala-nota" aria-hidden="true">
+          {nota}
+        </span>
         <textarea
           rows={2}
           maxLength={300}
@@ -178,31 +180,33 @@ export function SecaoRubricas({ dados }: { dados: Parametros }) {
         <div className="panel-head">
           <h2>Rubricas de 0 a 5</h2>
         </div>
-        <p className="muted" style={{ fontSize: "0.85rem", marginTop: 0 }}>
+        <p className="par-dica">
           Hoje só Experiência de alto rendimento tem rubrica própria (P1). Os demais pilares usam a
           escala geral. Cada descrição tem de 3 a 300 caracteres.
         </p>
-        {grupos.map((g) => (
-          <fieldset className="par-grupo" key={g.pilarId ?? "geral"}>
-            <legend>{g.titulo}</legend>
-            <ul className="par-rubricas par-rubricas-edit">
-              {NOTAS.map((n) => campo(g.pilarId, n, g.titulo.toLowerCase()))}
-            </ul>
-            {g.pilarId !== null && (
-              <button
-                type="button"
-                className="btn"
-                aria-label={`Remover rubrica deste pilar (${g.titulo})`}
-                onClick={() => {
-                  salvar.reset();
-                  setRemovendo({ id: g.pilarId!, nome: g.titulo });
-                }}
-              >
-                Remover rubrica deste pilar
-              </button>
-            )}
-          </fieldset>
-        ))}
+        <div className="par-grupos">
+          {grupos.map((g) => (
+            <fieldset className="par-grupo" key={g.pilarId ?? "geral"}>
+              <legend>{g.titulo}</legend>
+              <ul className="par-rubricas par-rubricas-edit">
+                {NOTAS.map((n) => campo(g.pilarId, n, g.titulo.toLowerCase()))}
+              </ul>
+              {g.pilarId !== null && (
+                <button
+                  type="button"
+                  className="btn sm"
+                  aria-label={`Remover rubrica deste pilar (${g.titulo})`}
+                  onClick={() => {
+                    salvar.reset();
+                    setRemovendo({ id: g.pilarId!, nome: g.titulo });
+                  }}
+                >
+                  Remover rubrica deste pilar
+                </button>
+              )}
+            </fieldset>
+          ))}
+        </div>
         {novoPilar === null ? (
           livres.length > 0 && (
             <button type="button" className="btn" onClick={() => setNovoPilar("")}>
@@ -231,7 +235,9 @@ export function SecaoRubricas({ dados }: { dados: Parametros }) {
               <ul className="par-rubricas par-rubricas-edit">
                 {NOTAS.map((n, i) => (
                   <li key={n}>
-                    <strong aria-hidden="true">{n}</strong>
+                    <span className="escala-nota" aria-hidden="true">
+                      {n}
+                    </span>
                     <textarea
                       rows={2}
                       maxLength={300}

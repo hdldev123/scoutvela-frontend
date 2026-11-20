@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
+import { EstadoVazio } from "./EstadoVazio";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { localParaIso, usePublicarTermo, useTermos, type VersaoTermo } from "@/lib/api/termos";
 
@@ -8,10 +9,10 @@ const MIN_TEXTO = 50;
 
 const fmtDia = (iso: string) => new Date(iso).toLocaleDateString("pt-BR");
 
-function situacao(v: VersaoTermo): string {
-  if (v.vigente) return "Vigente";
-  if (v.futura) return `Agendada para ${fmtDia(v.vigenteDesde)}`;
-  return "Anterior";
+function situacao(v: VersaoTermo): { texto: string; tom: string } {
+  if (v.vigente) return { texto: "Vigente", tom: "st-apto" };
+  if (v.futura) return { texto: `Agendada para ${fmtDia(v.vigenteDesde)}`, tom: "st-info" };
+  return { texto: "Anterior", tom: "st-neutro" };
 }
 
 /** Versões do termo de consentimento e publicação de nova versão (gestor). */
@@ -23,7 +24,7 @@ export function SecaoTermos() {
     <section className="panel" aria-labelledby="par-termo-t">
       <div className="panel-head">
         <h2 id="par-termo-t">Termo de consentimento</h2>
-        <button type="button" className="btn primary" onClick={() => setAberto(true)}>
+        <button type="button" className="btn sm primary" onClick={() => setAberto(true)}>
           Publicar nova versão
         </button>
       </div>
@@ -36,27 +37,29 @@ export function SecaoTermos() {
           {mensagemDeErro(q.error)}
         </p>
       ) : q.data.length === 0 ? (
-        <p className="muted">Nenhuma versão publicada.</p>
+        <EstadoVazio icone="file-text" titulo="Nenhuma versão publicada" />
       ) : (
         <div className="table-scroll" tabIndex={0}>
-          <table className="data">
+          <table className="data interativa">
             <thead>
               <tr>
                 <th>Versão</th>
                 <th>Título</th>
                 <th>Vigente desde</th>
                 <th>Situação</th>
-                <th className="r">Aceites</th>
+                <th className="num">Aceites</th>
               </tr>
             </thead>
             <tbody>
               {q.data.map((v) => (
                 <tr key={v.versao}>
-                  <td>{v.versao}</td>
+                  <td className="nw">{v.versao}</td>
                   <td>{v.titulo}</td>
-                  <td>{fmtDia(v.vigenteDesde)}</td>
-                  <td>{situacao(v)}</td>
-                  <td className="r">{v.aceites}</td>
+                  <td className="nw">{fmtDia(v.vigenteDesde)}</td>
+                  <td className="nw">
+                    <span className={`pill ${situacao(v).tom}`}>{situacao(v).texto}</span>
+                  </td>
+                  <td className="num">{v.aceites}</td>
                 </tr>
               ))}
             </tbody>

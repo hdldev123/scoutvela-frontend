@@ -46,18 +46,21 @@ export function Abas({ rotulo, itens, ativa, aoMudar }: Props) {
   );
 }
 
+/** `manter` deixa o conteúdo montado (só oculto) quando a aba não está ativa, para não perder edições. */
 export function PainelAba({
   id,
   ativa,
+  manter = false,
   children,
 }: {
   id: string;
   ativa: boolean;
+  manter?: boolean;
   children: ReactNode;
 }) {
   return (
     <div role="tabpanel" id={`painel-${id}`} aria-labelledby={`aba-${id}`} hidden={!ativa}>
-      {ativa ? children : null}
+      {ativa || manter ? children : null}
     </div>
   );
 }

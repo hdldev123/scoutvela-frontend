@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import "@/styles/parametros.css";
+import { Abas, PainelAba } from "./Abas";
 import { fmt1 } from "./formato";
 import { SecaoFaixas, SecaoRubricas } from "./ParametrosFaixasRubricas";
 import { SecaoRegras } from "./ParametrosRegras";
@@ -56,25 +57,73 @@ export function TelaParametros({ papel = "gestor" }: { papel?: string }) {
   );
 }
 
+const ABAS = [
+  { id: "pesos", rotulo: "Pesos e faixas" },
+  { id: "classes", rotulo: "Class Fit" },
+  { id: "rubricas", rotulo: "Rubricas" },
+  { id: "regras", rotulo: "Regras provisórias" },
+  { id: "termo", rotulo: "Termo de consentimento" },
+  { id: "custos", rotulo: "Componentes de custo" },
+];
+
+/** Aba ativa guardada no hash da URL (#pesos, #classes...). Lê depois da montagem, para não divergir do SSR. */
+function useAbaNoHash(validas: string[]): [string, (id: string) => void] {
+  const [ativa, setAtiva] = useState(validas[0] as string);
+  useEffect(() => {
+    const ler = () => {
+      const h = window.location.hash.replace("#", "");
+      if (validas.includes(h)) setAtiva(h);
+    };
+    ler();
+    window.addEventListener("hashchange", ler);
+    return () => window.removeEventListener("hashchange", ler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [validas.join(",")]);
+  const mudar = (id: string) => {
+    setAtiva(id);
+    try {
+      window.history.replaceState(null, "", `#${id}`);
+    } catch {
+      /* sem acesso ao histórico: a aba segue só no estado */
+    }
+  };
+  return [ativa, mudar];
+}
+
 function ConteudoParametros({ dados, gestor }: { dados: Parametros; gestor: boolean }) {
+  const itens = ABAS.filter((a) => gestor || a.id !== "termo");
+  const [ativa, mudar] = useAbaNoHash(itens.map((i) => i.id));
   return (
-    <div className="grid-2">
-      <div className="stack">
-        <SecaoPesos key={dados.pilares.map((p) => p.peso).join(",")} dados={dados} />
-        <SecaoFaixas dados={dados} />
-        <SecaoRegras dados={dados} />
-      </div>
-      <div className="stack">
+    <div className="stack">
+      <Abas rotulo="Seções dos parâmetros" itens={itens} ativa={ativa} aoMudar={mudar} />
+      <PainelAba id="pesos" ativa={ativa === "pesos"} manter>
+        <div className="par-duas">
+          <SecaoPesos key={dados.pilares.map((p) => p.peso).join(",")} dados={dados} />
+          <SecaoFaixas dados={dados} />
+        </div>
+      </PainelAba>
+      <PainelAba id="classes" ativa={ativa === "classes"} manter>
         <SecaoClasses
           key={dados.classes
             .map((c) => `${c.pesoMinKg}/${c.pesoMedioKg}/${c.pesoMaxKg}/${c.ativa}`)
             .join(",")}
           dados={dados}
         />
+      </PainelAba>
+      <PainelAba id="rubricas" ativa={ativa === "rubricas"} manter>
         <SecaoRubricas dados={dados} />
+      </PainelAba>
+      <PainelAba id="regras" ativa={ativa === "regras"} manter>
+        <SecaoRegras dados={dados} />
+      </PainelAba>
+      {gestor && (
+        <PainelAba id="termo" ativa={ativa === "termo"}>
+          <SecaoTermos />
+        </PainelAba>
+      )}
+      <PainelAba id="custos" ativa={ativa === "custos"}>
         <SecaoCustos dados={dados} />
-        {gestor && <SecaoTermos />}
-      </div>
+      </PainelAba>
     </div>
   );
 }
@@ -100,7 +149,10 @@ function SecaoPesos({ dados }: { dados: Parametros }) {
       <form onSubmit={enviar} noValidate>
         <div className="panel-head">
           <h2>Pesos dos pilares</h2>
-          <span className={`num ${soma === 100 ? "" : "down"}`} aria-live="polite">
+          <span
+            className={`pill par-total ${soma === 100 ? "st-apto" : "st-alerta"}`}
+            aria-live="polite"
+          >
             <b>{soma}</b> de 100 pts
           </span>
         </div>
@@ -121,7 +173,7 @@ function SecaoPesos({ dados }: { dados: Parametros }) {
             </label>
           ))}
         </div>
-        {!valido && <p className="muted">A soma precisa dar 100 para salvar.</p>}
+        {!valido && <p className="par-dica">A soma precisa dar 100 para salvar.</p>}
         {salvar.error && (
           <p className="par-erro" role="alert">
             {mensagemDeErro(salvar.error)}
@@ -217,34 +269,34 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
           </span>
         </div>
         <div className="table-scroll" tabIndex={0}>
-          <table className="data">
+          <table className="data interativa par-classes">
             <thead>
               <tr>
                 <th>Classe e posição</th>
-                <th className="r">Mín.</th>
-                <th className="r">Média</th>
-                <th className="r">Máx.</th>
-                <th className="r">Ativa</th>
+                <th className="num">Mín. (kg)</th>
+                <th className="num">Média (kg)</th>
+                <th className="num">Máx. (kg)</th>
+                <th className="par-col-ativa">Ativa</th>
               </tr>
             </thead>
             <tbody>
               {resultado.map(({ c, a, alterada, pesoAlterado }) => (
                 <tr key={c.id} data-alterada={alterada || undefined}>
-                  <td>
-                    {c.nome}
-                    <div className="muted" style={{ fontSize: "0.78rem" }}>
+                  <td className="nw par-classe">
+                    <span className="par-classe-nome">{c.nome}</span>
+                    <small className="par-ajuda">
                       {c.evento} · {POSICAO[c.posicao]}
-                    </div>
+                    </small>
                     {a.erro && pesoAlterado && (
                       <div className="par-erro" role="alert">
                         {a.erro}
                       </div>
                     )}
                   </td>
-                  <td className="r">{campo(c, "min", "Mínimo", !!a.erro)}</td>
-                  <td className="r">{campo(c, "med", "Média", !!a.erro)}</td>
-                  <td className="r">{campo(c, "max", "Máximo", !!a.erro)}</td>
-                  <td className="r">
+                  <td className="num">{campo(c, "min", "Mínimo", !!a.erro)}</td>
+                  <td className="num">{campo(c, "med", "Média", !!a.erro)}</td>
+                  <td className="num">{campo(c, "max", "Máximo", !!a.erro)}</td>
+                  <td className="par-col-ativa">
                     <input
                       type="checkbox"
                       role="switch"
@@ -302,7 +354,7 @@ function SecaoCustos({ dados }: { dados: Parametros }) {
   return (
     <section className="panel">
       <CabecalhoLeitura titulo="Componentes de custo" />
-      <ul className="par-lista">
+      <ul className="par-custos">
         {dados.componentesCusto.map((c) => (
           <li key={c.id}>{c.nome}</li>
         ))}

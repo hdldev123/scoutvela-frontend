@@ -100,6 +100,8 @@ function renderizar() {
   );
 }
 
+const irPara = (aba: string) => fireEvent.click(screen.getByRole("tab", { name: aba }));
+
 function montar() {
   GET.mockImplementation(async (caminho: string) => ({
     data: caminho === "/termos" ? [] : params,
@@ -112,6 +114,7 @@ describe("TelaParametros", () => {
   beforeEach(() => {
     GET.mockReset();
     PUT.mockReset();
+    window.location.hash = "";
     toastFn.success.mockReset();
   });
 
@@ -125,7 +128,9 @@ describe("TelaParametros", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Atualizada em 02/11/2026")).toBeInTheDocument();
     expect(screen.getByText(/modo: media; ativo: Sim/)).toBeInTheDocument();
+    irPara("Componentes de custo");
     expect(screen.getByText("Treinador")).toBeInTheDocument();
+    irPara("Pesos e faixas");
     expect(screen.getByText("100")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar pesos" })).toBeEnabled();
   });
@@ -136,7 +141,9 @@ describe("TelaParametros", () => {
     fireEvent.change(await screen.findByLabelText("Performance"), { target: { value: "50" } });
     expect(screen.getByText("90")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar pesos" })).toBeDisabled();
-    fireEvent.change(screen.getByLabelText("Class Fit"), { target: { value: "50" } });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Class Fit" }), {
+      target: { value: "50" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Salvar pesos" }));
     await waitFor(() =>
       expect(PUT).toHaveBeenCalledWith("/parametros", { body: { pesos: { perf: 50, cf: 50 } } }),
@@ -152,6 +159,7 @@ describe("TelaParametros", () => {
     PUT.mockResolvedValue({ data: params, response: { status: 200 } });
     montar();
     const max = await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+    irPara("Class Fit");
     fireEvent.change(max, { target: { value: "88,4" } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar faixas de peso" }));
     await waitFor(() =>
@@ -164,6 +172,7 @@ describe("TelaParametros", () => {
   it("avisa quando mín. > média ou média > máx. e bloqueia o envio", async () => {
     montar();
     const min = await screen.findByLabelText("Mínimo de 470, Timoneiro (kg)");
+    irPara("Class Fit");
     fireEvent.change(min, { target: { value: "78" } });
     expect(screen.getByText("O mínimo não pode passar da média.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar faixas de peso" })).toBeDisabled();
@@ -220,6 +229,7 @@ describe("TelaParametros", () => {
     ok();
     montar();
     const campo = await screen.findByLabelText("Descrição da nota 0, escala geral");
+    irPara("Rubricas");
     fireEvent.change(campo, { target: { value: "Nenhuma evidência" } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar rubricas" }));
     await waitFor(() =>
@@ -233,6 +243,7 @@ describe("TelaParametros", () => {
     ok();
     montar();
     await screen.findByDisplayValue("Pódio mundial");
+    irPara("Rubricas");
     const botoes = screen.getAllByRole("button", { name: /Remover rubrica deste pilar/ });
     expect(botoes).toHaveLength(1);
     expect(botoes[0]).toHaveAccessibleName("Remover rubrica deste pilar (Performance)");
@@ -255,6 +266,8 @@ describe("TelaParametros", () => {
   it("adiciona rubrica de um pilar com as 6 notas", async () => {
     ok();
     montar();
+    await screen.findByDisplayValue("Pódio mundial");
+    irPara("Rubricas");
     fireEvent.click(await screen.findByRole("button", { name: "Adicionar rubrica para um pilar" }));
     fireEvent.change(screen.getByLabelText("Pilar"), { target: { value: "cf" } });
     expect(screen.getByRole("button", { name: "Salvar rubricas" })).toBeDisabled();
@@ -274,14 +287,15 @@ describe("TelaParametros", () => {
     ok();
     montar();
     const apto = await screen.findByLabelText("Mínimo de eventos para apto");
+    irPara("Regras provisórias");
     fireEvent.change(apto, { target: { value: "0" } });
     expect(
       screen.getByText("O mínimo de apto não pode ser menor que o de condicional."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Salvar G3" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Salvar G3 · Alto rendimento" })).toBeDisabled();
     fireEvent.change(apto, { target: { value: "4" } });
     fireEvent.change(screen.getByLabelText("Janela (meses)"), { target: { value: "36" } });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar G3" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar G3 · Alto rendimento" }));
     await waitFor(() =>
       expect(PUT).toHaveBeenCalledWith("/parametros", {
         body: {
@@ -294,13 +308,15 @@ describe("TelaParametros", () => {
   it("salva a regra G4 por perfil", async () => {
     ok();
     montar();
-    fireEvent.change(await screen.findByLabelText("Perfil C · status"), {
+    await screen.findByLabelText("Perfil C · status");
+    irPara("Regras provisórias");
+    fireEvent.change(screen.getByLabelText("Perfil C · status"), {
       target: { value: "alerta" },
     });
     fireEvent.change(screen.getByLabelText("Perfil C · motivo"), {
       target: { value: "Alta dependência." },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar G4" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar G4 · Campanha" }));
     await waitFor(() =>
       expect(PUT).toHaveBeenCalledWith("/parametros", {
         body: {
@@ -323,6 +339,8 @@ describe("TelaParametros", () => {
       response: { status: 400 },
     });
     montar();
+    await screen.findByDisplayValue("Pódio mundial");
+    irPara("Class Fit");
     fireEvent.click(await screen.findByRole("switch", { name: "Ativa: 470, Timoneiro" }));
     fireEvent.click(screen.getByRole("button", { name: "Salvar faixas de peso" }));
     await waitFor(() =>
@@ -332,6 +350,58 @@ describe("TelaParametros", () => {
     );
     expect(await screen.findByText("A classe 470 tem atleta ativo.")).toBeInTheDocument();
     expect(toastFn.success).not.toHaveBeenCalled();
+  });
+
+  it("divide a página em abas, guarda a aba no hash e mantém as edições ao trocar", async () => {
+    montar();
+    const abas = await screen.findAllByRole("tab");
+    expect(abas.map((a) => a.textContent)).toEqual([
+      "Pesos e faixas",
+      "Class Fit",
+      "Rubricas",
+      "Regras provisórias",
+      "Termo de consentimento",
+      "Componentes de custo",
+    ]);
+    expect(screen.getByRole("tab", { name: "Pesos e faixas" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Salvar pesos" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Salvar faixas de peso" })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Performance"), { target: { value: "55" } });
+    irPara("Class Fit");
+    expect(window.location.hash).toBe("#classes");
+    expect(screen.getByRole("button", { name: "Salvar faixas de peso" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Salvar pesos" })).toBeNull();
+    irPara("Componentes de custo");
+    expect(screen.getByText("Treinador")).toBeVisible();
+    irPara("Pesos e faixas");
+    expect(screen.getByLabelText("Performance")).toHaveValue(55);
+    expect(screen.getByText("95")).toBeInTheDocument();
+    expect(screen.getByText("95").closest(".pill")?.className).toContain("st-alerta");
+  });
+
+  it("abre a aba indicada no hash da URL", async () => {
+    window.location.hash = "#regras";
+    montar();
+    expect(await screen.findByRole("tab", { name: "Regras provisórias" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Salvar G3 · Alto rendimento" })).toBeVisible(),
+    );
+  });
+
+  it("regras: botão curto, código em selo e somente leitura com valor em selo", async () => {
+    montar();
+    await screen.findByLabelText("Janela (meses)");
+    irPara("Regras provisórias");
+    const botao = screen.getByRole("button", { name: "Salvar G3 · Alto rendimento" });
+    expect(botao).toHaveTextContent(/^Salvar$/);
+    expect(screen.getByText("G3", { selector: "code" })).toBeVisible();
   });
 
   it("mostra a mensagem da API quando a leitura falha", async () => {
