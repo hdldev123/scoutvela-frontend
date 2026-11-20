@@ -32,7 +32,7 @@ export function TelaCiclos() {
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">Gestor CBVela</div>
+          <div className="eyebrow">Avaliação</div>
           <h1>Ciclos de avaliação</h1>
           <p>
             Rodada mensal com prazo. Ao fechar, o score e a faixa de cada atleta ficam congelados no

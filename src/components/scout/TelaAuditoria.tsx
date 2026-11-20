@@ -68,7 +68,7 @@ export function TelaAuditoria() {
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">Gestor CBVela</div>
+          <div className="eyebrow">Governança</div>
           <h1>Trilha de auditoria</h1>
           <p>Quem fez o quê e quando, do mais recente para o mais antigo. Só leitura.</p>
         </div>

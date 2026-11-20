@@ -46,7 +46,7 @@ export function TelaRevisoes({ papel }: { papel: string }) {
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">{gestor ? "Gestor CBVela" : "Treinador"}</div>
+          <div className="eyebrow">Governança</div>
           <h1>Pedidos de revisão</h1>
           <p>
             O atleta pode pedir revisão de uma nota (LGPD, art. 20). Cada resposta fica registrada

@@ -57,7 +57,7 @@ export function TelaCadastro() {
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">Gestor CBVela</div>
+          <div className="eyebrow">Atletas</div>
           <h1>Cadastrar atleta</h1>
           <p>
             O cadastro parte do VelaID: o sistema não pede CPF nem documento. No piloto, só entram

@@ -26,7 +26,7 @@ export function TelaParametros({ papel = "gestor" }: { papel?: string }) {
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">Gestor CBVela</div>
+          <div className="eyebrow">Metodologia</div>
           <h1>Parâmetros</h1>
           <p>
             Regras da metodologia ficam aqui, não no código. Mudou um peso, o ranking inteiro é

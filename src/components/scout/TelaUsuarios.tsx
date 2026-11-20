@@ -36,7 +36,7 @@ export function TelaUsuarios() {
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">Gestor CBVela</div>
+          <div className="eyebrow">Acesso</div>
           <h1>Contas de acesso</h1>
           <p>
             As contas são criadas pela CBVela: cada pessoa recebe um convite por e-mail para definir
