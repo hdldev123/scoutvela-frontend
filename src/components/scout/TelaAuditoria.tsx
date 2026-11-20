@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { ROTULO_ACAO, ROTULO_ENTIDADE, rotuloAcao, rotuloEntidade } from "./auditoria-rotulos";
+import { EstadoVazio } from "./EstadoVazio";
 import { fmtData } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
+import { useAtletasGestao } from "@/lib/api/usuarios";
 import {
   FILTROS_VAZIOS,
   useAuditoria,
@@ -8,32 +11,6 @@ import {
   type FiltrosAuditoria,
 } from "@/lib/api/auditoria";
 import "@/styles/auditoria.css";
-
-const ROTULO_ACAO: Record<string, string> = {
-  lancar_avaliacao: "Lançou avaliação",
-  decidir_gate: "Decidiu gate",
-  cadastrar_atleta: "Cadastrou atleta",
-  registrar_aceite_termo: "Registrou aceite do termo",
-  atualizar_parametros: "Atualizou parâmetros",
-  abrir_ciclo: "Abriu ciclo",
-  fechar_ciclo: "Fechou ciclo",
-  ajustar_prazo_ciclo: "Ajustou prazo do ciclo",
-  informar_financeiro: "Informou financeiro",
-  lancar_resultado: "Lançou resultado",
-  pedir_revisao: "Pediu revisão de nota",
-  responder_revisao: "Respondeu revisão de nota",
-  alterar_consentimento: "Alterou consentimento",
-  responder_questionario: "Respondeu questionário",
-  importar_csv: "Importou CSV",
-  exportar_dados: "Exportou dados",
-  pedir_titular: "Fez pedido do titular",
-  responder_titular: "Respondeu pedido do titular",
-  anexar_evidencia: "Anexou evidência",
-  acessar_evidencia: "Acessou evidência",
-  registrar_plano: "Registrou plano individual",
-};
-
-const rotuloAcao = (acao: string): string => ROTULO_ACAO[acao] ?? acao;
 
 const ROTULO_PAPEL: Record<string, string> = {
   gestor: "gestor",
@@ -60,6 +37,7 @@ export function TelaAuditoria() {
   const [rascunho, setRascunho] = useState<FiltrosAuditoria>(FILTROS_VAZIOS);
   const [filtros, setFiltros] = useState<FiltrosAuditoria>(FILTROS_VAZIOS);
   const q = useAuditoria(filtros);
+  const atletas = useAtletasGestao();
   const itens = q.data?.pages.flatMap((p) => p.itens) ?? [];
   const campo = (k: keyof FiltrosAuditoria) => (valor: string) =>
     setRascunho((r) => ({ ...r, [k]: valor }));
@@ -93,49 +71,67 @@ export function TelaAuditoria() {
                 onChange={(e) => campo("acao")(e.target.value)}
               >
                 <option value="">Todas</option>
-                {Object.entries(ROTULO_ACAO).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
+                {Object.entries(ROTULO_ACAO)
+                  .sort((a, b) => a[1].localeCompare(b[1], "pt-BR"))
+                  .map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
               </select>
             </label>
             <label className="field" htmlFor="aud-entidade">
               Entidade
-              <input
+              <select
                 id="aud-entidade"
                 value={rascunho.entidade}
                 onChange={(e) => campo("entidade")(e.target.value)}
-                placeholder="ex.: atleta"
-              />
+              >
+                <option value="">Todas</option>
+                {Object.entries(ROTULO_ENTIDADE).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                    {k === "atletas" ? " (cadastro)" : ""}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="field" htmlFor="aud-atleta">
-              Atleta (id)
-              <input
+              Atleta
+              <select
                 id="aud-atleta"
                 value={rascunho.atletaId}
                 onChange={(e) => campo("atletaId")(e.target.value)}
-              />
+              >
+                <option value="">Todos</option>
+                {(atletas.data ?? []).map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.nome}
+                  </option>
+                ))}
+              </select>
             </label>
-            <label className="field" htmlFor="aud-desde">
-              Desde
-              <input
-                id="aud-desde"
-                type="date"
-                value={rascunho.desde}
-                onChange={(e) => campo("desde")(e.target.value)}
-              />
-            </label>
-            <label className="field" htmlFor="aud-ate">
-              Até
-              <input
-                id="aud-ate"
-                type="date"
-                value={rascunho.ate}
-                onChange={(e) => campo("ate")(e.target.value)}
-              />
-            </label>
-            <div className="btn-row">
+            <div className="aud-datas">
+              <label className="field" htmlFor="aud-desde">
+                Desde
+                <input
+                  id="aud-desde"
+                  type="date"
+                  value={rascunho.desde}
+                  onChange={(e) => campo("desde")(e.target.value)}
+                />
+              </label>
+              <label className="field" htmlFor="aud-ate">
+                Até
+                <input
+                  id="aud-ate"
+                  type="date"
+                  value={rascunho.ate}
+                  onChange={(e) => campo("ate")(e.target.value)}
+                />
+              </label>
+            </div>
+            <div className="aud-botoes">
               <button type="submit" className="btn primary">
                 Filtrar
               </button>
@@ -165,10 +161,14 @@ export function TelaAuditoria() {
               {mensagemDeErro(q.error)}
             </div>
           ) : itens.length === 0 ? (
-            <p className="muted">Nenhum evento para estes filtros.</p>
+            <EstadoVazio
+              icone="list-magnifying-glass"
+              titulo="Nenhum evento para estes filtros."
+              texto="Amplie o período ou limpe os filtros para ver mais eventos."
+            />
           ) : (
             <div className="table-scroll" tabIndex={0}>
-              <table className="data">
+              <table className="data interativa aud-tabela">
                 <thead>
                   <tr>
                     <th>Quando</th>
@@ -208,7 +208,7 @@ function Linha({ e }: { e: EventoAuditoria }) {
   const temDetalhes = e.detalhes !== null && e.detalhes !== undefined;
   return (
     <tr>
-      <td>{fmtQuando(e.em)}</td>
+      <td className="nw">{fmtQuando(e.em)}</td>
       <td>
         {e.usuario ? (
           <>
@@ -220,15 +220,19 @@ function Linha({ e }: { e: EventoAuditoria }) {
         )}
       </td>
       <td>{rotuloAcao(e.acao)}</td>
-      <td>
-        {e.entidade}
-        {e.entidadeId && <span className="muted aud-id"> {e.entidadeId}</span>}
+      <td className="nw">
+        {rotuloEntidade(e.entidade)}
+        {e.entidadeId && (
+          <span className="muted aud-id" title={e.entidadeId}>
+            {e.entidadeId.slice(0, 8)}
+          </span>
+        )}
       </td>
       <td>
         {temDetalhes ? (
           <details className="aud-det">
             <summary>Ver detalhes</summary>
-            <pre>{JSON.stringify(e.detalhes, null, 1)}</pre>
+            <pre className="aud-json">{JSON.stringify(e.detalhes, null, 1)}</pre>
           </details>
         ) : (
           <span className="muted">—</span>

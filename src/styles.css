@@ -3643,3 +3643,94 @@
   justify-self: start;
   align-self: flex-start;
 }
+
+/* === Tela: Auditoria === */
+.scout .aud-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+.scout .aud-form .aud-datas {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.scout .aud-form .field select,
+.scout .aud-form .field input {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  box-sizing: border-box;
+}
+.scout .aud-form .aud-botoes {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+@media (max-width: 520px) {
+  .scout .aud-form .aud-datas {
+    grid-column: 1 / -1;
+  }
+}
+.scout .aud-tabela td {
+  vertical-align: top;
+}
+.scout .aud-tabela .aud-id {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+}
+.scout .aud-det summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: var(--shadow-xs);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+.scout .aud-det summary::-webkit-details-marker {
+  display: none;
+}
+.scout .aud-det summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.12s;
+}
+.scout .aud-det[open] summary::before {
+  transform: rotate(45deg);
+}
+.scout .aud-det summary:hover {
+  background: var(--surface-2);
+}
+.scout .aud-det summary:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+.scout .aud-det .aud-json {
+  max-width: 28rem;
+  max-height: 14rem;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-family: var(--f-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-wrap: normal;
+}

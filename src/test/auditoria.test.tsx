@@ -25,13 +25,24 @@ const evento = (id: string, acao: string, extra: Record<string, unknown> = {}) =
 
 beforeEach(() => {
   vi.clearAllMocks();
-  GET.mockImplementation(async (_c: string, opcoes: { params: { query: { antesDe?: string } } }) =>
-    opcoes.params.query.antesDe
-      ? ok({ itens: [evento("3", "decidir_gate")], proximo: null })
-      : ok({
-          itens: [evento("1", "lancar_avaliacao"), evento("2", "acao_nova_x", { usuario: null })],
-          proximo: "2",
-        }),
+  GET.mockImplementation(
+    async (caminho: string, opcoes: { params: { query: { antesDe?: string } } }) => {
+      if (caminho === "/atletas")
+        return ok([
+          { id: "a1", nome: "Helena Vasques" },
+          { id: "a2", nome: "Marcos Lima" },
+        ]);
+      return opcoes.params.query.antesDe
+        ? ok({ itens: [evento("3", "decidir_gate")], proximo: null })
+        : ok({
+            itens: [
+              evento("1", "lancar_avaliacao", { entidadeId: "0123456789abcdef" }),
+              evento("2", "acao_nova_x", { usuario: null }),
+              evento("4", "enviar_foto", { entidade: "usuarios" }),
+            ],
+            proximo: "2",
+          });
+    },
   );
 });
 
@@ -53,6 +64,11 @@ describe("TelaAuditoria", () => {
     const tabela = await screen.findByRole("table");
     expect(tabela.textContent).toContain("Lançou avaliação");
     expect(tabela.textContent).toContain("acao_nova_x");
+    expect(tabela.textContent).toContain("Enviou foto de perfil");
+    expect(tabela.textContent).not.toContain("enviar_foto");
+    expect(tabela.textContent).toContain("Conta");
+    const id = screen.getByText("01234567");
+    expect(id).toHaveAttribute("title", "0123456789abcdef");
     expect(tabela.textContent).toContain("Ana Ribeiro");
     expect(tabela.textContent).toContain("06/11/2026 12:30");
     expect(tabela.textContent).toContain('"nota": 4');
@@ -63,7 +79,8 @@ describe("TelaAuditoria", () => {
     await screen.findByRole("table");
     fireEvent.change(screen.getByLabelText("Ação"), { target: { value: "fechar_ciclo" } });
     fireEvent.change(screen.getByLabelText("Entidade"), { target: { value: "ciclo" } });
-    fireEvent.change(screen.getByLabelText("Atleta (id)"), { target: { value: "a1" } });
+    await screen.findByRole("option", { name: "Helena Vasques" });
+    fireEvent.change(screen.getByLabelText("Atleta"), { target: { value: "a1" } });
     fireEvent.change(screen.getByLabelText("Desde"), { target: { value: "2026-11-01" } });
     fireEvent.change(screen.getByLabelText("Até"), { target: { value: "2026-11-30" } });
     fireEvent.click(screen.getByRole("button", { name: "Filtrar" }));
@@ -80,6 +97,35 @@ describe("TelaAuditoria", () => {
         },
       }),
     );
+  });
+
+  it("filtro de atleta lista os nomes e manda o id; Todos é o padrão", async () => {
+    montar();
+    await screen.findByRole("table");
+    const select = screen.getByLabelText("Atleta") as HTMLSelectElement;
+    expect(select.value).toBe("");
+    expect(await screen.findByRole("option", { name: "Todos" })).toBeTruthy();
+    await screen.findByRole("option", { name: "Marcos Lima" });
+    fireEvent.change(select, { target: { value: "a2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Filtrar" }));
+    await waitFor(() =>
+      expect(GET).toHaveBeenLastCalledWith("/auditoria", { params: { query: { atletaId: "a2" } } }),
+    );
+  });
+
+  it("as opções do filtro de ação usam os rótulos legíveis", async () => {
+    montar();
+    await screen.findByRole("table");
+    expect(screen.getByRole("option", { name: "Anonimizou atleta" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Aceitou o termo" })).toBeTruthy();
+  });
+
+  it("lista vazia mostra o estado vazio", async () => {
+    GET.mockImplementation(async (c: string) =>
+      c === "/atletas" ? ok([]) : ok({ itens: [], proximo: null }),
+    );
+    montar();
+    expect(await screen.findByText("Nenhum evento para estes filtros.")).toBeTruthy();
   });
 
   it("carrega mais usando o cursor proximo como antesDe", async () => {
