@@ -73,6 +73,8 @@ export interface paths {
                                 email: string;
                                 /** @enum {string} */
                                 papel: "gestor" | "treinador" | "atleta" | "ibvar" | "responsavel";
+                                /** @description Link assinado curto; nulo = sem foto */
+                                fotoUrl: string | null;
                             };
                             atleta: {
                                 id: string;
@@ -114,6 +116,372 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/perfil": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Meu perfil: dados de contato, foto e, para o atleta, o cadastro
+         * @description Atleta, treinador e gestor. IBVAR recebe 403.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            nome: string;
+                            /** @description E-mail de login (só leitura) */
+                            email: string;
+                            /** @enum {string} */
+                            papel: "gestor" | "treinador" | "atleta";
+                            /** @description Link assinado curto; nulo = sem foto */
+                            fotoUrl: string | null;
+                            /** @description A sessão atual passou pelo segundo fator (aal2) */
+                            mfaAtivo: boolean;
+                            atleta: {
+                                velaid: string;
+                                classe: {
+                                    id: string;
+                                    nome: string;
+                                };
+                                numeroVela: string | null;
+                                /** @description AAAA-MM-DD */
+                                dataNascimento: string;
+                                clube: string | null;
+                                cidade: string | null;
+                                uf: string | null;
+                                treinador: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                emailContato: string | null;
+                                /** @description Instante ISO do aceite do termo do piloto */
+                                termoAceitoEm: string | null;
+                                compartilharIbvar: boolean;
+                            } | null;
+                            treinador: {
+                                quantidadeAtletas: number;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Edita o perfil: nome (treinador e gestor) ou e-mail de contato (atleta)
+         * @description Os dados vindos do VelaID não são editáveis aqui: a correção é pelo pedido do titular (tipo `correcao`). A auditoria guarda só os nomes dos campos.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        nome?: string;
+                        /** Format: email */
+                        emailContato?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            nome: string;
+                            /** @description E-mail de login (só leitura) */
+                            email: string;
+                            /** @enum {string} */
+                            papel: "gestor" | "treinador" | "atleta";
+                            /** @description Link assinado curto; nulo = sem foto */
+                            fotoUrl: string | null;
+                            /** @description A sessão atual passou pelo segundo fator (aal2) */
+                            mfaAtivo: boolean;
+                            atleta: {
+                                velaid: string;
+                                classe: {
+                                    id: string;
+                                    nome: string;
+                                };
+                                numeroVela: string | null;
+                                /** @description AAAA-MM-DD */
+                                dataNascimento: string;
+                                clube: string | null;
+                                cidade: string | null;
+                                uf: string | null;
+                                treinador: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                emailContato: string | null;
+                                /** @description Instante ISO do aceite do termo do piloto */
+                                termoAceitoEm: string | null;
+                                compartilharIbvar: boolean;
+                            } | null;
+                            treinador: {
+                                quantidadeAtletas: number;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/foto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Envia ou troca a foto de perfil (JPEG ou PNG de até 2 MB)
+         * @description A foto anterior é removida do Storage. Limite de 10 envios por minuto por usuário (429 `limite_excedido`).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        tipoMime: "image/jpeg" | "image/png";
+                        conteudoBase64: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            fotoUrl: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Remove a foto de perfil
+         * @description Idempotente: sem foto, também responde 204.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Foto removida */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": null;
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -173,6 +541,8 @@ export interface paths {
                                         nome: string;
                                         evento: string;
                                     };
+                                    /** @description Link assinado curto da foto da conta do atleta; sempre nulo para o IBVAR */
+                                    fotoUrl: string | null;
                                 };
                                 score: number;
                                 faixa: {
@@ -288,6 +658,8 @@ export interface paths {
                                 clube: string | null;
                                 cidade: string | null;
                                 uf: string | null;
+                                /** @description Link assinado curto da foto da conta do atleta; sempre nulo para o IBVAR */
+                                fotoUrl: string | null;
                                 termoAceito: boolean;
                                 classe: {
                                     id: string;

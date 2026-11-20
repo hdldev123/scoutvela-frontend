@@ -72,7 +72,7 @@ export function TelaInvestimento({ papel }: TelaInvestimentoProps) {
                     Score 75+, gates não bloqueados e perfil C ou D
                   </span>
                 </div>
-                <div className="table-scroll">
+                <div className="table-scroll" tabIndex={0}>
                   <table className="data">
                     <thead>
                       <tr>

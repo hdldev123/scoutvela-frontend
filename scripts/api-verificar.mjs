@@ -1,18 +1,25 @@
-// Confere se src/lib/api/schema.d.ts está em dia com ../vela-back/openapi.yaml.
+// Confere se src/lib/api/schema.d.ts está em dia com o openapi.yaml do back (ver caminho-back.mjs).
 // Gera os tipos num arquivo temporário e falha se diferirem. Uso: npm run api:verificar [-- caminho/do/openapi.yaml]
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createRequire } from "node:module";
+import { caminhoDoBack } from "./caminho-back.mjs";
 
 const raiz = resolve(import.meta.dirname, "..");
-const contrato = resolve(process.argv[2] ?? resolve(raiz, "../vela-back/openapi.yaml"));
+let contrato;
+try {
+  contrato = resolve(process.argv[2] ?? join(caminhoDoBack(), "openapi.yaml"));
+} catch (e) {
+  console.error(e.message);
+  process.exit(2);
+}
 const atual = resolve(raiz, "src/lib/api/schema.d.ts");
 
 if (!existsSync(contrato)) {
   console.error(
-    `Contrato não encontrado: ${contrato}. O vela-back precisa estar ao lado do vela-front.`,
+    `Contrato não encontrado: ${contrato}. O back precisa estar em ../vela-back ou ../scoutvela-backend (ou defina VELA_BACK_DIR).`,
   );
   process.exit(2);
 }

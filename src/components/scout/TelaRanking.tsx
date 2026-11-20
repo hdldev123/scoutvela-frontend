@@ -114,7 +114,7 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
       </div>
       <p className="rank-legend">
         Barras: os 9 pilares, de Performance a Carreira. Tracejado = pilar ainda sem nota. Pontos
-        CBVela vêm do ranking oficial (simulado), últimas 52 semanas.
+        CBVela vêm do ranking oficial, últimas 52 semanas.
       </p>
       <div className="rank-headrow" aria-hidden="true">
         <span>#</span>

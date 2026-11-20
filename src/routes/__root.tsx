@@ -11,7 +11,7 @@ import {
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { SessaoProvider } from "../lib/auth/sessao";
+import { SessaoProvider } from "../lib/auth/SessaoProvider";
 
 function NotFoundComponent() {
   return (
@@ -79,11 +79,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Scout Vela" },
-      { name: "description", content: "Talent ID da vela olímpica (protótipo, dados fictícios)." },
+      { name: "description", content: "Talent ID da vela olímpica." },
       { property: "og:title", content: "Scout Vela" },
       {
         property: "og:description",
-        content: "Talent ID da vela olímpica (protótipo, dados fictícios).",
+        content: "Talent ID da vela olímpica.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

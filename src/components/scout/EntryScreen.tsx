@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import heroPhoto from "@/assets/olympic-dinghy-sailing.jpg";
+import { AvisoAmbiente } from "./AvisoAmbiente";
 
 /*
  * Fundo do login. Ordem de preferência:
@@ -163,7 +164,7 @@ export function EntryScreen({
             </form>
           </>
         )}
-        <p className="entry-note">Ambiente de desenvolvimento com dados fictícios.</p>
+        <AvisoAmbiente className="entry-note" />
       </div>
     </div>
   );

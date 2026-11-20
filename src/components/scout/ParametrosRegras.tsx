@@ -187,8 +187,6 @@ const DEFINICOES: Record<string, Definicao> = {
   },
 };
 
-export const CODIGOS_EDITAVEIS = Object.keys(DEFINICOES);
-
 function ler(valor: unknown, chave: string): string {
   let atual: unknown = valor;
   for (const parte of chave.split(".")) {
@@ -214,7 +212,7 @@ function gravar(alvo: Record<string, unknown>, chave: string, v: unknown) {
 }
 
 /** Monta o valor da regra a partir dos textos. Um campo inválido devolve o erro. */
-export function montarRegra(
+function montarRegra(
   codigo: string,
   textos: Record<string, string>,
 ): { valor: Record<string, unknown> } | { erro: string } {

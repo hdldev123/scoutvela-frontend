@@ -92,19 +92,42 @@ export async function obterLinkEvidencia(id: string): Promise<string> {
 }
 
 /**
- * Abre a evidência: http(s) em nova aba (noopener); `data:` (modo local) vira download.
- * Qualquer outro esquema é recusado.
+ * Abre a evidência. A aba é aberta de forma síncrona no clique (evita o bloqueador de pop-up)
+ * e só depois recebe o link: http(s) navega na própria aba; `data:` (modo local) vira download
+ * e a aba é fechada. Se a API falhar ou o esquema não for aceito, a aba é fechada.
  */
 export async function abrirEvidencia(id: string, nomeArquivo: string): Promise<void> {
-  const url = await obterLinkEvidencia(id);
+  const aba = window.open("", "_blank");
+  try {
+    const url = await obterLinkEvidencia(id);
+    if (/^https?:\/\//i.test(url)) {
+      if (aba) {
+        aba.opener = null;
+        aba.location.href = url;
+        return;
+      }
+      baixarOuAbrir(url, nomeArquivo, true);
+      return;
+    }
+    if (/^data:/i.test(url)) {
+      aba?.close();
+      baixarOuAbrir(url, nomeArquivo, false);
+      return;
+    }
+    throw new Error("Link da evidência em formato não aceito.");
+  } catch (e) {
+    aba?.close();
+    throw e;
+  }
+}
+
+function baixarOuAbrir(url: string, nomeArquivo: string, novaAba: boolean): void {
   const a = document.createElement("a");
-  if (/^https?:\/\//i.test(url)) {
+  if (novaAba) {
     a.target = "_blank";
     a.rel = "noopener noreferrer";
-  } else if (/^data:/i.test(url)) {
-    a.download = nomeArquivo;
   } else {
-    throw new Error("Link da evidência em formato não aceito.");
+    a.download = nomeArquivo;
   }
   a.href = url;
   document.body.appendChild(a);

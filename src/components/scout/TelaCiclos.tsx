@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
+import { diasAtePrazo, sugestaoCiclo } from "./ciclos-util";
 import { fmtData } from "./formato";
 import {
   useAbrirCiclo,
@@ -14,42 +15,6 @@ import {
 } from "@/lib/api/ciclos";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import "@/styles/ciclos.css";
-
-const MESES = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
-];
-
-const dois = (n: number) => String(n).padStart(2, "0");
-const isoLocal = (d: Date) => `${d.getFullYear()}-${dois(d.getMonth() + 1)}-${dois(d.getDate())}`;
-
-/** Sugestão do formulário: "Mês de AAAA", início hoje, prazo no último dia do mês. */
-export function sugestaoCiclo(hoje = new Date()) {
-  const ultimo = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-  return {
-    nome: `${MESES[hoje.getMonth()]} de ${hoje.getFullYear()}`,
-    inicio: isoLocal(hoje),
-    prazo: isoLocal(ultimo),
-  };
-}
-
-/** Dias de calendário de hoje até o prazo (negativo = atrasado). */
-export function diasAtePrazo(prazo: string, hoje = new Date()): number {
-  const [a = 0, m = 1, d = 1] = prazo.split("-").map(Number);
-  const alvo = Date.UTC(a, m - 1, d);
-  const base = Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-  return Math.round((alvo - base) / 86400000);
-}
 
 function textoPrazo(dias: number): string {
   if (dias < 0) return `atrasado há ${-dias} ${-dias === 1 ? "dia" : "dias"}`;
@@ -431,7 +396,7 @@ function TabelaCiclos({ itens }: { itens: Ciclo[] }) {
       {itens.length === 0 ? (
         <p className="muted">Nenhum ciclo cadastrado.</p>
       ) : (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data">
             <thead>
               <tr>

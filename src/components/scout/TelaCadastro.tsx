@@ -310,7 +310,7 @@ function TermosPendentes() {
       ) : pendentes.data.length === 0 ? (
         <p className="muted">Nenhum termo pendente.</p>
       ) : (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data">
             <thead>
               <tr>
@@ -497,7 +497,7 @@ function ImportarCsv() {
             </span>
           </div>
           {resultado.erros.length > 0 && (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data">
                 <caption className="cad-sr">Erros por linha</caption>
                 <thead>
