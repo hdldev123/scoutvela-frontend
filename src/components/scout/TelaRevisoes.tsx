@@ -203,7 +203,7 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
       ) : q.data.length === 0 ? (
         <p className="muted">Nenhum pedido de revisão neste filtro.</p>
       ) : (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data">
             <thead>
               <tr>
@@ -391,7 +391,7 @@ function PedidosTitular() {
       ) : q.data.length === 0 ? (
         <p className="muted">Nenhum pedido do titular.</p>
       ) : (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data">
             <thead>
               <tr>

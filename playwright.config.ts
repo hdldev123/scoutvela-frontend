@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 /**
- * E2E do MVP: sobe o vela-back em modo local (banco próprio em vela-back/.dados-e2e,
+ * E2E do MVP: sobe o scoutvela-backend em modo local (banco próprio em scoutvela-backend/.dados-e2e,
  * recriado a cada execução, com os dados fictícios) e o front em http://localhost:8080.
  * Usa o Chrome instalado na máquina (E2E_CANAL=msedge para o Edge); não baixa navegador.
  * Pare o `npm run dev:local` antes: as portas 3333 e 54321 são as mesmas.
@@ -25,7 +25,7 @@ export default defineConfig({
   webServer: [
     {
       command: "npm run dev:local -- --recriar",
-      cwd: "../vela-back",
+      cwd: "../scoutvela-backend",
       url: `${API}/health`,
       env: { DADOS_LOCAIS_DIR: ".dados-e2e" },
       reuseExistingServer: false,

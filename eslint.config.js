@@ -16,6 +16,7 @@ export default tseslint.config(
       ".vercel",
       "src/lib/api/schema.d.ts",
       "src/routeTree.gen.ts",
+      "trash",
     ],
   },
   {
@@ -43,7 +44,10 @@ export default tseslint.config(
           ],
         },
       ],
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true, extraHOCs: ["createFileRoute", "createRootRouteWithContext"] },
+      ],
       "@typescript-eslint/no-unused-vars": "off",
     },
   },

@@ -120,7 +120,7 @@ export function PlanoIndividual({ ficha, papel }: { ficha: FichaAtleta; papel: s
           <p className="muted ficha-dica">
             {plano
               ? `Registrado por ${plano.registradoPor.nome} em ${fmtData(plano.registradoEm)}`
-              : "Sugestão da API, ainda não registrada"}
+              : "Sugestão automática, ainda não registrada"}
           </p>
           <dl className="kv">
             <dt>Forças</dt>

@@ -251,7 +251,7 @@ function ListaContas() {
       ) : usuarios.data.length === 0 ? (
         <p className="muted">Nenhuma conta cadastrada.</p>
       ) : (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data">
             <thead>
               <tr>
@@ -430,7 +430,7 @@ function AtletasDoPiloto() {
       ) : atletas.data.length === 0 ? (
         <p className="muted">Nenhum atleta encontrado.</p>
       ) : (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="data">
             <thead>
               <tr>

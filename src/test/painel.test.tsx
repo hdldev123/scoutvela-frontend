@@ -167,7 +167,7 @@ describe("TelaPainel", () => {
     toastFn.error.mockReset();
   });
 
-  it("mostra o primeiro nome, score, ciclo e link para a ficha", async () => {
+  it("mostra o primeiro nome, score e ciclo, sem o botão da ficha", async () => {
     montar(painel());
     expect(
       await screen.findByRole("heading", { level: 1, name: "Olá, Helena" }),
@@ -176,10 +176,7 @@ describe("TelaPainel", () => {
     expect(screen.getByText("Em desenvolvimento")).toBeInTheDocument();
     expect(screen.getByText(/Ciclo Novembro de 2026 · prazo 30\/11\/2026/)).toBeInTheDocument();
     expect(screen.getByText(/Avaliação parcial/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Minha ficha" })).toHaveAttribute(
-      "href",
-      "/atletas/a07",
-    );
+    expect(screen.queryByRole("link", { name: "Minha ficha" })).not.toBeInTheDocument();
   });
 
   it("lista pendências e módulos com situação", async () => {
@@ -219,6 +216,7 @@ describe("TelaPainel", () => {
     montar(painel());
     const chave = await screen.findByRole("switch", { name: /Compartilhar meu score com o IBVAR/ });
     expect(chave).not.toBeChecked();
+    expect(screen.getByText("Desativado")).toBeInTheDocument();
     expect(screen.getByText(/aceito em 14\/10\/2026/)).toBeInTheDocument();
     expect(screen.getByText(/Última decisão em 15\/10\/2026/)).toBeInTheDocument();
     fireEvent.click(chave);
@@ -263,6 +261,7 @@ describe("TelaPainel", () => {
         "Há uma nova versão do termo (2.0). Leia e aceite para continuar no piloto.",
       ),
     ).toBeInTheDocument();
+    expect(screen.queryByText("Versão 2.0")).not.toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "Li e aceito" })).toBeInTheDocument();
     expect(screen.getByText(/aceite da versão 2\.0 pendente/)).toBeInTheDocument();
   });

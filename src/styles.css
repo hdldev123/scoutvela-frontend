@@ -2013,7 +2013,7 @@
 .side {
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -2166,10 +2166,32 @@
   background: oklch(0.929 0.013 255.508 / 60%);
   color: var(--ink);
 }
-.side-demo {
-  padding: 0 10px;
-  font-size: 11px;
+.side-body {
+  display: contents;
+}
+.side-toggle,
+.side-fundo {
+  display: none;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.aviso-ambiente {
+  margin: 24px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
   color: var(--ink-2);
+}
+.entry-note.aviso-ambiente {
+  margin-top: 18px;
+  padding-top: 0;
+  border-top: 0;
 }
 
 /* canvas */
@@ -2629,8 +2651,22 @@
   font-size: 12px;
 }
 .cmdk [cmdk-item] {
+  grid-template-columns: 28px 1fr 8rem 9rem 3.5rem;
   border-left: 0;
   border-radius: 8px;
+}
+.cmdk .avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 10.5px;
+}
+@media (max-width: 560px) {
+  .cmdk [cmdk-item] {
+    grid-template-columns: 28px 1fr 3.5rem;
+  }
+  .cmdk [cmdk-item] .cmdk-meta {
+    display: none;
+  }
 }
 .cmdk [cmdk-item][data-selected="true"] {
   background: var(--surface-2);
@@ -2653,34 +2689,70 @@
   }
   .side {
     position: sticky;
-    z-index: 5;
+    z-index: 20;
     height: auto;
     flex-direction: row;
-    flex-wrap: wrap;
     align-items: center;
     padding: 10px 12px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
-  .scout .cmdk-trigger {
-    width: auto;
-    flex: 1;
+  .side-brand {
+    width: 100%;
+  }
+  .side-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .side-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: min(320px, 86vw);
+    height: 100dvh;
+    padding: 16px 12px;
+    overflow-y: auto;
+    background: var(--surface-2);
+    border-right: 1px solid var(--line);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 0.2s,
+      visibility 0.2s;
+  }
+  .side-body[data-aberta="true"] {
+    transform: none;
+    visibility: visible;
+  }
+  .side-fundo {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    background: oklch(0.208 0.042 265.755 / 40%);
   }
   .scout .tabs {
-    flex-direction: row;
-    overflow-x: auto;
+    flex-direction: column;
     width: 100%;
   }
   .side-foot {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    display: flex;
-    align-items: center;
-  }
-  .side-user,
-  .side-demo {
-    display: none;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    display: grid;
   }
   .scout main.wrap {
     padding: 20px 16px 48px;
@@ -2744,4 +2816,58 @@
 .dialogo {
   width: min(520px, 100%);
   box-shadow: 0 24px 48px -12px oklch(0 0 0 / 18%);
+}
+
+.scout .avatar {
+  overflow: hidden;
+}
+.scout .avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.scout .avatar-grande {
+  width: 72px;
+  height: 72px;
+  font-size: 22px;
+}
+.side-user-btn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.side-user-btn:hover,
+.side-user-btn:focus-visible {
+  background: var(--avatar-bg);
+}
+.dialogo:has(.perfil) {
+  width: min(560px, 100%);
+}
+.perfil-id,
+.perfil-foto {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.perfil-dados {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+.perfil-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.perfil-linha dt {
+  color: var(--ink-2);
+}
+.perfil-linha dd {
+  margin: 0;
+  text-align: right;
 }

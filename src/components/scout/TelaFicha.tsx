@@ -1,3 +1,4 @@
+import { Avatar } from "./Avatar";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -9,11 +10,13 @@ import { FinanceiroDialog } from "./FinanceiroDialog";
 import { GaugeClassFit } from "./GaugeClassFit";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
 import { PlanoIndividual } from "./PlanoIndividual";
-import { ResultadoDialog, rotuloNivel } from "./ResultadoDialog";
+import { ResultadoDialog } from "./ResultadoDialog";
 import { SemAcesso } from "./SemAcesso";
 import { SparkScore } from "./SparkScore";
-import { StatusPill, textoDoStatus } from "./StatusPill";
+import { StatusPill } from "./StatusPill";
 import { fmt0, fmt1, fmtData, rotuloCiclo } from "./formato";
+import { rotuloNivelHistorico } from "./niveis";
+import { textoDoStatus } from "./status-gate";
 import { ErroApi, mensagemDeErro } from "@/lib/api/cliente";
 import {
   useFicha,
@@ -310,7 +313,7 @@ function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
         )}
       </dl>
       {completo ? (
-        <div className="table-scroll" style={{ marginTop: 12 }}>
+        <div className="table-scroll" tabIndex={0} style={{ marginTop: 12 }}>
           <table className="data">
             <thead>
               <tr>
@@ -390,6 +393,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
         </div>
       )}
       <div className="athlete-head">
+        {atleta.fotoUrl && <Avatar nome={atleta.nome} fotoUrl={atleta.fotoUrl} grande />}
         <div>
           <div className="eyebrow">
             Ficha individual{ficha.ciclo ? ` · ciclo de ${ficha.ciclo.nome}` : ""}
@@ -478,7 +482,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 </button>
               </div>
             )}
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data">
                 <thead>
                   <tr>
@@ -497,7 +501,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                       <tr key={`${r.data}-${r.evento}-${i}`}>
                         <td className="num">{fmtData(r.data)}</td>
                         <td>{r.evento}</td>
-                        <td>{rotuloNivel(r.nivel)}</td>
+                        <td>{rotuloNivelHistorico(r.nivel)}</td>
                         <td className="r">
                           {r.posicao}º de {r.tamanhoFrota}
                         </td>
@@ -570,7 +574,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                   status={g1?.sugestaoAutomatica ?? "condicional"}
                 />
                 <p className="muted" style={{ fontSize: "0.82rem", margin: "6px 0 0" }}>
-                  Faixa de peso da classe pelo Word do Juan.
+                  Faixa de peso de referência da classe (parâmetro da metodologia).
                   {classFit.alturaCm != null ? ` Altura: ${classFit.alturaCm} cm.` : ""}
                 </p>
               </>

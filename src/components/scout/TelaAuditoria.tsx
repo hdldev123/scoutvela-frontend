@@ -9,7 +9,7 @@ import {
 } from "@/lib/api/auditoria";
 import "@/styles/auditoria.css";
 
-export const ROTULO_ACAO: Record<string, string> = {
+const ROTULO_ACAO: Record<string, string> = {
   lancar_avaliacao: "Lançou avaliação",
   decidir_gate: "Decidiu gate",
   cadastrar_atleta: "Cadastrou atleta",
@@ -33,7 +33,7 @@ export const ROTULO_ACAO: Record<string, string> = {
   registrar_plano: "Registrou plano individual",
 };
 
-export const rotuloAcao = (acao: string): string => ROTULO_ACAO[acao] ?? acao;
+const rotuloAcao = (acao: string): string => ROTULO_ACAO[acao] ?? acao;
 
 const ROTULO_PAPEL: Record<string, string> = {
   gestor: "gestor",
@@ -167,7 +167,7 @@ export function TelaAuditoria() {
           ) : itens.length === 0 ? (
             <p className="muted">Nenhum evento para estes filtros.</p>
           ) : (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="data">
                 <thead>
                   <tr>

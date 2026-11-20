@@ -1,4 +1,4 @@
-import { useEffect, useId, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 
 export interface DialogoProps {
   titulo: string;
@@ -6,21 +6,51 @@ export interface DialogoProps {
   children: ReactNode;
 }
 
-/** Diálogo modal simples (Esc e clique fora fecham). Renderize só quando estiver aberto. */
+const FOCAVEIS =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Diálogo modal: foco preso (Tab e Shift+Tab), Esc e clique fora fecham, e o foco volta a quem
+ * abriu. Renderize só quando estiver aberto.
+ */
 export function Dialogo({ titulo, aoFechar, children }: DialogoProps) {
   const idTitulo = useId();
+  const caixa = useRef<HTMLDivElement>(null);
+  const aoFecharRef = useRef(aoFechar);
+  aoFecharRef.current = aoFechar;
 
   useEffect(() => {
+    const origem = document.activeElement as HTMLElement | null;
+    const dentro = () => caixa.current?.contains(document.activeElement) ?? false;
+    if (!dentro()) caixa.current?.querySelector<HTMLElement>(FOCAVEIS)?.focus();
+
     const aoTeclar = (e: KeyboardEvent) => {
-      if (e.key === "Escape") aoFechar();
+      if (e.key === "Escape") return aoFecharRef.current();
+      if (e.key !== "Tab" || !caixa.current) return;
+      const itens = Array.from(caixa.current.querySelectorAll<HTMLElement>(FOCAVEIS));
+      if (itens.length === 0) return e.preventDefault();
+      const primeiro = itens[0]!;
+      const ultimo = itens[itens.length - 1]!;
+      const ativo = document.activeElement;
+      if (e.shiftKey && (ativo === primeiro || !caixa.current.contains(ativo))) {
+        e.preventDefault();
+        ultimo.focus();
+      } else if (!e.shiftKey && (ativo === ultimo || !caixa.current.contains(ativo))) {
+        e.preventDefault();
+        primeiro.focus();
+      }
     };
     window.addEventListener("keydown", aoTeclar);
-    return () => window.removeEventListener("keydown", aoTeclar);
-  }, [aoFechar]);
+    return () => {
+      window.removeEventListener("keydown", aoTeclar);
+      if (origem?.isConnected) origem.focus();
+    };
+  }, []);
 
   return (
-    <div className="dialogo-overlay" onClick={aoFechar}>
+    <div className="dialogo-overlay" onClick={() => aoFechar()}>
       <div
+        ref={caixa}
         className="dialogo panel"
         role="dialog"
         aria-modal="true"
@@ -29,7 +59,7 @@ export function Dialogo({ titulo, aoFechar, children }: DialogoProps) {
       >
         <div className="panel-head">
           <h2 id={idTitulo}>{titulo}</h2>
-          <button type="button" className="btn" onClick={aoFechar} aria-label="Fechar">
+          <button type="button" className="btn" onClick={() => aoFechar()} aria-label="Fechar">
             <i className="ph ph-x" aria-hidden="true" />
           </button>
         </div>

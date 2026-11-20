@@ -2,7 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { FaixaPill } from "./FaixaPill";
-import { textoDoStatus } from "./StatusPill";
+import { textoDoStatus } from "./status-gate";
 import { fmt0, fmt1, fmtData } from "./formato";
 import "@/styles/avaliar.css";
 import "@/styles/ficha.css";
