@@ -101,6 +101,25 @@ describe("TelaRanking", () => {
     expect(within(linha).getByText("1.234")).toBeInTheDocument();
   });
 
+  it("mostra a foto do atleta quando a API manda, e as iniciais quando não", async () => {
+    GET.mockResolvedValue({
+      data: resposta([
+        item(1, "Helena Vasques", "ILCA 6", {
+          atleta: { ...item(1, "Helena Vasques", "ILCA 6").atleta, fotoUrl: "https://x/f.jpg" },
+        }),
+        item(2, "Marcos Lima", "ILCA 7"),
+      ]),
+      response: { status: 200 },
+    });
+    montar(<TelaRanking papel="gestor" filtros={{}} aoMudarFiltros={() => {}} />);
+
+    const helena = (await screen.findByText("Helena Vasques")).closest("a")!;
+    expect(helena.querySelector(".avatar img")).toHaveAttribute("src", "https://x/f.jpg");
+    const marcos = screen.getByText("Marcos Lima").closest("a")!;
+    expect(marcos.querySelector(".avatar img")).toBeNull();
+    expect(marcos.querySelector(".avatar")).toHaveTextContent("ML");
+  });
+
   it("a legenda não fala em ranking simulado", async () => {
     GET.mockResolvedValue({
       data: resposta([item(1, "Helena Vasques", "ILCA 6")]),

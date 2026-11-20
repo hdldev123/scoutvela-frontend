@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { Avatar } from "./Avatar";
 import { FaixaPill } from "./FaixaPill";
 import { PilaresStrip } from "./PilaresStrip";
 import { StatusPill } from "./StatusPill";
@@ -7,7 +8,6 @@ import { filtrosLimpos, useRanking, type FiltrosRanking } from "@/lib/api/consul
 
 type ParcialFiltros = { [K in keyof FiltrosRanking]?: FiltrosRanking[K] | undefined };
 import { mensagemDeErro } from "@/lib/api/cliente";
-import { iniciais } from "@/lib/auth/navegacao";
 
 const FAIXAS = [
   { id: "f1", nome: "Prioridade de programa" },
@@ -147,9 +147,7 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
                 >
                   <span className="pos">{i.posicao}</span>
                   <span className="who">
-                    <span className="avatar" aria-hidden="true">
-                      {iniciais(i.atleta.nome)}
-                    </span>
+                    <Avatar nome={i.atleta.nome} fotoUrl={i.atleta.fotoUrl} />
                     <span className="who-txt">
                       <strong>
                         {i.atleta.nome}
