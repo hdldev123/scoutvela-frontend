@@ -316,6 +316,22 @@ describe("TelaCadastro", () => {
     });
   });
 
+  it("sem termos pendentes mostra o estado vazio", async () => {
+    pendentes = [];
+    montar();
+    expect(await screen.findByText("Nenhum termo pendente")).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
+  });
+
+  it("o tipo de importação é um radiogroup e o arquivo mostra a dica de tamanho", () => {
+    montar();
+    const grupo = screen.getByRole("radiogroup", { name: "Tipo de importação" });
+    expect(within(grupo).getAllByRole("radio")).toHaveLength(2);
+    expect((within(grupo).getByLabelText("VelaID") as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByText("CSV, até 512 KB")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Escolher CSV/ })).toBeTruthy();
+  });
+
   it("recusa no cliente arquivo acima de 512 KB, sem chamar a API", async () => {
     montar();
     const grande = new File([new Uint8Array(524289)], "grande.csv", { type: "text/csv" });

@@ -1,6 +1,8 @@
-import { useId, useState, type FormEvent } from "react";
+import { Fragment, useId, useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
+import { CampoArquivo } from "./CampoArquivo";
 import { Dialogo } from "./Dialogo";
+import { EstadoVazio } from "./EstadoVazio";
 import { fmtData } from "./formato";
 import {
   LIMITE_CSV_BYTES,
@@ -49,6 +51,23 @@ function lerTexto(arquivo: File): Promise<string> {
     leitor.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
     leitor.readAsText(arquivo, "UTF-8");
   });
+}
+
+function Aviso({
+  icone,
+  tom,
+  children,
+}: {
+  icone: string;
+  tom: "info" | "alerta";
+  children: ReactNode;
+}) {
+  return (
+    <div className={`aviso aviso-${tom}`}>
+      <i className={`ph ph-${icone}`} aria-hidden="true" />
+      <div>{children}</div>
+    </div>
+  );
 }
 
 /** Cadastro do atleta a partir do VelaID, termos pendentes e importação de CSV (gestor). */
@@ -308,7 +327,9 @@ function TermosPendentes() {
           {mensagemDeErro(pendentes.error)}
         </div>
       ) : pendentes.data.length === 0 ? (
-        <p className="muted">Nenhum termo pendente.</p>
+        <div className="vazio-compacto">
+          <EstadoVazio icone="seal-check" titulo="Nenhum termo pendente" />
+        </div>
       ) : (
         <div className="table-scroll" tabIndex={0}>
           <table className="data">
@@ -319,7 +340,7 @@ function TermosPendentes() {
                 <th>Classe</th>
                 <th>Cadastrado em</th>
                 <th>Termo</th>
-                <th>
+                <th className="acoes">
                   <span className="cad-sr">Ação</span>
                 </th>
               </tr>
@@ -328,18 +349,24 @@ function TermosPendentes() {
               {pendentes.data.map((p) => (
                 <tr key={p.id}>
                   <td>{p.nome}</td>
-                  <td>{p.velaid}</td>
-                  <td>{p.classe.nome}</td>
-                  <td>{fmtData(p.criadoEm)}</td>
-                  <td>
-                    {p.termoAceitoVersao
-                      ? `Aceitou a versão ${p.termoAceitoVersao}; falta a vigente`
-                      : "Nunca aceitou"}
+                  <td className="nw">
+                    <code>{p.velaid}</code>
                   </td>
-                  <td className="r">
+                  <td className="nw">{p.classe.nome}</td>
+                  <td className="nw">{fmtData(p.criadoEm)}</td>
+                  <td>
+                    {p.termoAceitoVersao ? (
+                      <span className="pill st-cond cad-termo">
+                        Aceitou a versão {p.termoAceitoVersao}; falta a vigente
+                      </span>
+                    ) : (
+                      <span className="pill st-alerta cad-termo">Nunca aceitou</span>
+                    )}
+                  </td>
+                  <td className="acoes">
                     <button
                       type="button"
-                      className="btn"
+                      className="btn sm"
                       onClick={() => {
                         setErro("");
                         setAlvo(p);
@@ -441,8 +468,7 @@ function ImportarCsv() {
         <span className="muted cad-sub">VelaID ou Ranking CBVela (até 512 KB)</span>
       </div>
       <form className="stack" style={{ gap: 12 }} onSubmit={(e) => void enviar(e)}>
-        <fieldset className="cad-tipos">
-          <legend className="cad-sr">Tipo de importação</legend>
+        <div className="segmentado" role="radiogroup" aria-label="Tipo de importação">
           {(Object.keys(FORMATOS) as TipoImportacao[]).map((t) => (
             <label key={t}>
               <input
@@ -458,31 +484,39 @@ function ImportarCsv() {
               {FORMATOS[t].nome}
             </label>
           ))}
-        </fieldset>
-        <div className="note">
+        </div>
+        <Aviso icone="info" tom="info">
           <b>Colunas esperadas ({formato.nome}):</b>
-          <div className="cad-formato">{formato.colunas}</div>
-          {formato.nota} Separador ; ou , detectado no cabeçalho.
-        </div>
-        <div className="note">
+          <code className="cad-formato">
+            {formato.colunas.split(";").map((c, i) => (
+              <Fragment key={c}>
+                {i > 0 && ";"}
+                {i > 0 && <wbr />}
+                {c}
+              </Fragment>
+            ))}
+          </code>
+          <span>{formato.nota} Separador ; ou , detectado no cabeçalho.</span>
+        </Aviso>
+        <Aviso icone="warning" tom="alerta">
           Arquivos com colunas de CPF, RG, documento, endereço ou renda são recusados por inteiro.
-        </div>
-        <label className="field" htmlFor="cad-arquivo">
-          Arquivo CSV
-          <input
-            key={chave}
-            id="cad-arquivo"
-            type="file"
-            accept=".csv,text/csv"
-            onChange={(e) => escolher(e.target.files?.[0] ?? null)}
-          />
-        </label>
+        </Aviso>
+        <CampoArquivo
+          key={chave}
+          id="cad-arquivo"
+          rotulo="Arquivo CSV"
+          accept=".csv,text/csv"
+          textoBotao="Escolher CSV"
+          dica="CSV, até 512 KB"
+          arquivo={arquivo}
+          aoEscolher={(f) => escolher(f ?? null)}
+        />
         {erro && (
           <div className="note" role="alert">
             {erro}
           </div>
         )}
-        <div className="btn-row">
+        <div className="btn-row cad-importar">
           <button type="submit" className="btn primary" disabled={!arquivo || importar.isPending}>
             {importar.isPending ? "Importando…" : "Importar"}
           </button>
@@ -502,14 +536,14 @@ function ImportarCsv() {
                 <caption className="cad-sr">Erros por linha</caption>
                 <thead>
                   <tr>
-                    <th className="r">Linha</th>
+                    <th className="num">Linha</th>
                     <th>Erro</th>
                   </tr>
                 </thead>
                 <tbody>
                   {resultado.erros.map((e) => (
                     <tr key={`${e.linha}-${e.mensagem}`}>
-                      <td className="r">{e.linha}</td>
+                      <td className="num">{e.linha}</td>
                       <td>{e.mensagem}</td>
                     </tr>
                   ))}

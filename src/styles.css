@@ -4251,3 +4251,83 @@
     width: auto;
   }
 }
+
+/* === Tela: Cadastrar atleta === */
+.scout .cad-form .btn {
+  min-height: 38px;
+}
+.scout .cad-termo {
+  white-space: normal;
+  text-align: left;
+}
+.scout .segmentado {
+  display: inline-flex;
+  justify-self: start;
+  max-width: 100%;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.scout .segmentado label {
+  position: relative;
+  padding: 6px 14px;
+  border-radius: 8px;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.scout .segmentado input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.scout .segmentado label:has(input:checked) {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+}
+.scout .segmentado label:has(input:focus-visible) {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+.scout .aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 0.84rem;
+}
+.scout .aviso > i {
+  flex: none;
+  margin-top: 1px;
+  color: var(--sea);
+  font-size: 1.1rem;
+}
+.scout .aviso > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.scout .aviso code {
+  color: var(--ink);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+.scout .aviso-alerta {
+  border-color: oklch(0.67 0.16 58 / 35%);
+  background: var(--warn-soft);
+  color: var(--ink);
+}
+.scout .aviso-alerta > i {
+  color: var(--warn);
+}
