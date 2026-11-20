@@ -3362,3 +3362,153 @@
     transition: none;
   }
 }
+
+/* === Tela: Ranking === */
+.scout .rank-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.scout .rank-legend i {
+  flex: none;
+  font-size: 14px;
+}
+.scout .rank-row,
+.scout .rank-headrow {
+  grid-template-columns: 2rem minmax(0, 1fr) 72px 8rem 6.25rem 9rem 4rem;
+  gap: 14px;
+}
+.scout .rank-headrow span {
+  white-space: nowrap;
+}
+.scout .rank-headrow .col-dir {
+  text-align: right;
+}
+.scout .rank-extra {
+  display: contents;
+}
+.scout .rank-row .who strong,
+.scout .rank-row .who .meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scout .rank-row .who .meta {
+  display: flex;
+  align-items: center;
+  gap: 4px 8px;
+}
+.scout .rank-row .who .meta-txt {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scout .rank-row .who .meta .pill {
+  flex: none;
+}
+.scout .rank-row .pts {
+  text-align: right;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.scout .rank-row .faixacell {
+  display: flex;
+  justify-content: flex-start;
+  min-width: 0;
+}
+.scout .rank-row .scorecell {
+  text-align: right;
+  font-family: var(--f-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.scout a.rank-row:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: -2px;
+  background: var(--sea-soft);
+}
+.scout a.rank-row:hover {
+  background: var(--sea-soft);
+}
+@media (max-width: 760px) {
+  .scout .rank-row {
+    grid-template-columns: 1.25rem 34px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "pos avatar nome score"
+      "pos avatar meta faixa"
+      "pos extra extra extra";
+    column-gap: 8px;
+    row-gap: 4px;
+    align-items: center;
+    padding: 12px 14px;
+  }
+  .scout .rank-row .pos {
+    grid-area: pos;
+    align-self: start;
+    padding-top: 6px;
+    font-size: 12px;
+  }
+  .scout .rank-row .who,
+  .scout .rank-row .who-txt {
+    display: contents;
+  }
+  .scout .rank-row .avatar {
+    grid-area: avatar;
+    align-self: start;
+  }
+  .scout .rank-row .who strong {
+    grid-area: nome;
+    white-space: normal;
+    overflow: visible;
+    align-self: end;
+  }
+  .scout .rank-row .who .meta {
+    grid-area: meta;
+    align-self: start;
+    flex-wrap: wrap;
+    white-space: normal;
+    overflow: visible;
+  }
+  .scout .rank-row .who .meta-txt {
+    white-space: normal;
+    overflow: visible;
+  }
+  .scout .rank-row .faixacell .pill {
+    padding: 2px 8px;
+    font-size: 11px;
+  }
+  .scout .rank-row .scorecell {
+    grid-area: score;
+    align-self: end;
+    font-size: 20px;
+  }
+  .scout .rank-row .faixacell {
+    grid-area: faixa;
+    justify-content: flex-end;
+    align-self: start;
+  }
+  .scout .rank-row .rank-extra {
+    grid-area: extra;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 6px;
+  }
+  .scout .rank-row .rank-extra .strip {
+    max-width: none;
+  }
+  .scout .rank-row .pts::after {
+    content: " pts";
+    font-family: var(--f-body);
+    font-size: 11px;
+    color: var(--ink-2);
+  }
+}

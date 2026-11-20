@@ -196,6 +196,21 @@ describe("TelaRanking", () => {
     expect(await screen.findByText("Nenhum atleta com esses filtros.")).toBeInTheDocument();
   });
 
+  it("lista vazia com filtros oferece 'Limpar filtros', que zera os filtros", async () => {
+    GET.mockResolvedValue({ data: resposta([]), response: { status: 200 } });
+    const aoMudar = vi.fn();
+    montar(<TelaRanking papel="gestor" filtros={{ classe: "ILCA 6" }} aoMudarFiltros={aoMudar} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Limpar filtros" }));
+    expect(aoMudar).toHaveBeenCalledWith({});
+  });
+
+  it("lista vazia sem filtros não mostra 'Limpar filtros'", async () => {
+    GET.mockResolvedValue({ data: resposta([]), response: { status: 200 } });
+    montar(<TelaRanking papel="gestor" filtros={{}} aoMudarFiltros={() => {}} />);
+    await screen.findByText("Nenhum atleta com esses filtros.");
+    expect(screen.queryByRole("button", { name: "Limpar filtros" })).not.toBeInTheDocument();
+  });
+
   it("mostra a mensagem de erro devolvida pela API", async () => {
     GET.mockResolvedValue({
       error: { erro: "sem_acesso", mensagem: "Sem permissão." },

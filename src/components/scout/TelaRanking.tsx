@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Avatar } from "./Avatar";
 import { FaixaPill } from "./FaixaPill";
 import { PilaresStrip } from "./PilaresStrip";
+import { EstadoVazio } from "./EstadoVazio";
 import { StatusPill } from "./StatusPill";
 import { fmt0, fmt1, fmtData } from "./formato";
 import { filtrosLimpos, useRanking, type FiltrosRanking } from "@/lib/api/consultas";
@@ -30,6 +31,7 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
   const eventos = [...new Set((base.data?.itens ?? []).map((i) => i.atleta.classe.evento))];
   if (filtros.classe && !eventos.includes(filtros.classe)) eventos.push(filtros.classe);
 
+  const temFiltros = Object.keys(filtrosLimpos(filtros)).length > 0;
   const titulo = papel === "treinador" ? "Meus atletas" : "Ranking de talento";
   const ciclo = lista.data?.ciclo;
   const mudar = (parcial: ParcialFiltros) =>
@@ -113,16 +115,20 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
         </label>
       </div>
       <p className="rank-legend">
-        Barras: os 9 pilares, de Performance a Carreira. Tracejado = pilar ainda sem nota. Pontos
-        CBVela vêm do ranking oficial, últimas 52 semanas.
+        <i className="ph ph-info" aria-hidden="true" />
+        <span>
+          Barras: os 9 pilares, de Performance a Carreira; tracejado = sem nota. Pontos CBVela vêm
+          do ranking oficial, últimas 52 semanas.
+        </span>
       </p>
       <div className="rank-headrow" aria-hidden="true">
         <span>#</span>
         <span>Atleta</span>
         <span>Pilares</span>
         <span>Gates</span>
-        <span style={{ textAlign: "right" }}>Ranking CBVela</span>
-        <span style={{ textAlign: "right" }}>Score</span>
+        <span className="col-dir">Pontos CBVela</span>
+        <span>Faixa</span>
+        <span className="col-dir">Score</span>
       </div>
       {lista.isPending ? (
         <p role="status" className="muted">
@@ -136,7 +142,22 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
         <>
           <div className="rank">
             {lista.data.itens.length === 0 ? (
-              <div className="panel empty-state">Nenhum atleta com esses filtros.</div>
+              <EstadoVazio
+                icone="funnel"
+                titulo="Nenhum atleta com esses filtros."
+                texto={
+                  temFiltros
+                    ? "Nenhum atleta atende a todos os filtros ao mesmo tempo."
+                    : "Ainda não há atletas para mostrar."
+                }
+                acao={
+                  temFiltros ? (
+                    <button type="button" className="btn sm" onClick={() => aoMudarFiltros({})}>
+                      Limpar filtros
+                    </button>
+                  ) : undefined
+                }
+              />
             ) : (
               lista.data.itens.map((i) => (
                 <Link
@@ -149,29 +170,28 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
                   <span className="who">
                     <Avatar nome={i.atleta.nome} fotoUrl={i.atleta.fotoUrl} />
                     <span className="who-txt">
-                      <strong>
-                        {i.atleta.nome}
-                        {!i.completo && <span className="pill st-parcial">Parcial</span>}
-                      </strong>
+                      <strong>{i.atleta.nome}</strong>
                       <span className="meta">
-                        <code>{i.atleta.velaid}</code> · {i.atleta.classe.nome} · {i.atleta.idade}{" "}
-                        anos
-                        {i.atleta.uf ? ` · ${i.atleta.uf}` : ""}
+                        <span className="meta-txt">
+                          <code>{i.atleta.velaid}</code> · {i.atleta.classe.nome} · {i.atleta.idade}{" "}
+                          anos
+                          {i.atleta.uf ? ` · ${i.atleta.uf}` : ""}
+                        </span>
+                        {!i.completo && <span className="pill st-parcial">Parcial</span>}
                       </span>
                     </span>
                   </span>
-                  <PilaresStrip pilares={i.pilares} />
-                  <span className="gatecell">
-                    <StatusPill status={i.statusGates} ponto />
+                  <span className="rank-extra">
+                    <PilaresStrip pilares={i.pilares} />
+                    <span className="gatecell">
+                      <StatusPill status={i.statusGates} ponto />
+                    </span>
+                    <span className="pts num">{fmt0(i.pontosCbvela)}</span>
                   </span>
-                  <span className="pts num">
-                    {fmt0(i.pontosCbvela)}
-                    <small>pts CBVela</small>
-                  </span>
-                  <span className="scorebox">
-                    <b>{fmt1(i.score)}</b>
+                  <span className="faixacell">
                     <FaixaPill faixa={i.faixa} curto />
                   </span>
+                  <span className="scorecell">{fmt1(i.score)}</span>
                 </Link>
               ))
             )}
