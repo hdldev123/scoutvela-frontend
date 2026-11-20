@@ -3004,11 +3004,6 @@
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
-.perfil .pill.st-neutro {
-  background: var(--surface-2);
-  color: var(--ink-2);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
 .perfil .btn-discreto {
   border-color: transparent;
   box-shadow: none;
@@ -3158,4 +3153,56 @@
 .scout .btn:focus-visible {
   outline: 2px solid var(--sea);
   outline-offset: 2px;
+}
+
+/*
+ * Utilitários de tabela (aplicar em table.data):
+ *   .num            valor numérico: à direita, algarismos tabulares
+ *   .nw             sem quebra de linha
+ *   .acoes          célula de ações: à direita, botões .btn.sm em linha
+ *   table.data.interativa   linha com hover suave
+ */
+.scout table.data th,
+.scout table.data td {
+  vertical-align: middle;
+}
+.scout table.data th {
+  white-space: nowrap;
+}
+.scout table.data .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.scout table.data .nw {
+  white-space: nowrap;
+}
+.scout table.data td.acoes,
+.scout table.data th.acoes {
+  text-align: right;
+  white-space: nowrap;
+}
+.scout table.data td.acoes {
+  display: table-cell;
+}
+.scout table.data td.acoes > .btn,
+.scout table.data td.acoes > .acoes-grupo > .btn {
+  margin-left: 6px;
+}
+.scout table.data .acoes-grupo {
+  display: inline-flex;
+  gap: 6px;
+}
+.scout table.data.interativa tbody tr:hover {
+  background: var(--surface-2);
+}
+
+/* Selos de status globais */
+.scout .st-neutro {
+  background: var(--surface-2);
+  color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.scout .st-info {
+  background: var(--sea-soft);
+  color: var(--sea);
 }
