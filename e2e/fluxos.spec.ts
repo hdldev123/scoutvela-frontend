@@ -6,10 +6,12 @@ const menu = (page: Page) => page.getByRole("navigation", { name: "Telas" });
 test("gestor lança uma avaliação com prévia", async ({ page }) => {
   await entrar(page, "gestor");
   await menu(page).getByRole("link", { name: "Lançar avaliação", exact: true }).click();
-  const escolha = page.getByLabel("Atleta");
+  // Pelo papel e nome: a grade de cartões ("Escolha um atleta") também casa com getByLabel("Atleta").
+  const escolha = page.getByRole("combobox", { name: /^Atleta/ });
   await escolha.selectOption({ index: 1 });
+  // A evidência só aparece quando a nota muda: escolhe uma nota diferente da atual.
   const grupo = page.getByRole("radiogroup").first();
-  await grupo.locator("label").last().click();
+  await grupo.locator("label:not(:has(input:checked))").first().click();
   await page.getByLabel("Evidência (obrigatória)").first().fill("Observado no treino de sábado");
   await expect(page.getByText("Prévia do cálculo")).toBeVisible();
   await expect(page.getByText(/Score\s*\d/)).toBeVisible();
