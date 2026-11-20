@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -297,6 +298,28 @@ function SecaoSenha() {
   );
 }
 
+/** Linha da verificação em duas etapas: diz se há app autenticador cadastrado, além do estado da sessão. */
+function LinhaMfa({ mfaAtivo }: { mfaAtivo: boolean }) {
+  const fatores = useQuery({
+    queryKey: ["mfa-fatores"],
+    queryFn: async () => {
+      const { data, error } = await getSupabase().auth.mfa.listFactors();
+      if (error) throw error;
+      return (data?.totp?.length ?? 0) > 0;
+    },
+    retry: false,
+  });
+  let valor: string;
+  if (fatores.isPending) valor = "Carregando…";
+  else if (fatores.isError) valor = mfaAtivo ? "Ativa nesta sessão" : "Não verificada nesta sessão";
+  else if (!fatores.data) valor = "Não cadastrada";
+  else
+    valor = mfaAtivo
+      ? "Cadastrada · verificada nesta sessão"
+      : "Cadastrada · não verificada nesta sessão";
+  return <Linha rotulo="Verificação em duas etapas" valor={valor} />;
+}
+
 function Corpo({ perfil, aoFechar }: { perfil: Perfil; aoFechar: () => void }) {
   const a = perfil.atleta;
   return (
@@ -310,10 +333,7 @@ function Corpo({ perfil, aoFechar }: { perfil: Perfil; aoFechar: () => void }) {
       </div>
       <dl className="perfil-dados">
         <Linha rotulo="E-mail de login" valor={perfil.email} />
-        <Linha
-          rotulo="Verificação em duas etapas"
-          valor={perfil.mfaAtivo ? "Ativa nesta sessão" : "Não verificada nesta sessão"}
-        />
+        <LinhaMfa mfaAtivo={perfil.mfaAtivo} />
         {perfil.treinador && (
           <Linha
             rotulo="Atletas sob sua responsabilidade"

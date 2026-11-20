@@ -8,6 +8,7 @@ const POST = vi.fn();
 const PUT = vi.fn();
 const DELETE = vi.fn();
 const updateUser = vi.hoisted(() => vi.fn());
+const listFactors = vi.hoisted(() => vi.fn());
 const preparar = vi.hoisted(() => vi.fn());
 const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
 
@@ -21,7 +22,7 @@ vi.mock("@/lib/api/cliente", async (importar) => ({
   },
 }));
 vi.mock("@/lib/auth/supabase", () => ({
-  getSupabase: () => ({ auth: { updateUser } }),
+  getSupabase: () => ({ auth: { updateUser, mfa: { listFactors } } }),
 }));
 vi.mock("@/lib/foto", async (importar) => ({
   ...(await importar<typeof import("@/lib/foto")>()),
@@ -102,6 +103,11 @@ async function abrir() {
 beforeEach(() => {
   for (const f of [GET, POST, PUT, DELETE, updateUser, preparar, toastFn, toastFn.error])
     f.mockReset();
+  listFactors.mockReset();
+  listFactors.mockResolvedValue({
+    data: { totp: [{ id: "f1" }], all: [{ id: "f1" }] },
+    error: null,
+  });
 });
 
 describe("Modal Meu perfil", () => {
@@ -109,7 +115,27 @@ describe("Modal Meu perfil", () => {
     montar(papel);
     await abrir();
     expect(await screen.findByText("ana@cbvela.org")).toBeInTheDocument();
-    expect(screen.getByText("Ativa nesta sessão")).toBeInTheDocument();
+    expect(await screen.findByText("Cadastrada · verificada nesta sessão")).toBeInTheDocument();
+  });
+
+  it("mostra a verificação em duas etapas cadastrada mas não verificada na sessão", async () => {
+    montar("gestor", perfil("gestor", { mfaAtivo: false }));
+    await abrir();
+    expect(await screen.findByText("Cadastrada · não verificada nesta sessão")).toBeInTheDocument();
+  });
+
+  it("mostra a verificação em duas etapas não cadastrada", async () => {
+    listFactors.mockResolvedValue({ data: { totp: [], all: [] }, error: null });
+    montar("gestor");
+    await abrir();
+    expect(await screen.findByText("Não cadastrada")).toBeInTheDocument();
+  });
+
+  it("cai no estado da sessão quando listFactors falha", async () => {
+    listFactors.mockResolvedValue({ data: null, error: new Error("falhou") });
+    montar("gestor", perfil("gestor", { mfaAtivo: false }));
+    await abrir();
+    expect(await screen.findByText("Não verificada nesta sessão")).toBeInTheDocument();
   });
 
   it("não abre para o IBVAR", () => {
