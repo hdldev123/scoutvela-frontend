@@ -185,7 +185,7 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
   const [peso, setPeso] = useState<string | undefined>();
   const [altura, setAltura] = useState<string | undefined>();
   const [evMedida, setEvMedida] = useState("");
-  const celular = useMedia("(max-width: 880px)");
+  const celular = useMedia("(max-width: 1180px)");
   const abaAtiva = useRef<HTMLButtonElement>(null);
 
   const pilar = ficha.pilares.find((p) => p.id === pilarId) ?? ficha.pilares[0];

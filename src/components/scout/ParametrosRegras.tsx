@@ -365,7 +365,7 @@ function FormRegra(props: {
           };
           const mudar = (v: string) => setTextos((t) => ({ ...t, [c.chave]: v }));
           return (
-            <div className="field" key={c.chave}>
+            <div className={`field${c.tipo === "texto" ? " par-campo-texto" : ""}`} key={c.chave}>
               <label htmlFor={id}>{c.rotulo}</label>
               {c.tipo === "status" ? (
                 <select {...comum} onChange={(e) => mudar(e.target.value)}>
@@ -376,12 +376,18 @@ function FormRegra(props: {
                     </option>
                   ))}
                 </select>
+              ) : c.tipo === "texto" ? (
+                <textarea
+                  {...comum}
+                  rows={2}
+                  maxLength={c.max}
+                  onChange={(e) => mudar(e.target.value)}
+                />
               ) : (
                 <input
                   {...comum}
                   type="text"
-                  inputMode={c.tipo === "texto" ? "text" : "decimal"}
-                  maxLength={c.tipo === "texto" ? c.max : undefined}
+                  inputMode="decimal"
                   onChange={(e) => mudar(e.target.value)}
                 />
               )}

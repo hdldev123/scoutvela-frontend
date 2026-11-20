@@ -310,6 +310,10 @@ describe("TelaParametros", () => {
     montar();
     await screen.findByLabelText("Perfil C · status");
     irPara("Regras provisórias");
+    const motivo = screen.getByLabelText("Perfil C · motivo");
+    expect(motivo.tagName).toBe("TEXTAREA");
+    expect(motivo).toHaveAttribute("rows", "2");
+    expect(motivo).toHaveAttribute("maxlength", "200");
     fireEvent.change(screen.getByLabelText("Perfil C · status"), {
       target: { value: "alerta" },
     });

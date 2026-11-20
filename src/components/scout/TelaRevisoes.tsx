@@ -40,6 +40,16 @@ function Status({ status }: { status: StatusRevisao }) {
 }
 
 /** Pedidos de revisão de nota (gestor e treinador) e pedidos do titular (só gestor). */
+/**
+ * Texto que a faixa estreita (881 a 1180 px) mostra abaixo do motivo, no lugar das colunas
+ * "Pedido em" e "Resposta". Vem em atributo para a CSS exibir sem duplicar o texto no DOM.
+ */
+function textoExtra(criadoEm: string, resposta: string | null | undefined): string {
+  const linhas = [`Pedido em ${fmtData(criadoEm)}`];
+  if (resposta) linhas.push(`Resposta: ${resposta}`);
+  return linhas.join("\n");
+}
+
 export function TelaRevisoes({ papel }: { papel: string }) {
   const gestor = papel === "gestor";
   const [aba, setAba] = useState<Aba>("notas");
@@ -208,9 +218,9 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                 <th>Atleta</th>
                 <th>Pilar</th>
                 <th>Motivo</th>
-                <th>Pedido em</th>
+                <th className="rev-col-data">Pedido em</th>
                 <th>Status</th>
-                <th>Resposta</th>
+                <th className="rev-col-resp">Resposta</th>
                 {gestor && (
                   <th className="acoes">
                     <span className="rev-sr">Ação</span>
@@ -230,7 +240,7 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                     <strong>{r.pilar?.nomeCurto ?? "—"}</strong>
                     {r.indicador && <span className="muted">{r.indicador.nome}</span>}
                   </td>
-                  <td className="rev-texto">
+                  <td className="rev-texto" data-extra={textoExtra(r.criadoEm, r.resposta)}>
                     {r.motivo}
                     {typeof r.notaNova === "number" && (
                       <div>
@@ -239,11 +249,11 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                       </div>
                     )}
                   </td>
-                  <td className="nw">{fmtData(r.criadoEm)}</td>
+                  <td className="nw rev-col-data">{fmtData(r.criadoEm)}</td>
                   <td className="nw">
                     <Status status={r.status} />
                   </td>
-                  <td className="rev-texto">
+                  <td className="rev-texto rev-col-resp">
                     {r.resposta ? (
                       <>
                         {r.resposta}
@@ -400,9 +410,9 @@ function PedidosTitular() {
                 <th>Atleta</th>
                 <th>Tipo</th>
                 <th>Descrição</th>
-                <th>Pedido em</th>
+                <th className="rev-col-data">Pedido em</th>
                 <th>Status</th>
-                <th>Resposta</th>
+                <th className="rev-col-resp">Resposta</th>
                 <th className="acoes">
                   <span className="rev-sr">Ação</span>
                 </th>
@@ -417,12 +427,14 @@ function PedidosTitular() {
                     </Link>
                   </td>
                   <td className="nw">{ROTULO_TIPO[p.tipo]}</td>
-                  <td className="rev-texto">{p.descricao}</td>
-                  <td className="nw">{fmtData(p.criadoEm)}</td>
+                  <td className="rev-texto" data-extra={textoExtra(p.criadoEm, p.resposta)}>
+                    {p.descricao}
+                  </td>
+                  <td className="nw rev-col-data">{fmtData(p.criadoEm)}</td>
                   <td className="nw">
                     <Status status={p.status} />
                   </td>
-                  <td className="rev-texto">{p.resposta ?? "—"}</td>
+                  <td className="rev-texto rev-col-resp">{p.resposta ?? "—"}</td>
                   <td className="acoes">
                     <div className="acoes-grupo">
                       {p.tipo === "exclusao" && (p.status === "aberto" || anonimizado(p)) && (

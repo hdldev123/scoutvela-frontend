@@ -411,7 +411,7 @@
     gap: 16px;
     min-width: 0;
   }
-  @media (max-width: 880px) {
+  @media (max-width: 1180px) {
     .grid-2 {
       grid-template-columns: minmax(0, 1fr);
     }
@@ -1024,7 +1024,7 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
   }
-  @media (max-width: 880px) {
+  @media (max-width: 1180px) {
     .modules {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -3312,9 +3312,10 @@
   width: 40px;
   height: 22px;
   padding: 0;
-  border: 1px solid var(--line);
+  /* Desligado: borda (~4,8:1 sobre o branco) e bolinha (~3,3:1 sobre o trilho) passam em WCAG 1.4.11. */
+  border: 1px solid var(--ink-2);
   border-radius: 999px;
-  background: var(--surface-2);
+  background: oklch(0.87 0.02 257);
   cursor: pointer;
   transition:
     background 0.18s ease,
@@ -3327,13 +3328,18 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: var(--shadow-xs);
-  transition: transform 0.18s ease;
+  background: var(--ink-2);
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease;
 }
 .scout .interruptor-botao[aria-checked="true"] {
   background: var(--good);
   border-color: var(--good);
+}
+.scout .interruptor-botao[aria-checked="true"] .interruptor-bolinha {
+  background: #fff;
+  box-shadow: var(--shadow-xs);
 }
 .scout .interruptor-botao[aria-checked="true"] .interruptor-bolinha {
   transform: translateX(18px);
@@ -3437,7 +3443,15 @@
 .scout a.rank-row:hover {
   background: var(--sea-soft);
 }
-@media (max-width: 760px) {
+/* Cartão por atleta até 1020 px: com a barra lateral de 240 px, a grade de tabela não cabe. */
+@media (max-width: 1020px) {
+  .scout .rank-headrow {
+    display: none;
+  }
+  .scout .rank-headrow + .rank {
+    border-top: 1px solid var(--line);
+    border-radius: 12px;
+  }
   .scout .rank-row {
     grid-template-columns: 1.25rem 34px minmax(0, 1fr) auto;
     grid-template-areas:
@@ -3829,7 +3843,7 @@
 .scout .ficha-grid .panel + .panel {
   margin-top: 0;
 }
-@media (max-width: 880px) {
+@media (max-width: 1180px) {
   .scout .ficha-grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -4222,7 +4236,7 @@
   display: flex;
   gap: 8px;
 }
-@media (max-width: 880px) {
+@media (max-width: 1180px) {
   .scout .avaliar-previa {
     position: static;
   }
@@ -4481,13 +4495,19 @@
 .scout table.data td.acoes .acoes-grupo {
   justify-content: flex-end;
 }
-@media (max-width: 880px) {
+@media (max-width: 1180px) {
   .scout .ct-form,
   .scout .ct-form.com-atleta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .scout .ct-form-acao {
     grid-column: 1 / -1;
+  }
+  /* Colunas secundárias saem para o nome, o status e as ações caberem sem rolagem lateral. */
+  .scout .ct-col-atleta,
+  .scout .ct-col-treinador,
+  .scout .ct-col-vela {
+    display: none;
   }
 }
 @media (max-width: 640px) {
@@ -4497,11 +4517,6 @@
   }
   .scout .ct-form-acao .btn {
     width: 100%;
-  }
-  .scout .ct-col-atleta,
-  .scout .ct-col-treinador,
-  .scout .ct-col-vela {
-    display: none;
   }
 }
 
@@ -4662,6 +4677,20 @@
 .scout .par-cartao .field {
   align-content: start;
 }
+/* Motivos de até 200 caracteres: campo de 2 linhas, mais largo que o select de status. */
+.scout .par-cartao .par-regra-campos:has(.par-campo-texto) {
+  grid-template-columns: minmax(10rem, 1fr) minmax(0, 2.4fr);
+}
+.scout .par-campo-texto textarea {
+  min-height: 3.4rem;
+  resize: vertical;
+  line-height: 1.35;
+}
+@media (max-width: 640px) {
+  .scout .par-cartao .par-regra-campos:has(.par-campo-texto) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .scout .par-cartao .par-ajuda {
   line-height: 1.35;
 }
@@ -4725,8 +4754,12 @@
   background: var(--surface-2);
   font-size: 0.9rem;
 }
+@media (max-width: 1180px) {
+  .scout .par-duas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 @media (max-width: 880px) {
-  .scout .par-duas,
   .scout .par-cartoes {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -4863,8 +4896,112 @@
   background-image: none;
 }
 .scout.cmdk-overlay {
+  padding: 12vh 16px 0;
   background-color: oklch(0.208 0.042 265.755 / 25%);
 }
 .scout.dialogo-overlay {
+  padding: 10vh 16px 16px;
   background-color: oklch(0.208 0.042 265.755 / 35%);
+}
+
+/* ================= Faixa intermediária (881 a 1180 px) =================
+   Com a barra lateral de 240 px, o conteúdo fica estreito demais para as grades de desktop
+   largo. Cada ajuste abaixo corrige uma tela; as telas de 1 coluna (ficha, investimento,
+   avaliar, parâmetros) foram tratadas nas próprias regras, subindo o limite de 880 para 1180. */
+@media (min-width: 881px) and (max-width: 1180px) {
+  /* Ranking, de 1021 a 1180 px: sem a coluna Pilares e com colunas fixas menores.
+     O nome do atleta nunca encolhe abaixo de 12,5 rem. Até 1020 px vale o cartão. */
+  /* Revisões: "Pedido em" e "Resposta" descem para baixo do motivo (atributo data-extra). */
+  .scout .rev-col-data,
+  .scout .rev-col-resp {
+    display: none;
+  }
+  .scout table.rev-tabela td.rev-texto[data-extra]::after {
+    content: attr(data-extra);
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--ink-2);
+    white-space: pre-line;
+  }
+
+  /* Contas: a célula de ações quebra em linhas em vez de sair do cartão. */
+  .scout table.ct-tabela td.acoes {
+    white-space: normal;
+    min-width: 7.5rem;
+  }
+  .scout table.ct-tabela td.acoes .acoes-grupo {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .scout table.ct-tabela .ct-nome {
+    min-width: 0;
+  }
+  .scout table.ct-tabela .ct-nome-txt,
+  .scout table.ct-tabela .ct-sub-txt {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  .scout table.ct-tabela th,
+  .scout table.ct-tabela td {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  .scout table.ct-tabela .pill {
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+
+  .scout table.ct-tabela td.nw {
+    white-space: normal;
+  }
+  .scout table.ct-tabela td.nw.mono {
+    white-space: nowrap;
+  }
+  .scout table.ct-tabela td.nw .pill {
+    white-space: nowrap;
+  }
+  /* Revisões: colunas de texto mais estreitas para Status e Ação caberem. */
+  .scout table.rev-tabela .rev-pilar {
+    min-width: 0;
+  }
+  .scout table.rev-tabela .rev-texto {
+    min-width: 8rem;
+  }
+  .scout table.rev-tabela td.nw {
+    white-space: normal;
+  }
+  .scout table.rev-tabela td.nw .pill {
+    white-space: nowrap;
+  }
+
+  /* Painel: o selo quebra para baixo do título quando falta espaço. */
+  .scout .modules .module .mh {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+}
+
+@media (min-width: 1021px) and (max-width: 1180px) {
+  .scout .rank-row,
+  .scout .rank-headrow {
+    grid-template-columns: 1.5rem minmax(14rem, 1fr) 7rem 5rem 7.5rem 3.25rem;
+    gap: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .scout .rank-row .strip,
+  .scout .rank-headrow > span:nth-child(3) {
+    display: none;
+  }
+  /* O nome ocupa o espaço que sobra; a linha de meta corta com reticências em vez de invadir Gates. */
+  .scout .rank-row .who-txt {
+    flex: 1 1 0;
+    min-width: 0;
+    grid-template-columns: minmax(0, max-content) auto;
+  }
+  .scout .rank-row .who .meta-txt {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }

@@ -453,7 +453,7 @@ function AtletasDoPiloto() {
         />
       ) : (
         <div className="table-scroll" tabIndex={0}>
-          <table className="data interativa">
+          <table className="data interativa ct-tabela">
             <thead>
               <tr>
                 <th>Atleta</th>
