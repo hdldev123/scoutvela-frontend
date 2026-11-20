@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main, staging, "release-*"]
   pull_request:
-    branches: [main, staging]
+    branches: [main, staging, "release-*"]
 
 permissions:
   contents: read
@@ -36,5 +36,59 @@ jobs:
       # Varredura de dependências (boaspraticas.md). Falha em vulnerabilidade alta ou crítica.
       - name: Auditoria de dependências
         run: bun audit --audit-level=high
-      # Não há passo de api:verificar: o contrato (openapi.yaml) vive no repositório do vela-back.
-      # Rode `npm run api:verificar` localmente, com o vela-back ao lado, antes de abrir o PR.
+      # api:verificar e o E2E rodam no job e2e, que baixa o back (o contrato vive no repositório dele).
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: scoutvela-frontend
+      # O nome da branch é controlado por quem abre o PR: passa por env, nunca direto no script.
+      - name: Escolher a branch do back
+        id: back
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+          REF_NAME: ${{ github.ref_name }}
+          DONO: ${{ github.repository_owner }}
+        run: |
+          for ref in "$HEAD_REF" "$BASE_REF" "$REF_NAME" staging; do
+            [ -z "$ref" ] && continue
+            if git ls-remote --exit-code --heads "https://github.com/$DONO/scoutvela-backend.git" "$ref" > /dev/null; then
+              echo "ref=$ref" >> "$GITHUB_OUTPUT"
+              echo "Branch do back: $ref"
+              exit 0
+            fi
+          done
+          echo "Nenhuma branch do back encontrada." >&2
+          exit 1
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/scoutvela-backend
+          ref: ${{ steps.back.outputs.ref }}
+          path: scoutvela-backend
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+      - name: Instalar dependências do back
+        working-directory: scoutvela-backend
+        run: npm ci
+      - name: Instalar dependências do front
+        working-directory: scoutvela-frontend
+        run: bun install --frozen-lockfile
+      - name: Contrato da API
+        working-directory: scoutvela-frontend
+        run: bun run api:verificar
+      - name: E2E
+        working-directory: scoutvela-frontend
+        run: bun run e2e
+      - name: Guardar resultados do E2E
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: scoutvela-frontend/test-results
+          if-no-files-found: ignore
