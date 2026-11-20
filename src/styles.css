@@ -2845,29 +2845,229 @@
 .side-user-btn:focus-visible {
   background: var(--avatar-bg);
 }
+/* Modal "Meu perfil" */
 .dialogo:has(.perfil) {
   width: min(560px, 100%);
 }
-.perfil-id,
-.perfil-foto {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+.perfil {
+  display: grid;
+  gap: 20px;
 }
-.perfil-dados {
+.perfil p {
+  margin: 0;
+}
+.perfil-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.perfil-foto {
+  flex: none;
+  border-radius: 50%;
+  padding: 3px;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.perfil-foto-previa {
+  box-shadow: 0 0 0 2px var(--sea);
+}
+.perfil-identidade {
   display: grid;
   gap: 6px;
-  margin: 0;
+  min-width: 0;
 }
-.perfil-linha {
+.perfil-nome {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.perfil-sub {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
-.perfil-linha dt {
+.perfil-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.perfil-nota {
+  font-size: 12px;
+  line-height: 1.45;
   color: var(--ink-2);
 }
-.perfil-linha dd {
+.perfil-secao h3 {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.perfil-cartao {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.perfil-cartao dl {
+  margin: 0;
+}
+/* Fio entre as linhas do cartão, inclusive quando parte delas está dentro de um <dl>. */
+.perfil-cartao > * + *,
+.perfil-cartao dl > .perfil-item + .perfil-item {
+  border-top: 1px solid var(--line);
+}
+.perfil-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 11px 14px;
+  font-size: 13.5px;
+}
+.perfil-item dt,
+.perfil-rotulo {
+  color: var(--ink-2);
+}
+.perfil-item dd {
   margin: 0;
   text-align: right;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.perfil-item-texto {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 220px;
+}
+.perfil-item-texto .perfil-rotulo {
+  color: var(--ink);
+  font-weight: 500;
+}
+.perfil-item-lado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.perfil-desc {
+  flex: 1 1 220px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.perfil-item-form {
+  display: grid;
+  justify-content: stretch;
+  gap: 8px;
+}
+.perfil-item-form > label,
+.perfil-item-form > .perfil-rotulo {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.perfil-inline {
+  display: flex;
+  gap: 8px;
+}
+.perfil-item-form input,
+.perfil-item-form textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--paper);
+}
+.perfil-inline input {
+  flex: 1;
+}
+.perfil-item-form input:focus,
+.perfil-item-form textarea:focus {
+  outline: 2px solid var(--sea);
+  outline-offset: 0;
+  border-color: transparent;
+}
+.perfil-senhas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.perfil .pill.st-neutro {
+  background: var(--surface-2);
+  color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.perfil .btn-discreto {
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--ink-2);
+}
+.perfil .btn-discreto:hover {
+  color: var(--bad);
+  background: var(--bad-soft);
+}
+.perfil .btn .ph {
+  font-size: 15px;
+  vertical-align: -2px;
+}
+.perfil-grade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.perfil-grade > .perfil-item {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+}
+.perfil-cartao .perfil-grade > .perfil-item + .perfil-item {
+  border-top: 0;
+}
+.perfil-cartao .perfil-grade > .perfil-item:nth-child(n + 3) {
+  border-top: 1px solid var(--line);
+}
+.perfil-grade > .perfil-item:nth-child(even) {
+  border-left: 1px solid var(--line);
+}
+.perfil-grade > .perfil-item:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.perfil-grade dt {
+  font-size: 12px;
+}
+.perfil-grade dd {
+  text-align: left;
+  font-weight: 500;
+}
+.perfil .field-error {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--bad);
+}
+.perfil-item code {
+  font-family: var(--f-mono);
+  font-size: 12.5px;
+}
+@media (max-width: 480px) {
+  .perfil-cabecalho {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .perfil-sub,
+  .perfil-acoes {
+    justify-content: center;
+  }
+  .perfil-senhas {
+    grid-template-columns: 1fr;
+  }
 }
