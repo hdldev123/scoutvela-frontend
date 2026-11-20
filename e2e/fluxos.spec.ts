@@ -1,11 +1,9 @@
-import { expect, test, type Page } from "@playwright/test";
-import { entrar } from "./apoio";
-
-const menu = (page: Page) => page.getByRole("navigation", { name: "Telas" });
+import { expect, test } from "@playwright/test";
+import { atletaPedeRevisao, entrar, linkDoMenu } from "./apoio";
 
 test("gestor lança uma avaliação com prévia", async ({ page }) => {
   await entrar(page, "gestor");
-  await menu(page).getByRole("link", { name: "Lançar avaliação", exact: true }).click();
+  await linkDoMenu(page, "Lançar avaliação").click();
   // Pelo papel e nome: a grade de cartões ("Escolha um atleta") também casa com getByLabel("Atleta").
   const escolha = page.getByRole("combobox", { name: /^Atleta/ });
   await escolha.selectOption({ index: 1 });
@@ -21,7 +19,7 @@ test("gestor lança uma avaliação com prévia", async ({ page }) => {
 
 test("gestor cadastra atleta e registra o aceite do termo", async ({ page }) => {
   await entrar(page, "gestor");
-  await menu(page).getByRole("link", { name: "Cadastrar atleta", exact: true }).click();
+  await linkDoMenu(page, "Cadastrar atleta").click();
   await page.getByLabel("Código VelaID").fill("MG-T15");
   await page.getByRole("button", { name: "Buscar no VelaID" }).click();
   await expect(page.getByText("Renata Bastos")).toBeVisible();
@@ -39,7 +37,7 @@ test("gestor cadastra atleta e registra o aceite do termo", async ({ page }) => 
 
 test("gestor fecha o ciclo e abre o próximo", async ({ page }) => {
   await entrar(page, "gestor");
-  await menu(page).getByRole("link", { name: "Ciclos", exact: true }).click();
+  await linkDoMenu(page, "Ciclos").click();
   await expect(page.getByRole("heading", { name: /Ciclo aberto: Novembro de 2026/ })).toBeVisible();
   await page.getByRole("button", { name: "Fechar ciclo" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Confirmar fechamento" }).click();
@@ -64,17 +62,11 @@ test("atleta muda o consentimento do IBVAR", async ({ page }) => {
 
 test("atleta pede revisão e o gestor responde", async ({ browser }) => {
   const atleta = await (await browser.newContext()).newPage();
-  await entrar(atleta, "atleta");
-  await atleta.getByRole("button", { name: "Pedir revisão de nota" }).click();
-  const dialogo = atleta.getByRole("dialog");
-  await dialogo.locator("#rev-pilar").selectOption({ index: 1 });
-  await dialogo.getByLabel("Motivo").fill("Acho que a nota deste pilar deveria ser revista.");
-  await dialogo.getByRole("button", { name: "Enviar pedido" }).click();
-  await expect(atleta.getByText(/Pedido de revisão enviado/)).toBeVisible();
+  await atletaPedeRevisao(atleta, "Acho que a nota deste pilar deveria ser revista.");
 
   const gestor = await (await browser.newContext()).newPage();
   await entrar(gestor, "gestor");
-  await menu(gestor).getByRole("link", { name: "Revisões", exact: true }).click();
+  await linkDoMenu(gestor, "Revisões").click();
   await gestor.getByRole("button", { name: "Responder" }).first().click();
   const resp = gestor.getByRole("dialog");
   await resp.getByLabel("Resposta").fill("Nota conferida e mantida.");

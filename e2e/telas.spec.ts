@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { entrar } from "./apoio";
+import { entrar, linkDoMenu } from "./apoio";
 
 // Cada papel abre as telas do seu menu com dados reais da API (modo local, dados fictícios).
 const TELAS = {
@@ -29,9 +29,8 @@ const TELAS = {
 for (const [conta, telas] of Object.entries(TELAS)) {
   test(`${conta} abre as telas do menu sem erro`, async ({ page }) => {
     await entrar(page, conta as keyof typeof TELAS);
-    const menu = page.getByRole("navigation", { name: "Telas" });
     for (const t of telas) {
-      await menu.getByRole("link", { name: t.menu, exact: true }).click();
+      await linkDoMenu(page, t.menu).click();
       await expect(page.getByRole("heading", { level: 1, name: t.titulo })).toBeVisible();
       await expect(page.getByRole("alert")).toHaveCount(0);
     }

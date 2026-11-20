@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { entrar } from "./apoio";
+import { atletaPedeRevisao, entrar } from "./apoio";
 
 // Faixa em que a barra lateral de 240 px ainda ocupa a tela e o conteúdo fica estreito.
 for (const largura of [900, 1024]) {
@@ -54,7 +54,13 @@ for (const largura of [900, 1024]) {
     });
 
     for (const rota of ["usuarios", "revisoes"]) {
-      test(`${rota}: a primeira ação cabe na janela`, async ({ page }) => {
+      test(`${rota}: a primeira ação cabe na janela`, async ({ page, browser }) => {
+        if (rota === "revisoes") {
+          // O banco do E2E nasce sem pedido aberto: sem ele não há botão "Responder" para medir.
+          const atleta = await (await browser.newContext()).newPage();
+          await atletaPedeRevisao(atleta, `Pedido aberto para conferir o layout em ${largura} px.`);
+          await atleta.context().close();
+        }
         await entrar(page, "gestor");
         await page.goto(`/${rota}`);
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

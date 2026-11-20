@@ -15,3 +15,25 @@ export async function entrar(page: Page, conta: keyof typeof CONTAS): Promise<vo
   await page.getByRole("button", { name: /Entrar/ }).click();
   await expect(page).not.toHaveURL(/\/entrar/);
 }
+
+/**
+ * Link do menu lateral pelo rótulo. O nome acessível pode trazer o balão de notificações
+ * ("Revisões 3 pendentes"), então aceita o rótulo sozinho ou seguido de espaço.
+ */
+export function linkDoMenu(page: Page, rotulo: string) {
+  const escapado = rotulo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return page
+    .getByRole("navigation", { name: "Telas" })
+    .getByRole("link", { name: new RegExp(`^${escapado}( |$)`) });
+}
+
+/** A atleta abre um pedido de revisão de nota (deixa um pedido aberto para o gestor). */
+export async function atletaPedeRevisao(page: Page, motivo: string): Promise<void> {
+  await entrar(page, "atleta");
+  await page.getByRole("button", { name: "Pedir revisão de nota" }).click();
+  const dialogo = page.getByRole("dialog");
+  await dialogo.locator("#rev-pilar").selectOption({ index: 1 });
+  await dialogo.getByLabel("Motivo").fill(motivo);
+  await dialogo.getByRole("button", { name: "Enviar pedido" }).click();
+  await expect(page.getByText(/Pedido de revisão enviado/)).toBeVisible();
+}
