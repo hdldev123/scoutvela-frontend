@@ -357,6 +357,59 @@ function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
   );
 }
 
+const SITUACAO_ALTURA = {
+  dentro: { texto: "dentro da faixa", status: "apto" },
+  abaixo: { texto: "abaixo da faixa", status: "condicional" },
+  acima: { texto: "acima da faixa", status: "condicional" },
+} as const;
+
+/** Altura contra a faixa da classe; a situação vem pronta da API. Só informativa. */
+function MedidorAltura({
+  altura,
+  classe,
+}: {
+  altura: NonNullable<FichaAtleta["classFit"]>["altura"];
+  classe: string;
+}) {
+  const { cm, minCm, mediaCm, maxCm, situacao } = altura;
+  let corpo;
+  if (cm == null) {
+    corpo = <p className="medidor-texto">Altura não registrada</p>;
+  } else if (minCm == null || mediaCm == null || maxCm == null) {
+    corpo = (
+      <>
+        <p className="medidor-texto">{cm} cm</p>
+        <p className="panel-dica">
+          Faixa de altura da classe não definida (parâmetro da metodologia).
+        </p>
+      </>
+    );
+  } else {
+    const s = situacao ? SITUACAO_ALTURA[situacao] : null;
+    corpo = (
+      <GaugeClassFit
+        grandeza="Altura"
+        unidade="cm"
+        casas={0}
+        valor={cm}
+        min={minCm}
+        media={mediaCm}
+        max={maxCm}
+        margem={10}
+        classe={classe}
+        status={s?.status ?? "condicional"}
+        {...(s ? { situacao: s.texto } : {})}
+      />
+    );
+  }
+  return (
+    <div className="medidor">
+      <p className="medidor-rotulo">Altura</p>
+      {corpo}
+    </div>
+  );
+}
+
 function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
   const queryClient = useQueryClient();
   const [abertos, setAbertos] = useState<Record<string, boolean>>({});
@@ -604,17 +657,26 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
             </div>
             {classFit ? (
               <>
-                <GaugeClassFit
-                  pesoKg={classFit.pesoKg}
-                  pesoMinKg={classFit.pesoMinKg}
-                  pesoMedioKg={classFit.pesoMedioKg}
-                  pesoMaxKg={classFit.pesoMaxKg}
-                  classe={atleta.classe.nome}
-                  status={g1?.sugestaoAutomatica ?? "condicional"}
-                />
+                <div className="medidor">
+                  <p className="medidor-rotulo">Peso</p>
+                  <GaugeClassFit
+                    grandeza="Peso"
+                    unidade="kg"
+                    casas={1}
+                    valor={classFit.pesoKg}
+                    min={classFit.pesoMinKg}
+                    media={classFit.pesoMedioKg}
+                    max={classFit.pesoMaxKg}
+                    classe={atleta.classe.nome}
+                    status={g1?.sugestaoAutomatica ?? "condicional"}
+                  />
+                </div>
+                <MedidorAltura altura={classFit.altura} classe={atleta.classe.nome} />
                 <p className="panel-dica">
                   Faixa de peso de referência da classe (parâmetro da metodologia).
-                  {classFit.alturaCm != null ? ` Altura: ${classFit.alturaCm} cm.` : ""}
+                </p>
+                <p className="panel-dica">
+                  A altura é informativa: não entra no score nem nos gates.
                 </p>
               </>
             ) : (

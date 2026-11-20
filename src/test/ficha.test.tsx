@@ -170,6 +170,7 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
     classFit: {
       pesoKg: 62,
       alturaCm: 172,
+      altura: { cm: 172, minCm: 165, mediaCm: 172, maxCm: 180, situacao: "dentro" as const },
       pesoMinKg: 55,
       pesoMedioKg: 60,
       pesoMaxKg: 65,
@@ -489,6 +490,64 @@ describe("TelaFicha", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Word do Juan/)).not.toBeInTheDocument();
+  });
+
+  describe("Altura no Class Fit", () => {
+    const comAltura = (altura: Partial<NonNullable<FichaAtleta["classFit"]>["altura"]>) => {
+      const base = ficha();
+      return ficha({
+        classFit: { ...base.classFit!, altura: { ...base.classFit!.altura, ...altura } },
+      });
+    };
+
+    it("desenha os dois medidores com rótulos curtos e a nota informativa", async () => {
+      montar("gestor", ficha());
+      expect(await screen.findByRole("img", { name: /^Peso de 62,0 kg/ })).toBeInTheDocument();
+      const alt = screen.getByRole("img", { name: /^Altura de 172 cm/ });
+      expect(alt).toHaveAccessibleName(
+        "Altura de 172 cm, dentro da faixa, faixa da classe ILCA 6 de 165 a 180 cm, média 172",
+      );
+      expect(within(alt as unknown as HTMLElement).getByText("172 cm")).toBeInTheDocument();
+      expect(screen.getByText("Peso", { selector: ".medidor-rotulo" })).toBeInTheDocument();
+      expect(screen.getByText("Altura", { selector: ".medidor-rotulo" })).toBeInTheDocument();
+      expect(screen.queryByText(/Altura: 172 cm/)).not.toBeInTheDocument();
+      expect(
+        screen.getByText("A altura é informativa: não entra no score nem nos gates."),
+      ).toBeInTheDocument();
+    });
+
+    it.each([
+      ["abaixo", 160, "abaixo da faixa"],
+      ["acima", 188, "acima da faixa"],
+    ] as const)("situação %s vem do servidor", async (situacao, cm, texto) => {
+      montar("gestor", comAltura({ cm, situacao }));
+      const alt = await screen.findByRole("img", { name: /^Altura de/ });
+      expect(alt.getAttribute("aria-label")).toContain(`${cm} cm, ${texto}, faixa da classe`);
+      expect(alt.getAttribute("aria-label")).toContain("de 165 a 180 cm, média 172");
+    });
+
+    it("sem faixa mostra a altura como texto e a nota", async () => {
+      montar("gestor", comAltura({ minCm: null, mediaCm: null, maxCm: null, situacao: null }));
+      expect(await screen.findByText("172 cm")).toBeInTheDocument();
+      expect(
+        screen.getByText("Faixa de altura da classe não definida (parâmetro da metodologia)."),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: /^Altura de/ })).not.toBeInTheDocument();
+    });
+
+    it("sem altura mostra 'Altura não registrada'", async () => {
+      montar("gestor", comAltura({ cm: null, situacao: null }));
+      expect(await screen.findByText("Altura não registrada")).toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: /^Altura de/ })).not.toBeInTheDocument();
+    });
+
+    it("IBVAR não recebe o cartão de medidores", async () => {
+      montar("ibvar", ficha({ classFit: null }));
+      fireEvent.click(await screen.findByRole("button", { name: /^Class Fit/ }));
+      expect(screen.queryByRole("img", { name: /^Altura de/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: /^Peso de/ })).not.toBeInTheDocument();
+      expect(screen.queryByText("Altura não registrada")).not.toBeInTheDocument();
+    });
   });
 
   it("histórico traduz todos os níveis para pt-BR", async () => {

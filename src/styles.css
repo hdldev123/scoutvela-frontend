@@ -5035,3 +5035,24 @@
   top: -6px;
   right: -6px;
 }
+
+/* === Medidores do Class Fit (peso e altura) === */
+.scout .medidor {
+  margin: 0 0 6px;
+}
+.scout .medidor-rotulo {
+  margin: 0 0 2px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.scout .medidor-texto {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
