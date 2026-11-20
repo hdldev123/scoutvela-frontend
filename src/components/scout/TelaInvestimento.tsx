@@ -47,18 +47,22 @@ export function TelaInvestimento({ papel }: TelaInvestimentoProps) {
         <>
           <div className="kpis">
             <div className="kpi">
+              <i className="ph ph-users kpi-icone" aria-hidden="true" />
               <div className="v">{fmt0(d.kpis.atletas)}</div>
               <div className="l">atletas no piloto</div>
             </div>
             <div className="kpi">
+              <i className="ph ph-gauge kpi-icone" aria-hidden="true" />
               <div className="v">{fmt1(d.kpis.scoreMedio)}</div>
               <div className="l">score médio</div>
             </div>
             <div className="kpi">
+              <i className="ph ph-seal-check kpi-icone" aria-hidden="true" />
               <div className="v">{fmt0(d.kpis.aptos)}</div>
               <div className="l">aptos nos 4 gates</div>
             </div>
             <div className="kpi">
+              <i className="ph ph-hand-coins kpi-icone" aria-hidden="true" />
               <div className="v">{fmt0(d.kpis.dependentesApoio)}</div>
               <div className="l">dependem de apoio (perfil C ou D)</div>
             </div>
@@ -73,15 +77,15 @@ export function TelaInvestimento({ papel }: TelaInvestimentoProps) {
                   </span>
                 </div>
                 <div className="table-scroll" tabIndex={0}>
-                  <table className="data">
+                  <table className="data interativa inv-tabela">
                     <thead>
                       <tr>
                         <th>Atleta</th>
                         <th>Classe</th>
-                        <th className="r">Score</th>
+                        <th className="num">Score</th>
                         <th>Gates</th>
                         <th>Suporte</th>
-                        {!ibvar && <th className="r">Assegurado</th>}
+                        {!ibvar && <th className="num">Assegurado</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -94,21 +98,23 @@ export function TelaInvestimento({ papel }: TelaInvestimentoProps) {
                       ) : (
                         d.ondeInvestir.map((x) => (
                           <tr key={x.atleta.id}>
-                            <td>
+                            <td className="nw">
                               <Link to="/atletas/$id" params={{ id: x.atleta.id }}>
                                 {x.atleta.nome}
                               </Link>
                             </td>
-                            <td>{x.atleta.classe.nome}</td>
-                            <td className="r">
+                            <td className="nw">{x.atleta.classe.nome}</td>
+                            <td className="num">
                               <b>{fmt1(x.score)}</b>
                             </td>
-                            <td>
+                            <td className="nw">
                               <StatusPill status={x.statusGates} />
                             </td>
-                            <td>{x.perfilSuporte}</td>
+                            <td className="nw">
+                              <span className="pill st-neutro">{x.perfilSuporte}</span>
+                            </td>
                             {!ibvar && (
-                              <td className="r">
+                              <td className="num nw">
                                 {x.mesesAssegurados == null ? "—" : `${x.mesesAssegurados} meses`}
                               </td>
                             )}

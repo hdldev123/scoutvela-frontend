@@ -3512,3 +3512,71 @@
     color: var(--ink-2);
   }
 }
+
+/* === Tela: Investimento === */
+.scout .kpi {
+  position: relative;
+  padding: 14px 16px;
+}
+.scout .kpi .kpi-icone {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 18px;
+  color: var(--ink-2);
+  opacity: 0.7;
+}
+.scout .kpi .l {
+  max-width: 22ch;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+.scout .hbar {
+  grid-template-columns: 10.5rem minmax(0, 1fr) 2.5rem;
+}
+.scout .hbar > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scout .hbar .n {
+  font-family: var(--f-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.scout .inv-gate .contagem {
+  font-variant-numeric: tabular-nums;
+}
+.scout .inv-gate {
+  gap: 6px;
+}
+.scout .inv-gate + .inv-gate {
+  margin-top: 6px;
+}
+.scout .legend {
+  margin-top: 14px;
+}
+.scout table.inv-tabela th,
+.scout table.inv-tabela td {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.scout table.inv-tabela .num {
+  font-family: inherit;
+}
+.scout table.inv-tabela td.num b {
+  font-family: var(--f-mono);
+  font-weight: 600;
+}
+@media (max-width: 520px) {
+  .scout .hbar {
+    grid-template-columns: 8.5rem minmax(0, 1fr) 2.4rem;
+  }
+  .scout .hbar > span:first-child {
+    white-space: normal;
+    line-height: 1.25;
+  }
+}
