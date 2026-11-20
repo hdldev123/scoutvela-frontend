@@ -385,7 +385,13 @@ describe("TelaFicha", () => {
   it("financeiro: o gestor abre o diálogo e o PUT leva o corpo preenchido", async () => {
     atualizarFinanceiro.mockResolvedValue({});
     montar("gestor", ficha());
-    fireEvent.click(await screen.findByRole("button", { name: "Atualizar financeiro" }));
+    const atualizar = await screen.findByRole("button", { name: "Atualizar financeiro" });
+    // Título e ação no mesmo cabeçalho de cartão, com botão compacto.
+    expect(atualizar.parentElement).toContainElement(
+      screen.getByRole("heading", { name: "Sustentabilidade da campanha" }),
+    );
+    expect(atualizar.className).toContain("sm");
+    fireEvent.click(atualizar);
     const dialogo = await screen.findByRole("dialog");
     expect(await within(dialogo).findByText(/não entra no score/)).toBeInTheDocument();
     expect(within(dialogo).getByText(/gate G4/)).toBeInTheDocument();

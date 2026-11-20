@@ -215,7 +215,9 @@ function Consentimento({ c }: { c: ConsentimentoPainel }) {
           ligado={c.compartilharIbvar}
           aoMudar={(v) => alterar.mutate(v)}
           rotulo="Compartilhar meu score com o IBVAR"
-          descricao={c.atualizadoEm ? `Última decisão em ${fmtData(c.atualizadoEm)}.` : undefined}
+          {...(c.atualizadoEm
+            ? { descricao: `Última decisão em ${fmtData(c.atualizadoEm)}.` }
+            : {})}
           desabilitado={alterar.isPending}
         />
       </div>

@@ -96,6 +96,11 @@ describe("TelaRanking", () => {
     const linha = screen.getByText("Marcos Lima").closest("a")!;
     expect(linha).toHaveAttribute("href", "/atletas/a2");
     expect(within(linha).getByText("Parcial")).toBeInTheDocument();
+    // O selo fica no bloco do nome (a meta inteira fica no próprio texto, sem disputar espaço).
+    const selo = within(linha).getByText("Parcial");
+    expect(selo.className).toContain("pill");
+    expect(selo.closest(".who-txt")).toContainElement(within(linha).getByText("Marcos Lima"));
+    expect(linha.querySelector(".meta-txt")).not.toContainElement(selo);
     expect(within(linha).getByText("Apto")).toBeInTheDocument();
     expect(within(linha).getByText("80,3")).toBeInTheDocument();
     expect(within(linha).getByText("1.234")).toBeInTheDocument();

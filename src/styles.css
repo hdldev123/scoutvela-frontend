@@ -4805,3 +4805,44 @@
 .scout section[aria-labelledby="painel-lgpd"] > form.stack {
   margin-bottom: 14px;
 }
+
+/* === Ajustes: Ranking e Ficha === */
+@media (min-width: 761px) {
+  .scout .rank-row .who .meta {
+    display: contents;
+  }
+  .scout .rank-row .who-txt {
+    grid-template-columns: minmax(0, max-content) auto;
+    grid-template-areas:
+      "nome selo"
+      "meta meta";
+    column-gap: 8px;
+    justify-content: start;
+    align-items: center;
+  }
+  .scout .rank-row .who strong {
+    grid-area: nome;
+  }
+  .scout .rank-row .who .meta .pill {
+    grid-area: selo;
+    justify-self: start;
+    align-self: center;
+    line-height: 1.3;
+  }
+  .scout .rank-row .who .meta-txt {
+    grid-area: meta;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .scout .ordem-financeiro .panel-head {
+    flex-wrap: nowrap;
+  }
+  .scout .ordem-financeiro .panel-head h2 {
+    flex: 1 1 0;
+  }
+  .scout .ordem-financeiro .panel-head .btn {
+    flex: none;
+  }
+}
