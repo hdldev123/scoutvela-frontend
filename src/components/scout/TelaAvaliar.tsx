@@ -690,7 +690,7 @@ function LinhaIndicador({
             <MensagemCampo id="av-altura-erro" texto={medida.erroAltura} />
           </div>
         </div>
-        <div className="avaliar-campo-med">
+        <div className="avaliar-campo-med ev">
           <label className="field ev" htmlFor="av-ev-medida">
             Evidência da medida (opcional)
             <input
