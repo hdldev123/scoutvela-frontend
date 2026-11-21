@@ -37,3 +37,8 @@ dist-ssr
 # Playwright
 test-results/
 playwright-report/
+
+# Segredos locais
+.env
+.env.*
+!.env.example
