@@ -917,13 +917,21 @@ describe("TelaFicha: ordem dos blocos e selos do financeiro", () => {
     const selos2 = outra.querySelectorAll(".pill");
     expect(selos2[0]).toHaveClass("st-apto");
     expect(selos2[1]).toHaveClass("st-neutro");
+    // A ordem do DOM é a de leitura e de foco no celular; as colunas do desktop vêm da grade CSS.
     const ordem = [
       "ordem-pilares",
       "ordem-gates",
       "ordem-classfit",
       "ordem-historico",
       "ordem-financeiro",
+      "ordem-plano",
+      "ordem-evidencias",
     ];
-    for (const c of ordem) expect(document.querySelector(`.${c}`)).not.toBeNull();
+    const grade = document.querySelector(".ficha-grid")!;
+    expect(grade.querySelector(".ficha-col")).toBeNull();
+    const noDom = Array.from(grade.children).map(
+      (el) => ordem.find((c) => el.classList.contains(c)) ?? "",
+    );
+    expect(noDom).toEqual(ordem);
   });
 });

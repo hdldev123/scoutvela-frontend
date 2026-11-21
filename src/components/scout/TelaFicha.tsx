@@ -324,7 +324,13 @@ function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
         )}
       </dl>
       {completo ? (
-        <div className="table-scroll" tabIndex={0} style={{ marginTop: 12 }}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de componentes do financeiro da campanha, role para ver todas as colunas"
+          style={{ marginTop: 12 }}
+        >
           <table className="data tabela-fin">
             <thead>
               <tr>
@@ -521,187 +527,184 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
         </p>
       )}
       <div className="ficha-grid">
-        <div className="ficha-col">
-          <section className="panel ordem-pilares">
-            <div className="panel-head">
-              <h2>Os 9 pilares</h2>
-              {papel === "atleta" && (
-                <button type="button" className="btn sm" onClick={() => setPedindoRevisao(true)}>
-                  Pedir revisão de uma nota
-                </button>
-              )}
-              {podeLancar && (
-                <Link to="/avaliar" search={{ atleta: atleta.id }} className="btn sm primary">
-                  Lançar avaliação
-                </Link>
-              )}
-            </div>
-            <p className="panel-dica">
-              Toque num pilar para ver por que a nota é essa.
-              {papel === "atleta" ? " Pedir revisão é um direito previsto na LGPD (art. 20)." : ""}
-            </p>
-            {pilares.map((p) => (
-              <BlocoPilar
-                key={p.id}
-                pilar={p}
-                aberto={!!abertos[p.id]}
-                aoAlternar={() => setAbertos((a) => ({ ...a, [p.id]: !a[p.id] }))}
-                maiorPerda={maiorPerda?.id === p.id}
-                atletaId={ficha.atleta.id}
-              />
-            ))}
-          </section>
-          <section className="panel ordem-historico">
-            <div className="panel-head">
-              <h2>Histórico competitivo</h2>
-              {podeLancar && (
-                <button type="button" className="btn sm" onClick={() => setLancandoResultado(true)}>
-                  Lançar resultado internacional
-                </button>
-              )}
-            </div>
-            <p className="pts-total">
-              <b>{fmt0(ficha.pontosCbvela)}</b> pts no Ranking CBVela
-            </p>
-            <div className="table-scroll" tabIndex={0}>
-              <table className="data tabela-hist">
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Evento</th>
-                    <th className="r">Posição</th>
-                    <th className="r">Pts</th>
-                    <th>Fonte</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resultados.map((r, i) => {
-                    const link = linkSeguro(r.linkOficial);
-                    return (
-                      <tr key={`${r.data}-${r.evento}-${i}`}>
-                        <td className="nw">{fmtData(r.data)}</td>
-                        <td>
-                          {r.evento}
-                          <small className="sub">{rotuloNivelHistorico(r.nivel)}</small>
-                        </td>
-                        <td className="r nw">
-                          {r.posicao}º de {r.tamanhoFrota}
-                        </td>
-                        <td className="r num">
-                          {r.pontosCbvela == null ? "—" : fmt0(r.pontosCbvela)}
-                        </td>
-                        <td className="nw">
-                          {r.fonte === "ranking_cbvela" ? (
-                            <span className="pill st-info">Ranking CBVela</span>
-                          ) : link ? (
-                            <a
-                              className="pill st-neutro"
-                              href={link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label="Lançado + link oficial"
-                            >
-                              Lançado
-                              <i className="ph ph-arrow-square-out" aria-hidden="true" />
-                            </a>
-                          ) : (
-                            <span className="pill st-neutro">Lançado</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <p className="panel-dica">
-              Resultados nacionais chegam do Ranking CBVela pelo código VelaID. Internacionais são
-              lançados com o link do resultado oficial.
-            </p>
-          </section>
-          {papel !== "ibvar" && (
-            <EvidenciasSecao
-              atletaId={atleta.id}
-              papel={papel}
-              indicadores={indicadoresEvidencia}
-              className="ordem-evidencias"
-            />
-          )}
-        </div>
-        <div className="ficha-col">
-          <section className="panel ordem-gates">
-            <div className="panel-head">
-              <h2>Gates aos 18</h2>
-              <StatusPill status={gates.statusFinal} ponto />
-            </div>
-            {gates.itens.map((g) => (
-              <LinhaGate
-                key={g.gate}
-                gate={g}
-                editavel={papel === "gestor"}
-                ocupado={alterarGate.isPending}
-                aoAlterar={(status) => alterarGate.mutate({ gate: g.gate, status })}
-              />
-            ))}
-            <p className="panel-dica">
-              Sugestão automática por regra provisória (P7).{" "}
-              {papel === "gestor"
-                ? "O gestor confirma ou ajusta cada gate."
-                : "Quem decide é o gestor."}
-            </p>
-          </section>
-          <section className="panel ordem-classfit">
-            <div className="panel-head">
-              <h2>Class Fit</h2>
-              <span className="muted panel-info">{atleta.classe.nome}</span>
-            </div>
-            {classFit ? (
-              <>
-                <div className="medidor">
-                  <p className="medidor-rotulo">Peso</p>
-                  <GaugeClassFit
-                    grandeza="Peso"
-                    unidade="kg"
-                    casas={1}
-                    valor={classFit.pesoKg}
-                    min={classFit.pesoMinKg}
-                    media={classFit.pesoMedioKg}
-                    max={classFit.pesoMaxKg}
-                    classe={atleta.classe.nome}
-                    status={g1?.sugestaoAutomatica ?? "condicional"}
-                  />
-                </div>
-                <MedidorAltura altura={classFit.altura} classe={atleta.classe.nome} />
-                <p className="panel-dica">
-                  Faixa de peso de referência da classe (parâmetro da metodologia).
-                </p>
-                <p className="panel-dica">
-                  A altura é informativa: não entra no score nem nos gates.
-                </p>
-              </>
-            ) : (
-              <div className="lock">
-                Peso e medidas são dado sensível. O IBVAR vê só o resultado do gate G1.
-              </div>
+        <section className="panel ordem-pilares">
+          <div className="panel-head">
+            <h2>Os 9 pilares</h2>
+            {papel === "atleta" && (
+              <button type="button" className="btn sm" onClick={() => setPedindoRevisao(true)}>
+                Pedir revisão de uma nota
+              </button>
             )}
-          </section>
-          <section className="panel ordem-financeiro">
-            <div className="panel-head">
-              <h2>Sustentabilidade da campanha</h2>
-              {papel === "gestor" && (
-                <button
-                  type="button"
-                  className="btn sm"
-                  onClick={() => setEditandoFinanceiro(true)}
-                >
-                  Atualizar financeiro
-                </button>
-              )}
+            {podeLancar && (
+              <Link to="/avaliar" search={{ atleta: atleta.id }} className="btn sm primary">
+                Lançar avaliação
+              </Link>
+            )}
+          </div>
+          <p className="panel-dica">
+            Toque num pilar para ver por que a nota é essa.
+            {papel === "atleta" ? " Pedir revisão é um direito previsto na LGPD (art. 20)." : ""}
+          </p>
+          {pilares.map((p) => (
+            <BlocoPilar
+              key={p.id}
+              pilar={p}
+              aberto={!!abertos[p.id]}
+              aoAlternar={() => setAbertos((a) => ({ ...a, [p.id]: !a[p.id] }))}
+              maiorPerda={maiorPerda?.id === p.id}
+              atletaId={ficha.atleta.id}
+            />
+          ))}
+        </section>
+        <section className="panel ordem-gates">
+          <div className="panel-head">
+            <h2>Gates aos 18</h2>
+            <StatusPill status={gates.statusFinal} ponto />
+          </div>
+          {gates.itens.map((g) => (
+            <LinhaGate
+              key={g.gate}
+              gate={g}
+              editavel={papel === "gestor"}
+              ocupado={alterarGate.isPending}
+              aoAlterar={(status) => alterarGate.mutate({ gate: g.gate, status })}
+            />
+          ))}
+          <p className="panel-dica">
+            Sugestão automática por regra provisória (P7).{" "}
+            {papel === "gestor"
+              ? "O gestor confirma ou ajusta cada gate."
+              : "Quem decide é o gestor."}
+          </p>
+        </section>
+        <section className="panel ordem-classfit">
+          <div className="panel-head">
+            <h2>Class Fit</h2>
+            <span className="muted panel-info">{atleta.classe.nome}</span>
+          </div>
+          {classFit ? (
+            <>
+              <div className="medidor">
+                <p className="medidor-rotulo">Peso</p>
+                <GaugeClassFit
+                  grandeza="Peso"
+                  unidade="kg"
+                  casas={1}
+                  valor={classFit.pesoKg}
+                  min={classFit.pesoMinKg}
+                  media={classFit.pesoMedioKg}
+                  max={classFit.pesoMaxKg}
+                  classe={atleta.classe.nome}
+                  status={g1?.sugestaoAutomatica ?? "condicional"}
+                />
+              </div>
+              <MedidorAltura altura={classFit.altura} classe={atleta.classe.nome} />
+              <p className="panel-dica">
+                Faixa de peso de referência da classe (parâmetro da metodologia).
+              </p>
+              <p className="panel-dica">
+                A altura é informativa: não entra no score nem nos gates.
+              </p>
+            </>
+          ) : (
+            <div className="lock">
+              Peso e medidas são dado sensível. O IBVAR vê só o resultado do gate G1.
             </div>
-            <BlocoFinanceiro fin={ficha.financeiro} />
-          </section>
-          <PlanoIndividual ficha={ficha} papel={papel} className="ordem-plano" />
-        </div>
+          )}
+        </section>
+        <section className="panel ordem-historico">
+          <div className="panel-head">
+            <h2>Histórico competitivo</h2>
+            {podeLancar && (
+              <button type="button" className="btn sm" onClick={() => setLancandoResultado(true)}>
+                Lançar resultado internacional
+              </button>
+            )}
+          </div>
+          <p className="pts-total">
+            <b>{fmt0(ficha.pontosCbvela)}</b> pts no Ranking CBVela
+          </p>
+          <div
+            className="table-scroll"
+            tabIndex={0}
+            role="region"
+            aria-label="Tabela de histórico competitivo, role para ver todas as colunas"
+          >
+            <table className="data tabela-hist">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Evento</th>
+                  <th className="r">Posição</th>
+                  <th className="r">Pts</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                {resultados.map((r, i) => {
+                  const link = linkSeguro(r.linkOficial);
+                  return (
+                    <tr key={`${r.data}-${r.evento}-${i}`}>
+                      <td className="nw">{fmtData(r.data)}</td>
+                      <td>
+                        {r.evento}
+                        <small className="sub">{rotuloNivelHistorico(r.nivel)}</small>
+                      </td>
+                      <td className="r nw">
+                        {r.posicao}º de {r.tamanhoFrota}
+                      </td>
+                      <td className="r num">
+                        {r.pontosCbvela == null ? "—" : fmt0(r.pontosCbvela)}
+                      </td>
+                      <td className="nw">
+                        {r.fonte === "ranking_cbvela" ? (
+                          <span className="pill st-info">Ranking CBVela</span>
+                        ) : link ? (
+                          <a
+                            className="pill st-neutro"
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Lançado + link oficial"
+                          >
+                            Lançado
+                            <i className="ph ph-arrow-square-out" aria-hidden="true" />
+                          </a>
+                        ) : (
+                          <span className="pill st-neutro">Lançado</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="panel-dica">
+            Resultados nacionais chegam do Ranking CBVela pelo código VelaID. Internacionais são
+            lançados com o link do resultado oficial.
+          </p>
+        </section>
+        <section className="panel ordem-financeiro">
+          <div className="panel-head">
+            <h2>Sustentabilidade da campanha</h2>
+            {papel === "gestor" && (
+              <button type="button" className="btn sm" onClick={() => setEditandoFinanceiro(true)}>
+                Atualizar financeiro
+              </button>
+            )}
+          </div>
+          <BlocoFinanceiro fin={ficha.financeiro} />
+        </section>
+        <PlanoIndividual ficha={ficha} papel={papel} className="ordem-plano" />
+        {papel !== "ibvar" && (
+          <EvidenciasSecao
+            atletaId={atleta.id}
+            papel={papel}
+            indicadores={indicadoresEvidencia}
+            className="ordem-evidencias"
+          />
+        )}
       </div>
       {lancandoResultado && (
         <ResultadoDialog atletaId={atleta.id} aoFechar={() => setLancandoResultado(false)} />
