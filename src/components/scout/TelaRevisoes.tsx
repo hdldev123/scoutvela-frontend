@@ -41,13 +41,29 @@ function Status({ status }: { status: StatusRevisao }) {
 
 /** Pedidos de revisão de nota (gestor e treinador) e pedidos do titular (só gestor). */
 /**
- * Texto que a faixa estreita (881 a 1180 px) mostra abaixo do motivo, no lugar das colunas
- * "Pedido em" e "Resposta". Vem em atributo para a CSS exibir sem duplicar o texto no DOM.
+ * Pedido em e resposta, em texto real dentro da célula do motivo. Só aparece na faixa estreita
+ * (881 a 1180 px), em que as colunas "Pedido em" e "Resposta" somem (mesma media query).
  */
-function textoExtra(criadoEm: string, resposta: string | null | undefined): string {
-  const linhas = [`Pedido em ${fmtData(criadoEm)}`];
-  if (resposta) linhas.push(`Resposta: ${resposta}`);
-  return linhas.join("\n");
+function Extra({
+  criadoEm,
+  resposta,
+  respondidoEm,
+}: {
+  criadoEm: string;
+  resposta: string | null | undefined;
+  respondidoEm: string | null | undefined;
+}) {
+  return (
+    <span className="rev-extra">
+      <span>Pedido em {fmtData(criadoEm)}</span>
+      {resposta && (
+        <span>
+          Resposta: {resposta}
+          {respondidoEm ? ` (${fmtData(respondidoEm)})` : ""}
+        </span>
+      )}
+    </span>
+  );
 }
 
 export function TelaRevisoes({ papel }: { papel: string }) {
@@ -211,7 +227,12 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
           }
         />
       ) : (
-        <div className="table-scroll" tabIndex={0}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de pedidos de revisão, role para ver todas as colunas"
+        >
           <table className="data interativa rev-tabela">
             <thead>
               <tr>
@@ -240,7 +261,7 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                     <strong>{r.pilar?.nomeCurto ?? "—"}</strong>
                     {r.indicador && <span className="muted">{r.indicador.nome}</span>}
                   </td>
-                  <td className="rev-texto" data-extra={textoExtra(r.criadoEm, r.resposta)}>
+                  <td className="rev-texto">
                     {r.motivo}
                     {typeof r.notaNova === "number" && (
                       <div>
@@ -248,6 +269,11 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                         <NotaRevisao notaAnterior={r.notaAnterior} notaNova={r.notaNova} />
                       </div>
                     )}
+                    <Extra
+                      criadoEm={r.criadoEm}
+                      resposta={r.resposta}
+                      respondidoEm={r.respondidoEm}
+                    />
                   </td>
                   <td className="nw rev-col-data">{fmtData(r.criadoEm)}</td>
                   <td className="nw">
@@ -403,7 +429,12 @@ function PedidosTitular() {
           texto="Pedidos de acesso, correção, exclusão ou revogação feitos pelos atletas aparecem aqui."
         />
       ) : (
-        <div className="table-scroll" tabIndex={0}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de pedidos do titular, role para ver todas as colunas"
+        >
           <table className="data interativa rev-tabela">
             <thead>
               <tr>
@@ -427,8 +458,13 @@ function PedidosTitular() {
                     </Link>
                   </td>
                   <td className="nw">{ROTULO_TIPO[p.tipo]}</td>
-                  <td className="rev-texto" data-extra={textoExtra(p.criadoEm, p.resposta)}>
+                  <td className="rev-texto">
                     {p.descricao}
+                    <Extra
+                      criadoEm={p.criadoEm}
+                      resposta={p.resposta}
+                      respondidoEm={p.respondidoEm}
+                    />
                   </td>
                   <td className="nw rev-col-data">{fmtData(p.criadoEm)}</td>
                   <td className="nw">
