@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { atletaPedeRevisao, entrar, linkDoMenu } from "./apoio";
+import { atletaPedeRevisao, entrar, linkDoMenu, SEED } from "./apoio";
 
 test("gestor lança uma avaliação com prévia", async ({ page }) => {
   await entrar(page, "gestor");
@@ -20,25 +20,29 @@ test("gestor lança uma avaliação com prévia", async ({ page }) => {
 test("gestor cadastra atleta e registra o aceite do termo", async ({ page }) => {
   await entrar(page, "gestor");
   await linkDoMenu(page, "Cadastrar atleta").click();
-  await page.getByLabel("Código VelaID").fill("MG-T15");
+  await page.getByLabel("Código VelaID").fill(SEED.velaid.codigo);
   await page.getByRole("button", { name: "Buscar no VelaID" }).click();
-  await expect(page.getByText("Renata Bastos")).toBeVisible();
+  await expect(page.getByText(SEED.velaid.nome)).toBeVisible();
   await page.getByLabel("Classe e função projetadas").selectOption({ index: 1 });
   await page.getByLabel("Treinador(a) responsável").selectOption({ index: 1 });
   await page.getByRole("button", { name: "Enviar termo de consentimento" }).click();
-  await expect(page.getByText(/Termo enviado a Renata Bastos/)).toBeVisible();
+  await expect(page.getByText(new RegExp(`Termo enviado a ${SEED.velaid.nome}`))).toBeVisible();
 
-  const linha = page.getByRole("row", { name: /Renata Bastos/ });
+  const linha = page.getByRole("row", { name: new RegExp(SEED.velaid.nome) });
   await linha.getByRole("button", { name: "Registrar aceite recebido" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Confirmar aceite" }).click();
-  await expect(page.getByText(/Aceite de Renata Bastos registrado/)).toBeVisible();
-  await expect(page.getByRole("row", { name: /Renata Bastos/ })).toHaveCount(0);
+  await expect(
+    page.getByText(new RegExp(`Aceite de ${SEED.velaid.nome} registrado`)),
+  ).toBeVisible();
+  await expect(page.getByRole("row", { name: new RegExp(SEED.velaid.nome) })).toHaveCount(0);
 });
 
 test("gestor fecha o ciclo e abre o próximo", async ({ page }) => {
   await entrar(page, "gestor");
   await linkDoMenu(page, "Ciclos").click();
-  await expect(page.getByRole("heading", { name: /Ciclo aberto: Novembro de 2026/ })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: new RegExp(`Ciclo aberto: ${SEED.cicloAberto}`) }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Fechar ciclo" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Confirmar fechamento" }).click();
   await expect(page.getByRole("heading", { name: /Ciclo aberto:/ })).toHaveCount(0);
@@ -62,12 +66,17 @@ test("atleta muda o consentimento do IBVAR", async ({ page }) => {
 
 test("atleta pede revisão e o gestor responde", async ({ browser }) => {
   const atleta = await (await browser.newContext()).newPage();
-  await atletaPedeRevisao(atleta, "Acho que a nota deste pilar deveria ser revista.");
+  const motivo = `Acho que esta nota deveria ser revista ${Date.now()}`;
+  await atletaPedeRevisao(atleta, motivo);
 
   const gestor = await (await browser.newContext()).newPage();
   await entrar(gestor, "gestor");
   await linkDoMenu(gestor, "Revisões").click();
-  await gestor.getByRole("button", { name: "Responder" }).first().click();
+  // A linha certa pelo motivo: o seed pode ter outros pedidos abertos.
+  await gestor
+    .getByRole("row", { name: new RegExp(motivo) })
+    .getByRole("button", { name: "Responder" })
+    .click();
   const resp = gestor.getByRole("dialog");
   await resp.getByLabel("Resposta").fill("Nota conferida e mantida.");
   await resp.getByRole("button", { name: "Enviar resposta" }).click();

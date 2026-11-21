@@ -32,6 +32,8 @@ for (const [conta, telas] of Object.entries(TELAS)) {
     for (const t of telas) {
       await linkDoMenu(page, t.menu).click();
       await expect(page.getByRole("heading", { level: 1, name: t.titulo })).toBeVisible();
+      // O título aparece antes dos dados: espera a rede assentar para o "sem alerta" valer.
+      await page.waitForLoadState("networkidle");
       await expect(page.getByRole("alert")).toHaveCount(0);
     }
   });
@@ -48,5 +50,8 @@ test("gestor abre a ficha a partir do ranking", async ({ page }) => {
 test("atleta não abre telas de gestão", async ({ page }) => {
   await entrar(page, "atleta");
   await page.goto("/parametros");
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Sem acesso para este perfil" }),
+  ).toBeVisible();
   await expect(page.getByRole("heading", { level: 1, name: "Parâmetros" })).toHaveCount(0);
 });
