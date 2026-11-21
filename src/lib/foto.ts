@@ -1,14 +1,30 @@
 export const FOTO_TIPOS = ["image/jpeg", "image/png"] as const;
+/** Limite do arquivo original escolhido (a foto é recortada e reduzida antes do envio). */
+export const FOTO_ORIGINAL_MAX_BYTES = 15 * 1024 * 1024;
+/** Limite do recorte (até 512 px) que vai para a API. */
 export const FOTO_MAX_BYTES = 2 * 1024 * 1024;
 const LADO = 512;
 
-/** Valida tipo e tamanho; devolve a mensagem de erro ou `null`. */
+/** Valida tipo e tamanho do arquivo original; devolve a mensagem de erro ou `null`. */
 export function validarFoto(arquivo: { type: string; size: number }): string | null {
   if (!(FOTO_TIPOS as readonly string[]).includes(arquivo.type)) {
     return "Use uma imagem JPG ou PNG.";
   }
-  if (arquivo.size > FOTO_MAX_BYTES) return "A foto precisa ter até 2 MB.";
+  if (arquivo.size > FOTO_ORIGINAL_MAX_BYTES) return "A foto precisa ter até 15 MB.";
   return null;
+}
+
+/** Tamanho em bytes de um conteúdo base64 (sem prefixo). */
+export function bytesDoBase64(base64: string): number {
+  const preenchimento = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+  return Math.floor((base64.length * 3) / 4) - preenchimento;
+}
+
+/** Valida o recorte já preparado (o que de fato vai para a API): até 2 MB. */
+export function validarRecorte(conteudoBase64: string): string | null {
+  return bytesDoBase64(conteudoBase64) > FOTO_MAX_BYTES
+    ? "A foto, depois de reduzida, ainda passa de 2 MB. Escolha outra imagem."
+    : null;
 }
 
 /** Recorte quadrado centralizado de uma imagem de `larg` × `alt`. */

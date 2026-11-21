@@ -13,11 +13,16 @@ import {
 import { useCriarPedidoTitular } from "@/lib/api/titular";
 import { ROTULO_PAPEL } from "@/lib/auth/navegacao";
 import { getSupabase } from "@/lib/auth/supabase";
-import { prepararFoto, validarFoto } from "@/lib/foto";
+import { prepararFoto, validarFoto, validarRecorte } from "@/lib/foto";
+import { mensagemErroSenha, type ErroSenha } from "@/lib/auth/erros-senha";
+import { errosPorCampo } from "@/lib/api/cliente";
+import { mensagemEmail } from "@/lib/validacao";
 import { Avatar } from "./Avatar";
 import { Dialogo } from "./Dialogo";
 import { fmtInstante } from "./formato";
 import { SENHA_MINIMA } from "./TelaRedefinirSenha";
+import { atributosDoCampo } from "./campo-util";
+import { MensagemCampo } from "./MensagemCampo";
 
 function idade(nascimento: string, hoje = new Date()): number {
   const [a, m, d] = nascimento.split("-").map(Number) as [number, number, number];
@@ -84,6 +89,12 @@ function Cabecalho({ perfil }: { perfil: Perfil }) {
     }
     try {
       const p = await prepararFoto(arquivo);
+      // O limite de 2 MB vale para o recorte que vai à API, não para o arquivo original.
+      const grande = validarRecorte(p.conteudoBase64);
+      if (grande) {
+        setPrevia(null);
+        return setErro(grande);
+      }
       setErro("");
       setPrevia({ tipoMime: p.tipoMime, conteudoBase64: p.conteudoBase64, url: p.previa });
     } catch (e) {
@@ -174,8 +185,8 @@ function Cabecalho({ perfil }: { perfil: Perfil }) {
           {previa
             ? "Pré-visualização do recorte quadrado. Salve para aplicar."
             : perfil.atleta
-              ? "Opcional. JPG ou PNG, até 2 MB. Visível para você, a gestão técnica e seu treinador. O IBVAR não vê."
-              : "Opcional. JPG ou PNG, até 2 MB. Aparece no seu menu lateral."}
+              ? "Opcional. JPG ou PNG, até 15 MB (a foto é reduzida antes do envio). Visível para você, a gestão técnica e seu treinador. O IBVAR não vê."
+              : "Opcional. JPG ou PNG, até 15 MB (a foto é reduzida antes do envio). Aparece no seu menu lateral."}
         </p>
         <Erro texto={erro} />
       </div>
@@ -191,17 +202,31 @@ function CampoEditavel({ perfil }: { perfil: Perfil }) {
   const [valor, setValor] = useState(inicial);
   const [erro, setErro] = useState("");
   const alterado = valor.trim() !== inicial.trim();
+  const texto = valor.trim();
+  // Erro de validação do cliente (aparece ao digitar) e o do servidor (400, por campo).
+  const falha = atleta
+    ? mensagemEmail(texto)
+    : texto.length > 0 && (texto.length < 2 || texto.length > 120)
+      ? "O nome precisa ter de 2 a 120 caracteres."
+      : null;
+  const doServidor = errosPorCampo(salvar.error)[atleta ? "emailContato" : "nome"];
+  const msg = falha ?? doServidor;
 
   function submeter(e: FormEvent) {
     e.preventDefault();
-    const texto = valor.trim();
     if (!atleta && (texto.length < 2 || texto.length > 120)) {
       return setErro("O nome precisa ter de 2 a 120 caracteres.");
     }
+    if (falha) return;
     setErro("");
     salvar.mutate(atleta ? { emailContato: texto === "" ? null : texto } : { nome: texto }, {
       onSuccess: () => toast(atleta ? "E-mail de contato atualizado" : "Nome atualizado"),
-      onError: (err) => setErro(mensagemDeErro(err, "Não foi possível salvar o perfil.")),
+      onError: (err) =>
+        setErro(
+          Object.keys(errosPorCampo(err)).length > 0
+            ? ""
+            : mensagemDeErro(err, "Não foi possível salvar o perfil."),
+        ),
     });
   }
 
@@ -214,9 +239,18 @@ function CampoEditavel({ perfil }: { perfil: Perfil }) {
           type={atleta ? "email" : "text"}
           autoComplete={atleta ? "email" : "name"}
           value={valor}
-          onChange={(e) => setValor(e.target.value)}
+          {...atributosDoCampo("perfil-editavel-erro", msg)}
+          onChange={(e) => {
+            if (salvar.isError) salvar.reset();
+            setErro("");
+            setValor(e.target.value);
+          }}
         />
-        <button type="submit" className="btn primary" disabled={!alterado || salvar.isPending}>
+        <button
+          type="submit"
+          className="btn primary"
+          disabled={!alterado || !!falha || salvar.isPending}
+        >
           {salvar.isPending ? "Salvando…" : "Salvar"}
         </button>
       </div>
@@ -225,15 +259,19 @@ function CampoEditavel({ perfil }: { perfil: Perfil }) {
           Usado pela CBVela para falar com você. O e-mail de login não muda.
         </p>
       )}
+      <MensagemCampo id="perfil-editavel-erro" texto={msg} />
       <Erro texto={erro} />
     </form>
   );
 }
 
+const MIN_CORRECAO = 10;
+
 function PedidoCorrecao() {
   const criar = useCriarPedidoTitular();
   const [aberto, setAberto] = useState(false);
-  const [descricao, setDescricao] = useState("Corrigir no meu cadastro: ");
+  // Sem texto pré-preenchido: o mínimo de caracteres vale só para o que a pessoa escreve.
+  const [descricao, setDescricao] = useState("");
   const [erro, setErro] = useState("");
 
   if (!aberto) {
@@ -252,8 +290,8 @@ function PedidoCorrecao() {
   function submeter(e: FormEvent) {
     e.preventDefault();
     const texto = descricao.trim();
-    if (texto.length < 10 || texto.length > 2000) {
-      return setErro("Descreva a correção com 10 a 2000 caracteres.");
+    if (texto.length < MIN_CORRECAO || texto.length > 2000) {
+      return setErro(`Descreva a correção com ${MIN_CORRECAO} a 2000 caracteres.`);
     }
     setErro("");
     criar.mutate(
@@ -268,16 +306,25 @@ function PedidoCorrecao() {
     );
   }
 
+  const campoServidor = errosPorCampo(criar.error)["descricao"];
+  const msg = erro || campoServidor || null;
+
   return (
     <form className="perfil-item perfil-item-form" onSubmit={submeter} noValidate>
       <label htmlFor="perfil-correcao">O que precisa ser corrigido?</label>
       <textarea
         id="perfil-correcao"
         rows={3}
+        placeholder="Ex.: meu clube está errado, o correto é Iate Clube (mínimo de 10 caracteres)"
         value={descricao}
-        onChange={(e) => setDescricao(e.target.value)}
+        {...atributosDoCampo("perfil-correcao-erro", msg)}
+        onChange={(e) => {
+          if (criar.isError) criar.reset();
+          setErro("");
+          setDescricao(e.target.value);
+        }}
       />
-      <Erro texto={erro} />
+      <MensagemCampo id="perfil-correcao-erro" texto={msg} />
       <div className="perfil-acoes">
         <button type="submit" className="btn primary" disabled={criar.isPending}>
           {criar.isPending ? "Enviando…" : "Enviar pedido"}
@@ -346,9 +393,9 @@ function ItemMfa({ mfaAtivo, aoFechar }: { mfaAtivo: boolean; aoFechar: () => vo
   );
 }
 
-function ItemSenha() {
+function ItemSenha({ aoFechar }: { aoFechar: () => void }) {
   const [aberto, setAberto] = useState(false);
-  const [erro, setErro] = useState("");
+  const [erro, setErro] = useState<ErroSenha | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   if (!aberto) {
@@ -370,14 +417,19 @@ function ItemSenha() {
     const f = new FormData(e.currentTarget);
     const senha = String(f.get("senha"));
     if (senha.length < SENHA_MINIMA) {
-      return setErro(`A senha precisa ter pelo menos ${SENHA_MINIMA} caracteres.`);
+      return setErro({
+        texto: `A senha precisa ter pelo menos ${SENHA_MINIMA} caracteres.`,
+        pedeVerificacao: false,
+      });
     }
-    if (senha !== String(f.get("confirmacao"))) return setErro("As senhas não coincidem.");
-    setErro("");
+    if (senha !== String(f.get("confirmacao"))) {
+      return setErro({ texto: "As senhas não coincidem.", pedeVerificacao: false });
+    }
+    setErro(null);
     setEnviando(true);
     const { error } = await getSupabase().auth.updateUser({ password: senha });
     setEnviando(false);
-    if (error) return setErro("Não foi possível trocar a senha. Tente de novo.");
+    if (error) return setErro(mensagemErroSenha(error));
     toast("Senha alterada");
     setAberto(false);
   }
@@ -400,7 +452,14 @@ function ItemSenha() {
           />
         </label>
       </div>
-      <Erro texto={erro} />
+      <Erro texto={erro?.texto ?? ""} />
+      {erro?.pedeVerificacao && (
+        <div className="perfil-acoes">
+          <Link to="/verificacao" className="btn" onClick={aoFechar}>
+            Verificar agora
+          </Link>
+        </div>
+      )}
       <div className="perfil-acoes">
         <button type="submit" className="btn primary" disabled={enviando}>
           {enviando ? "Salvando…" : "Salvar senha"}
@@ -485,7 +544,7 @@ function Corpo({ perfil, aoFechar }: { perfil: Perfil; aoFechar: () => void }) {
 
       <Secao id="perfil-seguranca" titulo="Segurança">
         <ItemMfa mfaAtivo={perfil.mfaAtivo} aoFechar={aoFechar} />
-        <ItemSenha />
+        <ItemSenha aoFechar={aoFechar} />
       </Secao>
     </div>
   );
