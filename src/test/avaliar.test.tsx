@@ -300,16 +300,24 @@ describe("TelaAvaliar", () => {
     expect(screen.queryByRole("heading", { name: "Escolha um atleta" })).toBeNull();
   });
 
-  it("evidência e anexo só aparecem quando a nota muda, e o campo recebe o foco", async () => {
+  it("evidência e anexo só aparecem quando a nota muda, sem roubar o foco das notas", async () => {
     montar("a07");
     await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
     expect(screen.getByText("Atual: 2 · Escala geral 2")).toBeTruthy();
     expect(screen.queryByLabelText(/Evidência \(obrigatória\)/)).toBeNull();
     expect(screen.queryByLabelText("Anexar evidência de Leitura de vento")).toBeNull();
-    nota("Leitura de vento", 4);
+    const radio4 = within(
+      screen.getByRole("radiogroup", { name: "Nota de Leitura de vento" }),
+    ).getByRole("radio", { name: "4" });
+    radio4.focus();
+    fireEvent.click(radio4);
     const campo = evidencia();
     expect(campo.getAttribute("placeholder")).toBe("Ex.: Vídeo de treino");
-    await waitFor(() => expect(document.activeElement).toBe(campo));
+    // O foco continua no grupo de notas; o campo novo é anunciado por região aria-live.
+    await new Promise((res) => setTimeout(res, 30));
+    expect(document.activeElement).toBe(radio4);
+    const aviso = screen.getByText("Evidência obrigatória para a nova nota de Leitura de vento");
+    expect(aviso.getAttribute("aria-live")).toBe("polite");
     expect(screen.getByLabelText("Anexar evidência de Leitura de vento")).toBeTruthy();
     expect(screen.getByText("PDF, JPG ou PNG, até 5 MB")).toBeTruthy();
     // Voltar à nota atual, sem texto, recolhe de novo.
@@ -493,6 +501,88 @@ describe("TelaAvaliar", () => {
           { indicadorId: "tec_1", valor: 3, evidencia: "Regata de seleção", anexoId: "anx1" },
         ],
       },
+    });
+  });
+
+  describe("upload de anexo em andamento", () => {
+    let liberar: (v: unknown) => void;
+    beforeEach(() => {
+      liberar = undefined as never;
+    });
+    const anexoPronto = {
+      data: { id: "anx1", nomeArquivo: "regata.pdf", indicadorId: "tec_1" },
+      response: { status: 201 },
+    };
+
+    function subindo() {
+      const padrao = POST.getMockImplementation()!;
+      POST.mockImplementation((caminho: string, ...resto: unknown[]) =>
+        caminho.endsWith("/evidencias")
+          ? new Promise((res) => {
+              liberar = res;
+            })
+          : padrao(caminho, ...resto),
+      );
+    }
+
+    async function comecarUpload() {
+      subindo();
+      montar("a07");
+      await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+      nota("Leitura de vento", 3);
+      fireEvent.change(evidencia(), { target: { value: "Regata de seleção" } });
+      fireEvent.change(screen.getByLabelText("Anexar evidência de Leitura de vento"), {
+        target: { files: [new File(["abc"], "regata.pdf", { type: "application/pdf" })] },
+      });
+      await screen.findByText("Enviando…");
+      await waitFor(() => expect(liberar).toBeTypeOf("function"));
+    }
+
+    it("Salvar e Descartar ficam desabilitados até o upload terminar", async () => {
+      await comecarUpload();
+      const salvar = screen.getByRole("button", { name: "Enviando anexo…" });
+      expect(salvar.hasAttribute("disabled")).toBe(true);
+      expect(screen.getByRole("button", { name: "Descartar" }).hasAttribute("disabled")).toBe(true);
+      fireEvent.click(salvar);
+      expect(POST.mock.calls.some((c) => c[0] === "/atletas/{id}/avaliacoes")).toBe(false);
+
+      liberar(anexoPronto);
+      const habilitado = await screen.findByRole("button", { name: "Salvar avaliação" });
+      await waitFor(() => expect(habilitado.hasAttribute("disabled")).toBe(false));
+      expect(screen.getByRole("button", { name: "Descartar" }).hasAttribute("disabled")).toBe(
+        false,
+      );
+    });
+
+    it("o corpo gravado depois do upload inclui o anexoId", async () => {
+      await comecarUpload();
+      liberar(anexoPronto);
+      const salvar = await screen.findByRole("button", { name: "Salvar avaliação" });
+      await waitFor(() => expect(salvar.hasAttribute("disabled")).toBe(false));
+      fireEvent.click(salvar);
+      await waitFor(() => expect(toastFn.success).toHaveBeenCalled());
+      const envio = POST.mock.calls.find((c) => c[0] === "/atletas/{id}/avaliacoes");
+      expect(envio?.[1].body.notas[0]).toMatchObject({ indicadorId: "tec_1", anexoId: "anx1" });
+    });
+
+    it("upload que termina depois de a nota voltar ao valor atual não cria rascunho fantasma", async () => {
+      await comecarUpload();
+      nota("Leitura de vento", 2);
+      liberar(anexoPronto);
+      await new Promise((res) => setTimeout(res, 50));
+      expect(screen.queryByText(/Anexo segue junto da nota/)).toBeNull();
+      expect(screen.queryByLabelText(/Evidência (obrigatória)/)).toBeNull();
+    });
+
+    it("trocar de pilar durante o upload não trava o Salvar", async () => {
+      await comecarUpload();
+      fireEvent.click(screen.getByRole("button", { name: /Class Fit/ }));
+      liberar(anexoPronto);
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Salvar avaliação" }).hasAttribute("disabled"),
+        ).toBe(false),
+      );
     });
   });
 });
