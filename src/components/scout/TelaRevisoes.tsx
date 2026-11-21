@@ -5,8 +5,11 @@ import { Abas, PainelAba } from "./Abas";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
 import { fmtInstante } from "./formato";
+import { atributosDoCampo } from "./campo-util";
+import { MensagemCampo } from "./MensagemCampo";
 import { NotaRevisao } from "./NotaRevisao";
-import { mensagemDeErro } from "@/lib/api/cliente";
+import { errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
+import { LIMITES, mensagemResposta } from "@/lib/validacao";
 import { useAnonimizarAtleta, type ResultadoAnonimizacao } from "@/lib/api/titular";
 import {
   useLancamentosRevisao,
@@ -111,37 +114,57 @@ export function TelaRevisoes({ papel }: { papel: string }) {
 
 function FormResposta({
   rotuloBotao,
+  rotuloCampo = "Resposta",
+  minimo = LIMITES.resposta.min,
   pendente,
   erro,
+  erroCampo,
   aoEnviar,
   aoCancelar,
   extra,
 }: {
   rotuloBotao: string;
+  rotuloCampo?: string;
+  /** Mínimo de caracteres (3 na resposta comum, 20 na justificativa de recusa). */
+  minimo?: number;
   pendente: boolean;
   erro: string;
+  /** Mensagem do 400 da API para o campo `resposta`. */
+  erroCampo?: string | undefined;
   aoEnviar: (resposta: string) => void;
   aoCancelar: () => void;
   extra?: ReactNode;
 }) {
   const [texto, setTexto] = useState("");
+  const tamanho = texto.trim().length;
+  const falha =
+    tamanho > 0 && tamanho < minimo
+      ? minimo === LIMITES.resposta.min
+        ? mensagemResposta(texto)
+        : `A justificativa precisa ter pelo menos ${minimo} caracteres (faltam ${minimo - tamanho}).`
+      : null;
+  const msg = falha ?? erroCampo;
   const enviar = (e: FormEvent) => {
     e.preventDefault();
-    aoEnviar(texto.trim());
+    if (tamanho >= minimo) aoEnviar(texto.trim());
   };
   return (
     <form className="stack" style={{ gap: 12 }} onSubmit={enviar}>
-      <label className="field" htmlFor="rev-resposta">
-        Resposta
-        <textarea
-          id="rev-resposta"
-          rows={5}
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          required
-          maxLength={2000}
-        />
-      </label>
+      <div>
+        <label className="field" htmlFor="rev-resposta">
+          {rotuloCampo}
+          <textarea
+            id="rev-resposta"
+            rows={5}
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            required
+            maxLength={2000}
+            {...atributosDoCampo("rev-resposta-erro", msg)}
+          />
+        </label>
+        <MensagemCampo id="rev-resposta-erro" texto={msg} />
+      </div>
       {extra}
       {erro && (
         <div className="note" role="alert">
@@ -149,7 +172,7 @@ function FormResposta({
         </div>
       )}
       <div className="btn-row">
-        <button type="submit" className="btn primary" disabled={pendente || !texto.trim()}>
+        <button type="submit" className="btn primary" disabled={pendente || tamanho < minimo}>
           {pendente ? "Enviando…" : rotuloBotao}
         </button>
         <button type="button" className="btn" onClick={aoCancelar}>
@@ -323,6 +346,7 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
             rotuloBotao="Enviar resposta"
             pendente={responder.isPending}
             erro={erro}
+            erroCampo={errosPorCampo(responder.error)["resposta"]}
             aoEnviar={enviar}
             aoCancelar={() => setAlvo(null)}
             extra={
@@ -393,11 +417,13 @@ function PedidosTitular() {
     if (!alvo) return;
     setErro("");
     responder.mutate(
-      { id: alvo.id, resposta },
+      { id: alvo.id, resposta, ...(alvo.tipo === "exclusao" ? { recusar: true } : {}) },
       {
         onSuccess: () => {
           setAlvo(null);
-          toast.success("Resposta registrada.");
+          toast.success(
+            alvo.tipo === "exclusao" ? "Pedido recusado e registrado." : "Resposta registrada.",
+          );
         },
         onError: (err) => setErro(mensagemDeErro(err)),
       },
@@ -473,14 +499,14 @@ function PedidosTitular() {
                   <td className="rev-texto rev-col-resp">{p.resposta ?? "—"}</td>
                   <td className="acoes">
                     <div className="acoes-grupo">
-                      {p.tipo === "exclusao" && (p.status === "aberto" || anonimizado(p)) && (
+                      {p.tipo === "exclusao" && acaoAnonimizar(p) && (
                         <button
                           type="button"
                           className="btn sm"
-                          aria-label={`${anonimizado(p) ? ROTULO_RETOMAR : ROTULO_ANONIMIZAR}: ${p.atleta.nome}`}
+                          aria-label={`${acaoAnonimizar(p)}: ${p.atleta.nome}`}
                           onClick={() => setAnonimizando(p)}
                         >
-                          {anonimizado(p) ? ROTULO_RETOMAR : ROTULO_ANONIMIZAR}
+                          {acaoAnonimizar(p)}
                         </button>
                       )}
                       {p.status === "aberto" && (
@@ -488,11 +514,12 @@ function PedidosTitular() {
                           type="button"
                           className="btn sm"
                           onClick={() => {
+                            responder.reset();
                             setErro("");
                             setAlvo(p);
                           }}
                         >
-                          Responder
+                          {p.tipo === "exclusao" ? "Recusar pedido" : "Responder"}
                         </button>
                       )}
                     </div>
@@ -504,7 +531,12 @@ function PedidosTitular() {
         </div>
       )}
       {alvo && (
-        <Dialogo titulo="Responder pedido do titular" aoFechar={() => setAlvo(null)}>
+        <Dialogo
+          titulo={
+            alvo.tipo === "exclusao" ? "Recusar pedido de exclusão" : "Responder pedido do titular"
+          }
+          aoFechar={() => setAlvo(null)}
+        >
           <p className="rev-contexto">
             <strong>
               {alvo.atleta.nome} ({ROTULO_TIPO[alvo.tipo]})
@@ -513,14 +545,18 @@ function PedidosTitular() {
           </p>
           {alvo.tipo === "exclusao" && (
             <div className="note">
-              Para atender a exclusão, use “Anonimizar atleta”. Responder aqui só registra o texto e
-              não apaga dados.
+              A exclusão se faz por “{ROTULO_ANONIMIZAR}”, que atende o pedido e o fecha. Use
+              “Recusar pedido” só quando a exclusão não puder ser feita, com a justificativa abaixo.
+              A recusa fica registrada na auditoria e não apaga dados.
             </div>
           )}
           <FormResposta
-            rotuloBotao="Enviar resposta"
+            rotuloBotao={alvo.tipo === "exclusao" ? "Recusar pedido" : "Enviar resposta"}
+            rotuloCampo={alvo.tipo === "exclusao" ? "Justificativa da recusa" : "Resposta"}
+            minimo={alvo.tipo === "exclusao" ? LIMITES.justificativaRecusa : LIMITES.resposta.min}
             pendente={responder.isPending}
             erro={erro}
+            erroCampo={errosPorCampo(responder.error)["resposta"]}
             aoEnviar={enviar}
             aoCancelar={() => setAlvo(null)}
           />
@@ -536,9 +572,20 @@ function PedidosTitular() {
 const ROTULO_ANONIMIZAR = "Anonimizar atleta";
 const ROTULO_RETOMAR = "Concluir pendências da anonimização";
 
-/** Pedido de exclusão já anonimizado: a resposta automática começa por este texto. */
-const anonimizado = (p: PedidoTitular) =>
-  p.status === "respondido" && !!p.resposta?.startsWith("Dados pessoais anonimizados");
+/** A anonimização que a API registrou neste pedido (nula se ainda não houve). */
+const anonimizado = (p: PedidoTitular) => !!p.anonimizacao;
+
+/** "Concluir pendências" só existe quando a API ainda aponta arquivos ou conta a limpar. */
+const temPendencia = (p: PedidoTitular) =>
+  !!p.anonimizacao && (p.anonimizacao.pendencias.arquivos > 0 || p.anonimizacao.pendencias.conta);
+
+/** Rótulo da ação de anonimizar para o pedido, ou null quando não há o que fazer. */
+function acaoAnonimizar(p: PedidoTitular): string | null {
+  if (p.tipo !== "exclusao") return null;
+  if (temPendencia(p)) return ROTULO_RETOMAR;
+  if (!anonimizado(p) && p.status === "aberto") return ROTULO_ANONIMIZAR;
+  return null;
+}
 
 function ResultadoAnon({ r }: { r: ResultadoAnonimizacao }) {
   const pendente = r.pendencias.arquivos > 0 || r.pendencias.conta;
@@ -568,28 +615,28 @@ function ResultadoAnon({ r }: { r: ResultadoAnonimizacao }) {
 function DialogoAnonimizar({ pedido, aoFechar }: { pedido: PedidoTitular; aoFechar: () => void }) {
   const anonimizar = useAnonimizarAtleta();
   const [texto, setTexto] = useState("");
-  const [erro, setErro] = useState("");
-  const [resultado, setResultado] = useState<ResultadoAnonimizacao | null>(null);
+  const erro = anonimizar.isError ? mensagemDeErro(anonimizar.error) : "";
+  // O resultado vem do estado da mutação (não de um callback): aparece mesmo que a lista
+  // recarregue por baixo e troque o pedido.
+  const resultado: ResultadoAnonimizacao | null = anonimizar.data ?? null;
   const retomada = anonimizado(pedido);
+  const pendente = anonimizar.isPending;
 
   const enviar = (e: FormEvent) => {
     e.preventDefault();
-    if (texto !== "ANONIMIZAR") return;
-    setErro("");
+    if (texto !== "ANONIMIZAR" || pendente) return;
     anonimizar.mutate(
       { atletaId: pedido.atleta.id, pedidoTitularId: pedido.id },
-      {
-        onSuccess: (r) => {
-          setResultado(r);
-          toast.success("Atleta anonimizado.");
-        },
-        onError: (err) => setErro(mensagemDeErro(err)),
-      },
+      { onSuccess: () => toast.success("Atleta anonimizado.") },
     );
   };
 
   return (
-    <Dialogo titulo={retomada ? ROTULO_RETOMAR : ROTULO_ANONIMIZAR} aoFechar={aoFechar}>
+    <Dialogo
+      titulo={retomada ? ROTULO_RETOMAR : ROTULO_ANONIMIZAR}
+      aoFechar={aoFechar}
+      bloqueado={pendente}
+    >
       {resultado ? (
         <div className="stack" style={{ gap: 12 }}>
           <ResultadoAnon r={resultado} />
@@ -651,11 +698,11 @@ function DialogoAnonimizar({ pedido, aoFechar }: { pedido: PedidoTitular; aoFech
             <button
               type="submit"
               className="btn primary"
-              disabled={texto !== "ANONIMIZAR" || anonimizar.isPending}
+              disabled={texto !== "ANONIMIZAR" || pendente}
             >
-              {anonimizar.isPending ? "Anonimizando…" : "Anonimizar"}
+              {pendente ? "Anonimizando…" : "Anonimizar"}
             </button>
-            <button type="button" className="btn" onClick={aoFechar}>
+            <button type="button" className="btn" disabled={pendente} onClick={aoFechar}>
               Cancelar
             </button>
           </div>

@@ -114,6 +114,9 @@ export function useAnonimizarAtleta() {
     onSuccess: () =>
       Promise.all([
         qc.invalidateQueries({ queryKey: ["pedidos-titular"] }),
+        qc.invalidateQueries({ queryKey: ["revisoes"] }),
+        qc.invalidateQueries({ queryKey: ["usuarios"] }),
+        qc.invalidateQueries({ queryKey: ["atletas-gestao"] }),
         qc.invalidateQueries({ queryKey: ["atletas"] }),
         qc.invalidateQueries({ queryKey: ["atleta"] }),
         qc.invalidateQueries({ queryKey: ["ranking"] }),

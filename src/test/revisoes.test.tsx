@@ -53,6 +53,7 @@ const pedido = {
   criadoEm: "2026-11-04T12:00:00.000Z",
   resposta: null,
   respondidoEm: null,
+  anonimizacao: null,
 };
 
 const lancamento = {
@@ -212,15 +213,27 @@ describe("TelaRevisoes", () => {
     expect(await screen.findByText("Nenhum pedido de revisão neste filtro.")).toBeTruthy();
   });
 
-  it("gestor responde pedido do titular e vê o aviso da exclusão", async () => {
+  it("gestor responde pedido do titular que não é exclusão", async () => {
+    GET.mockImplementation(async (caminho: string) =>
+      ok(
+        caminho === "/pedidos-titular"
+          ? [{ ...pedido, tipo: "acesso", descricao: "Quero meus dados." }]
+          : [],
+      ),
+    );
     PUT.mockResolvedValue(ok({ ...pedido, status: "respondido", resposta: "Feito." }));
     const inv = montar("gestor");
     fireEvent.click(await screen.findByRole("tab", { name: "Pedidos do titular (LGPD)" }));
-    expect(await screen.findByText("Exclusão")).toBeTruthy();
+    expect(await screen.findByText("Acesso")).toBeTruthy();
     expect(screen.getByRole("note").textContent).toContain("procedimento manual");
     fireEvent.click(screen.getByRole("button", { name: "Responder" }));
     const dialogo = await screen.findByRole("dialog");
-    fireEvent.change(within(dialogo).getByLabelText("Resposta"), { target: { value: "Feito." } });
+    const campo = within(dialogo).getByLabelText("Resposta");
+    fireEvent.change(campo, { target: { value: "ok" } });
+    expect(within(dialogo).getByText(/pelo menos 3 caracteres/)).toBeTruthy();
+    expect(campo.getAttribute("aria-invalid")).toBe("true");
+    expect(within(dialogo).getByRole("button", { name: "Enviar resposta" })).toBeDisabled();
+    fireEvent.change(campo, { target: { value: "Feito." } });
     fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar resposta" }));
     await waitFor(() =>
       expect(PUT).toHaveBeenCalledWith("/pedidos-titular/{id}", {
@@ -229,6 +242,30 @@ describe("TelaRevisoes", () => {
       }),
     );
     await waitFor(() => expect(inv).toHaveBeenCalledWith({ queryKey: ["pedidos-titular"] }));
+  });
+
+  it("pedido de exclusão: 'Recusar pedido' exige 20 caracteres e envia recusar: true", async () => {
+    PUT.mockResolvedValue(ok({ ...pedido, status: "respondido", resposta: "x".repeat(25) }));
+    montar("gestor");
+    fireEvent.click(await screen.findByRole("tab", { name: "Pedidos do titular (LGPD)" }));
+    expect(screen.queryByRole("button", { name: "Responder" })).toBeNull();
+    fireEvent.click(await screen.findByRole("button", { name: "Recusar pedido" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Recusar pedido de exclusão" });
+    expect(within(dialogo).getByText(/A exclusão se faz por “Anonimizar atleta”/)).toBeTruthy();
+    const campo = within(dialogo).getByLabelText("Justificativa da recusa");
+    const enviar = within(dialogo).getByRole("button", { name: "Recusar pedido" });
+    fireEvent.change(campo, { target: { value: "Curto demais" } });
+    expect(within(dialogo).getByText(/pelo menos 20 caracteres/)).toBeTruthy();
+    expect(enviar).toBeDisabled();
+    const justificativa = "Há obrigação legal de guardar o registro.";
+    fireEvent.change(campo, { target: { value: justificativa } });
+    fireEvent.click(enviar);
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/pedidos-titular/{id}", {
+        params: { path: { id: "t1" } },
+        body: { resposta: justificativa, recusar: true },
+      }),
+    );
   });
 
   describe("anonimização", () => {
@@ -247,7 +284,8 @@ describe("TelaRevisoes", () => {
         ),
       );
       await abrirTitular();
-      expect(await screen.findAllByRole("button", { name: "Responder" })).toHaveLength(2);
+      expect(await screen.findAllByRole("button", { name: "Responder" })).toHaveLength(1);
+      expect(screen.getAllByRole("button", { name: "Recusar pedido" })).toHaveLength(1);
       expect(screen.getAllByRole("button", { name: /^Anonimizar atleta/ })).toHaveLength(1);
     });
 
@@ -283,8 +321,45 @@ describe("TelaRevisoes", () => {
       expect(within(dialogo).getByText(/conta de login ainda não foi apagada/)).toBeTruthy();
       const chaves = inv.mock.calls.map((c) => JSON.stringify(c[0]?.queryKey));
       expect(chaves).toEqual(
-        expect.arrayContaining(['["pedidos-titular"]', '["atletas"]', '["atleta"]', '["ranking"]']),
+        expect.arrayContaining([
+          '["pedidos-titular"]',
+          '["atletas-gestao"]',
+          '["usuarios"]',
+          '["revisoes"]',
+          '["atleta"]',
+          '["ranking"]',
+        ]),
       );
+    });
+
+    it("trava o diálogo enquanto anonimiza e mostra o resultado ao terminar", async () => {
+      let terminar: (v: unknown) => void = () => {};
+      POST.mockImplementation(() => new Promise((res) => (terminar = res)));
+      await abrirTitular();
+      fireEvent.click(await screen.findByRole("button", { name: /^Anonimizar atleta/ }));
+      const dialogo = await screen.findByRole("dialog");
+      fireEvent.change(within(dialogo).getByLabelText("Digite ANONIMIZAR para confirmar"), {
+        target: { value: "ANONIMIZAR" },
+      });
+      fireEvent.click(within(dialogo).getByRole("button", { name: "Anonimizar" }));
+      const andamento = await within(dialogo).findByRole("button", { name: "Anonimizando…" });
+      expect(andamento).toBeDisabled();
+      expect(within(dialogo).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+      fireEvent.keyDown(window, { key: "Escape" });
+      const fundo = document.querySelector(".dialogo-overlay")!;
+      fireEvent.mouseDown(fundo);
+      fireEvent.click(fundo);
+      expect(screen.getByRole("dialog")).toBeTruthy();
+      terminar(
+        ok({
+          atletaId: "a2",
+          anonimizadoEm: "2026-11-12T12:00:00.000Z",
+          evidenciasRemovidas: 1,
+          pendencias: { arquivos: 0, conta: false },
+        }),
+      );
+      expect(await within(dialogo).findByText(/Evidências removidas: 1/)).toBeTruthy();
+      expect(within(dialogo).getByText("Sem pendências.")).toBeTruthy();
     });
 
     it("oferece concluir pendências num pedido já anonimizado", async () => {
@@ -296,6 +371,10 @@ describe("TelaRevisoes", () => {
                   ...pedido,
                   status: "respondido",
                   resposta: "Dados pessoais anonimizados em 12/11/2026.",
+                  anonimizacao: {
+                    em: "2026-11-12T12:00:00.000Z",
+                    pendencias: { arquivos: 2, conta: false },
+                  },
                 },
               ]
             : [],
@@ -306,6 +385,54 @@ describe("TelaRevisoes", () => {
         await screen.findByRole("button", { name: /^Concluir pendências da anonimização/ }),
       ).toBeTruthy();
       expect(screen.queryByRole("button", { name: /^Anonimizar atleta/ })).toBeNull();
+    });
+
+    it("sem pendências na anonimização, não oferece concluir nada (mesmo com outra resposta)", async () => {
+      GET.mockImplementation(async (caminho: string) =>
+        ok(
+          caminho === "/pedidos-titular"
+            ? [
+                {
+                  ...pedido,
+                  status: "respondido",
+                  resposta: "Atendido.",
+                  anonimizacao: {
+                    em: "2026-11-12T12:00:00.000Z",
+                    pendencias: { arquivos: 0, conta: false },
+                  },
+                },
+              ]
+            : [],
+        ),
+      );
+      await abrirTitular();
+      await screen.findByText("Exclusão");
+      expect(screen.queryByRole("button", { name: /Concluir pendências/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /^Anonimizar atleta/ })).toBeNull();
+    });
+
+    it("pendência só da conta também oferece concluir", async () => {
+      GET.mockImplementation(async (caminho: string) =>
+        ok(
+          caminho === "/pedidos-titular"
+            ? [
+                {
+                  ...pedido,
+                  status: "respondido",
+                  resposta: "Atendido.",
+                  anonimizacao: {
+                    em: "2026-11-12T12:00:00.000Z",
+                    pendencias: { arquivos: 0, conta: true },
+                  },
+                },
+              ]
+            : [],
+        ),
+      );
+      await abrirTitular();
+      expect(
+        await screen.findByRole("button", { name: /^Concluir pendências da anonimização/ }),
+      ).toBeTruthy();
     });
 
     it("exibe o erro da API no diálogo", async () => {
