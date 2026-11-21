@@ -14,7 +14,7 @@ import { ResultadoDialog } from "./ResultadoDialog";
 import { SemAcesso } from "./SemAcesso";
 import { SparkScore } from "./SparkScore";
 import { StatusPill } from "./StatusPill";
-import { fmt0, fmt1, fmtData, rotuloCiclo } from "./formato";
+import { fmt0, fmt1, fmtData, fmtInstante, rotuloCiclo } from "./formato";
 import { rotuloNivelHistorico } from "./niveis";
 import { textoDoStatus } from "./status-gate";
 import { seloApoio, seloAutonomia } from "./financeiro-util";
@@ -84,7 +84,7 @@ function HistoricoDialog({
               <div className="ficha-historico-topo">
                 <span className="nota">{l.valor}</span>
                 <span>
-                  {fmtData(l.lancadoEm)}
+                  {fmtInstante(l.lancadoEm)}
                   {l.cicloNome ? ` · ${l.cicloNome}` : ""}
                   {l.pesoKg != null ? ` · ${fmt1(l.pesoKg)} kg` : ""}
                 </span>
@@ -152,7 +152,7 @@ function LinhaIndicador({ ind, atletaId }: { ind: Indicador; atletaId: string })
         ? `Resposta do atleta · nota de ${ind.avaliador?.nome ?? "avaliador"}`
         : ind.avaliador?.nome;
     origem =
-      [ind.evidencia, quem, ind.lancadoEm ? fmtData(ind.lancadoEm) : null]
+      [ind.evidencia, quem, ind.lancadoEm ? fmtInstante(ind.lancadoEm) : null]
         .filter(Boolean)
         .join(" · ") + resp;
   }

@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { CampoArquivo } from "./CampoArquivo";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
-import { fmtData } from "./formato";
+import { fmtData, fmtInstante } from "./formato";
 import {
   LIMITE_CSV_BYTES,
   useBuscarVelaId,
@@ -358,7 +358,7 @@ function TermosPendentes() {
                     <code>{p.velaid}</code>
                   </td>
                   <td className="nw">{p.classe.nome}</td>
-                  <td className="nw">{fmtData(p.criadoEm)}</td>
+                  <td className="nw">{fmtInstante(p.criadoEm)}</td>
                   <td>
                     {p.termoAceitoVersao ? (
                       <span className="pill st-cond cad-termo">

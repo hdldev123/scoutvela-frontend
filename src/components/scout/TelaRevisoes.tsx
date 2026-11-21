@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Abas, PainelAba } from "./Abas";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
-import { fmtData } from "./formato";
+import { fmtInstante } from "./formato";
 import { NotaRevisao } from "./NotaRevisao";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useAnonimizarAtleta, type ResultadoAnonimizacao } from "@/lib/api/titular";
@@ -55,11 +55,11 @@ function Extra({
 }) {
   return (
     <span className="rev-extra">
-      <span>Pedido em {fmtData(criadoEm)}</span>
+      <span>Pedido em {fmtInstante(criadoEm)}</span>
       {resposta && (
         <span>
           Resposta: {resposta}
-          {respondidoEm ? ` (${fmtData(respondidoEm)})` : ""}
+          {respondidoEm ? ` (${fmtInstante(respondidoEm)})` : ""}
         </span>
       )}
     </span>
@@ -275,7 +275,7 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                       respondidoEm={r.respondidoEm}
                     />
                   </td>
-                  <td className="nw rev-col-data">{fmtData(r.criadoEm)}</td>
+                  <td className="nw rev-col-data">{fmtInstante(r.criadoEm)}</td>
                   <td className="nw">
                     <Status status={r.status} />
                   </td>
@@ -284,7 +284,7 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                       <>
                         {r.resposta}
                         {r.respondidoEm && (
-                          <span className="muted"> ({fmtData(r.respondidoEm)})</span>
+                          <span className="muted"> ({fmtInstante(r.respondidoEm)})</span>
                         )}
                       </>
                     ) : (
@@ -365,7 +365,7 @@ function LancamentoCorrigiu({
             <option value="">Nenhum (resposta sem nova nota)</option>
             {consulta.data.map((l) => (
               <option key={l.id} value={l.id}>
-                {l.indicadorNome} · nota {l.valor} · {fmtData(l.lancadoEm)} ·{" "}
+                {l.indicadorNome} · nota {l.valor} · {fmtInstante(l.lancadoEm)} ·{" "}
                 {l.avaliador?.nome ?? l.origem}
               </option>
             ))}
@@ -466,7 +466,7 @@ function PedidosTitular() {
                       respondidoEm={p.respondidoEm}
                     />
                   </td>
-                  <td className="nw rev-col-data">{fmtData(p.criadoEm)}</td>
+                  <td className="nw rev-col-data">{fmtInstante(p.criadoEm)}</td>
                   <td className="nw">
                     <Status status={p.status} />
                   </td>

@@ -24,7 +24,7 @@ export function useSessao(): ContextoSessao {
 export function useMe() {
   const { sessao } = useSessao();
   return useQuery({
-    queryKey: ["me"],
+    queryKey: ["me", sessao?.user.id ?? null],
     enabled: !!sessao,
     retry: false,
     staleTime: 5 * 60_000,

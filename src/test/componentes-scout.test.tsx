@@ -2,7 +2,14 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Dialogo } from "@/components/scout/Dialogo";
 import { FaixaPill } from "@/components/scout/FaixaPill";
-import { fmt0, fmt1, fmtData, fmtDelta, rotuloCiclo } from "@/components/scout/formato";
+import {
+  fmt0,
+  fmt1,
+  fmtData,
+  fmtDelta,
+  fmtInstante,
+  rotuloCiclo,
+} from "@/components/scout/formato";
 import { PilaresStrip } from "@/components/scout/PilaresStrip";
 import { StatusPill } from "@/components/scout/StatusPill";
 
@@ -12,6 +19,9 @@ describe("formato", () => {
     expect(fmt0(1234.4)).toBe("1.234");
     expect(fmtData("2026-11-06")).toBe("06/11/2026");
     expect(fmtData("2026-11-06T10:00:00.000Z")).toBe("06/11/2026");
+    // 23h30 em Brasília (UTC-3) já é o dia seguinte em UTC: o dia certo é o de Brasília.
+    expect(fmtInstante("2026-11-07T02:30:00.000Z")).toBe("06/11/2026");
+    expect(fmtInstante("2026-11-06T12:00:00.000Z")).toBe("06/11/2026");
     expect(fmtDelta(1.25)).toBe("+1,3 kg");
     expect(fmtDelta(-0.8)).toBe("−0,8 kg");
     expect(rotuloCiclo("Setembro de 2026")).toBe("Set");

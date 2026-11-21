@@ -2,7 +2,7 @@ import { useEffect, useId, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
-import { fmtData } from "./formato";
+import { fmtInstante } from "./formato";
 import { useTreinadores } from "@/lib/api/cadastro";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useParametros } from "@/lib/api/parametros";
@@ -195,7 +195,7 @@ function SeloConta({ u }: { u: Usuario }) {
     return (
       <span className="ct-conta">
         <span className="pill st-cond">Convite enviado</span>
-        <small className="ct-sub-txt">em {fmtData(u.convidadoEm)}</small>
+        <small className="ct-sub-txt">em {fmtInstante(u.convidadoEm)}</small>
       </span>
     );
   }

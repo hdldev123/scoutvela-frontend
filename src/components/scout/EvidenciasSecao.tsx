@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { CampoArquivo } from "./CampoArquivo";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
-import { fmtData } from "./formato";
+import { fmtInstante } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import {
   ACEITA_ARQUIVO,
@@ -190,7 +190,7 @@ export function EvidenciasSecao({
               <div>
                 <i className="ph ph-paperclip" aria-hidden="true" /> <span>{a.nomeArquivo}</span>
                 <div className="src muted">
-                  {nomeDe(a.indicadorId)} · {fmtData(a.enviadoEm)}
+                  {nomeDe(a.indicadorId)} · {fmtInstante(a.enviadoEm)}
                 </div>
               </div>
               <AbrirEvidencia

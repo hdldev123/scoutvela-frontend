@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
 import { diasAtePrazo, progressoCiclo, sugestaoCiclo } from "./ciclos-util";
-import { fmtData } from "./formato";
+import { fmtData, fmtInstante } from "./formato";
 import {
   useAbrirCiclo,
   useAjustarPrazo,
@@ -500,7 +500,7 @@ function TabelaCiclos({ itens }: { itens: Ciclo[] }) {
                     </span>
                   </td>
                   <td className="num">{c.status === "aberto" ? "—" : c.atletasComScore}</td>
-                  <td className="nw">{c.fechadoEm ? fmtData(c.fechadoEm) : "—"}</td>
+                  <td className="nw">{c.fechadoEm ? fmtInstante(c.fechadoEm) : "—"}</td>
                 </tr>
               ))}
             </tbody>

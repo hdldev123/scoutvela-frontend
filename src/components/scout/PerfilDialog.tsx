@@ -16,7 +16,7 @@ import { getSupabase } from "@/lib/auth/supabase";
 import { prepararFoto, validarFoto } from "@/lib/foto";
 import { Avatar } from "./Avatar";
 import { Dialogo } from "./Dialogo";
-import { fmtData } from "./formato";
+import { fmtInstante } from "./formato";
 import { SENHA_MINIMA } from "./TelaRedefinirSenha";
 
 function idade(nascimento: string, hoje = new Date()): number {
@@ -456,7 +456,7 @@ function Corpo({ perfil, aoFechar }: { perfil: Perfil; aoFechar: () => void }) {
                 rotulo="Termo do piloto"
                 valor={
                   a.termoAceitoEm ? (
-                    <Selo tom="ok">Aceito em {fmtData(a.termoAceitoEm)}</Selo>
+                    <Selo tom="ok">Aceito em {fmtInstante(a.termoAceitoEm)}</Selo>
                   ) : (
                     <Selo tom="atencao">Ainda não aceito</Selo>
                   )

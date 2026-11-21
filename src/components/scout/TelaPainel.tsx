@@ -8,7 +8,7 @@ import { EstadoVazio } from "./EstadoVazio";
 import { Interruptor } from "./Interruptor";
 import { NotaRevisao } from "./NotaRevisao";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
-import { fmtData, primeiroNome } from "./formato";
+import { fmtData, fmtInstante, primeiroNome } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useFicha } from "@/lib/api/consultas";
 import { invalidarNotificacoes, marcarPainelVisto } from "@/lib/api/notificacoes";
@@ -197,7 +197,7 @@ function Consentimento({ c }: { c: ConsentimentoPainel }) {
         <h2 id="painel-consent">Seus dados e consentimento</h2>
         <span className="muted" style={{ fontSize: ".85rem" }}>
           {c.termoAceitoEm
-            ? `Termo do piloto 18+${c.termoVersao ? ` (versão ${c.termoVersao})` : ""} · aceito em ${fmtData(c.termoAceitoEm)}`
+            ? `Termo do piloto 18+${c.termoVersao ? ` (versão ${c.termoVersao})` : ""} · aceito em ${fmtInstante(c.termoAceitoEm)}`
             : "Termo do piloto 18+ ainda não aceito"}
           {c.termoAceitoEm && c.termoPendente
             ? ` · aceite da versão ${c.termoVigenteVersao} pendente`
@@ -218,7 +218,7 @@ function Consentimento({ c }: { c: ConsentimentoPainel }) {
           aoMudar={(v) => alterar.mutate(v)}
           rotulo="Compartilhar meu score com o IBVAR"
           {...(c.atualizadoEm
-            ? { descricao: `Última decisão em ${fmtData(c.atualizadoEm)}.` }
+            ? { descricao: `Última decisão em ${fmtInstante(c.atualizadoEm)}.` }
             : {})}
           desabilitado={alterar.isPending}
         />
@@ -413,12 +413,12 @@ function PedidosTitular() {
           </span>
           <p>{p.descricao}</p>
           <span className="muted" style={{ fontSize: ".82rem" }}>
-            Pedido em {fmtData(p.criadoEm)}
+            Pedido em {fmtInstante(p.criadoEm)}
           </span>
           {p.resposta && (
             <p>
               <b>Resposta:</b> {p.resposta}
-              {p.respondidoEm ? ` (${fmtData(p.respondidoEm)})` : ""}
+              {p.respondidoEm ? ` (${fmtInstante(p.respondidoEm)})` : ""}
             </p>
           )}
         </div>
@@ -491,7 +491,7 @@ function Revisoes({ atletaId }: { atletaId: string }) {
           </span>
           <p>{r.motivo}</p>
           <span className="muted" style={{ fontSize: ".82rem" }}>
-            Pedido em {fmtData(r.criadoEm)}
+            Pedido em {fmtInstante(r.criadoEm)}
           </span>
           {typeof r.notaNova === "number" && (
             <p>
@@ -501,7 +501,7 @@ function Revisoes({ atletaId }: { atletaId: string }) {
           {r.resposta && (
             <p>
               <b>Resposta do gestor:</b> {r.resposta}
-              {r.respondidoEm ? ` (${fmtData(r.respondidoEm)})` : ""}
+              {r.respondidoEm ? ` (${fmtInstante(r.respondidoEm)})` : ""}
             </p>
           )}
         </div>

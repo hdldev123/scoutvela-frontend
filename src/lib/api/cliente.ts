@@ -2,12 +2,19 @@ import createClient, { type Middleware } from "openapi-fetch";
 import { getSupabase } from "@/lib/auth/supabase";
 import type { paths } from "./schema";
 
+export interface CampoComErro {
+  campo: string;
+  mensagem: string;
+}
+
 /** Erro devolvido pela API: `{ erro, mensagem }`. */
 export class ErroApi extends Error {
   constructor(
     readonly status: number,
     readonly codigo: string,
     mensagem: string,
+    /** Erros de validação por campo (400): `{ campo: "notas.0.evidencia", mensagem }`. */
+    readonly campos: readonly CampoComErro[] = [],
   ) {
     super(mensagem);
     this.name = "ErroApi";
@@ -31,12 +38,36 @@ export function paraErroApi(status: number, corpo: unknown): ErroApi {
   const c = (corpo && typeof corpo === "object" ? corpo : {}) as {
     erro?: unknown;
     mensagem?: unknown;
+    campos?: unknown;
   };
+  const campos = Array.isArray(c.campos)
+    ? c.campos.filter(
+        (x): x is CampoComErro =>
+          !!x &&
+          typeof x === "object" &&
+          typeof (x as CampoComErro).campo === "string" &&
+          typeof (x as CampoComErro).mensagem === "string",
+      )
+    : [];
   return new ErroApi(
     status,
     typeof c.erro === "string" ? c.erro : "erro_interno",
     mensagemDeErro(c),
+    campos,
   );
+}
+
+/**
+ * Erros de validação por campo de um `ErroApi` (400). A chave é o caminho com ponto, sem prefixo
+ * ("notas.0.evidencia"); com vários erros no mesmo campo, vale o primeiro. Outro erro: `{}`.
+ */
+export function errosPorCampo(erro: unknown): Record<string, string> {
+  const saida: Record<string, string> = {};
+  if (!(erro instanceof ErroApi)) return saida;
+  for (const { campo, mensagem } of erro.campos) {
+    if (!(campo in saida)) saida[campo] = mensagem;
+  }
+  return saida;
 }
 
 export interface OpcoesMiddleware {
@@ -76,8 +107,9 @@ export const api = criarClienteApi(import.meta.env.VITE_API_URL, {
     const { data } = await getSupabase().auth.getSession();
     return data.session?.access_token ?? null;
   },
-  // O SessaoProvider reage ao SIGNED_OUT e o layout autenticado volta ao /entrar.
+  // O SessaoProvider reage ao SIGNED_OUT e o layout autenticado volta ao /entrar. Escopo local:
+  // um 401 aqui não derruba a pessoa nos outros aparelhos.
   aoNaoAutenticado: async () => {
-    await getSupabase().auth.signOut();
+    await getSupabase().auth.signOut({ scope: "local" });
   },
 });
