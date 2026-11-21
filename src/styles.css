@@ -5129,3 +5129,12 @@
     background: Highlight;
   }
 }
+
+/* Mensagem de erro sob um campo (MensagemCampo). */
+.scout .campo-erro {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--bad-ink);
+}
