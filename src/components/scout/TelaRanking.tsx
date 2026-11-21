@@ -6,6 +6,7 @@ import { EstadoVazio } from "./EstadoVazio";
 import { StatusPill } from "./StatusPill";
 import { fmt0, fmt1, fmtData } from "./formato";
 import { filtrosLimpos, useRanking, type FiltrosRanking } from "@/lib/api/consultas";
+import { useJanelaRankingCbvela } from "@/lib/api/parametros";
 
 type ParcialFiltros = { [K in keyof FiltrosRanking]?: FiltrosRanking[K] | undefined };
 import { mensagemDeErro } from "@/lib/api/cliente";
@@ -26,6 +27,7 @@ export interface TelaRankingProps {
 /** Ranking de talento: filtros vêm dos search params da rota; ordem e acesso vêm da API. */
 export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps) {
   const lista = useRanking(filtros);
+  const janela = useJanelaRankingCbvela(papel === "gestor" || papel === "treinador");
   // Opções de classe: sempre as da lista sem filtro (mesma chave quando não há filtro, sem requisição extra).
   const base = useRanking({});
   const eventos = [...new Set((base.data?.itens ?? []).map((i) => i.atleta.classe.evento))];
@@ -118,7 +120,8 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
         <i className="ph ph-info" aria-hidden="true" />
         <span>
           Barras: os 9 pilares, de Performance a Carreira; tracejado = sem nota. Pontos CBVela vêm
-          do ranking oficial, últimas 52 semanas.
+          do ranking oficial,{" "}
+          {janela ? `últimas ${janela} semanas` : "na janela de semanas definida nos parâmetros"}.
         </span>
       </p>
       <div className="rank-headrow" aria-hidden="true">

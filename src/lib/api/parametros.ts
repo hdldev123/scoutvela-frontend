@@ -24,6 +24,26 @@ export function useParametros() {
   return useQuery({ queryKey: ["parametros"], queryFn: buscarParametros });
 }
 
+/**
+ * Janela, em semanas, dos pontos somados no Ranking CBVela (regra `RANKING_CBVELA`). Só gestor e
+ * treinador leem `GET /parametros`; sem leitura (ou antes de carregar) vale `null`, e a tela usa
+ * texto genérico, sem número.
+ */
+export function useJanelaRankingCbvela(habilitado: boolean): number | null {
+  const q = useQuery({
+    queryKey: ["parametros"],
+    queryFn: buscarParametros,
+    enabled: habilitado,
+    retry: false,
+    select: (p) => {
+      const valor = p.regras.find((r) => r.codigo === "RANKING_CBVELA")?.valor as
+        { janela_semanas?: unknown } | undefined;
+      return typeof valor?.janela_semanas === "number" ? valor.janela_semanas : null;
+    },
+  });
+  return q.data ?? null;
+}
+
 /** Salva e invalida o que depende dos parâmetros (o ranking recalcula na API). */
 export function useSalvarParametros() {
   const qc = useQueryClient();

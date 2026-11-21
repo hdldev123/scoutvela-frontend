@@ -221,11 +221,13 @@ function NovoAtleta() {
                     onChange={(e) => setClasseId(e.target.value)}
                   >
                     <option value="">Escolha</option>
-                    {(classes.data ?? []).map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome}
-                      </option>
-                    ))}
+                    {(classes.data ?? [])
+                      .filter((c) => c.ativa)
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nome}
+                        </option>
+                      ))}
                   </select>
                 </label>
                 <label className="field" htmlFor="cad-trein">
@@ -466,6 +468,7 @@ function ImportarCsv() {
   const [resultado, setResultado] = useState<ResultadoImportacao | null>(null);
   const [chave, setChave] = useState(0);
   const importar = useImportarCsv();
+  const [lendo, setLendo] = useState(false);
   const formato = FORMATOS[tipo];
 
   const escolher = (f: File | null) => {
@@ -482,11 +485,14 @@ function ImportarCsv() {
 
   const enviar = async (e: FormEvent) => {
     e.preventDefault();
-    if (!arquivo) return;
+    if (!arquivo || lendo || importar.isPending) return;
     setErro("");
     setResultado(null);
+    // Marca "enviando" antes de ler o arquivo: um segundo clique durante a leitura não duplica.
+    setLendo(true);
     try {
       const conteudo = await lerTexto(arquivo);
+      setLendo(false);
       if (!conteudo.trim()) {
         setErro("O arquivo está vazio.");
         return;
@@ -502,6 +508,7 @@ function ImportarCsv() {
         },
       );
     } catch (err) {
+      setLendo(false);
       setErro(mensagemDeErro(err));
     }
   };
@@ -562,8 +569,12 @@ function ImportarCsv() {
           </div>
         )}
         <div className="btn-row cad-importar">
-          <button type="submit" className="btn primary" disabled={!arquivo || importar.isPending}>
-            {importar.isPending ? "Importando…" : "Importar"}
+          <button
+            type="submit"
+            className="btn primary"
+            disabled={!arquivo || lendo || importar.isPending}
+          >
+            {lendo || importar.isPending ? "Importando…" : "Importar"}
           </button>
         </div>
       </form>

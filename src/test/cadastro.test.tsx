@@ -58,7 +58,12 @@ beforeEach(() => {
   ];
   GET.mockImplementation(async (caminho: string) => {
     if (caminho === "/parametros") {
-      return ok({ classes: [{ id: "ilca7", nome: "ILCA 7" }] });
+      return ok({
+        classes: [
+          { id: "ilca7", nome: "ILCA 7", ativa: true },
+          { id: "velha", nome: "Classe desativada", ativa: false },
+        ],
+      });
     }
     if (caminho === "/termo") {
       return ok({
@@ -118,6 +123,7 @@ describe("TelaCadastro", () => {
     const enviar = screen.getByRole("button", { name: "Enviar termo de consentimento" });
     expect((enviar as HTMLButtonElement).disabled).toBe(true);
     await screen.findByRole("option", { name: "ILCA 7" });
+    expect(screen.queryByRole("option", { name: "Classe desativada" })).toBeNull();
     await screen.findByRole("option", { name: "Ana Ribeiro" });
     fireEvent.change(screen.getByLabelText("Classe e função projetadas"), {
       target: { value: "ilca7" },
@@ -343,6 +349,29 @@ describe("TelaCadastro", () => {
         conteudo: "velaid;nivel\nSC-T01;brasileiro",
       },
     });
+  });
+
+  it("importar invalida ranking, atleta, investimento e pendentes, e não duplica o envio", async () => {
+    POST.mockResolvedValue(ok({ id: 1, linhasOk: 1, linhasErro: 0, erros: [] }, 201));
+    const inv = montar();
+    const arquivo = new File(["codigo;nome\nSC-T01;Ana"], "velaid.csv", { type: "text/csv" });
+    fireEvent.change(screen.getByLabelText("Arquivo CSV"), { target: { files: [arquivo] } });
+    const botao = screen.getByRole("button", { name: "Importar" });
+    // Dois cliques seguidos, antes de a leitura do arquivo terminar.
+    fireEvent.click(botao);
+    fireEvent.click(botao);
+    expect(await screen.findByText("1 linhas ok")).toBeTruthy();
+    expect(POST).toHaveBeenCalledTimes(1);
+    const chaves = inv.mock.calls.map((c) => JSON.stringify(c[0]?.queryKey));
+    expect(chaves).toEqual(
+      expect.arrayContaining([
+        '["ranking"]',
+        '["atleta"]',
+        '["atletas"]',
+        '["investimento"]',
+        '["notificacoes"]',
+      ]),
+    );
   });
 
   it("sem termos pendentes mostra o estado vazio", async () => {
