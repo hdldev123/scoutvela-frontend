@@ -103,19 +103,26 @@ for (const largura of [800, 900, 1000]) {
         const caixaLinha = await linha.boundingBox();
         const selo = linha.locator(".who .pill");
         if (await selo.count()) {
-          // O selo "Parcial" fica dentro do bloco do atleta (depois da meta), nunca numa
-          // célula implícita da grade. A posição horizontal depende do tamanho da meta.
+          // O selo "Parcial" fica na linha da meta (depois do VelaID · classe · idade), nunca
+          // numa célula implícita da grade, e não encosta no selo de faixa. No cartão, .who e
+          // .who-txt são display: contents (sem caixa); a referência é o .meta.
           const caixaSelo = await selo.first().boundingBox();
-          const caixaQuem = await linha.locator(".who").boundingBox();
-          expect(caixaSelo && caixaQuem, "selo e bloco do atleta").toBeTruthy();
-          expect(caixaSelo!.x).toBeGreaterThanOrEqual(caixaQuem!.x - 1);
+          const caixaMeta = await linha.locator(".who .meta").boundingBox();
+          const caixaFaixa = await linha.locator(".faixacell").boundingBox();
+          expect(caixaSelo && caixaMeta, "selo e linha da meta").toBeTruthy();
+          expect(caixaSelo!.x).toBeGreaterThanOrEqual(caixaMeta!.x - 1);
           expect(caixaSelo!.x + caixaSelo!.width).toBeLessThanOrEqual(
-            caixaQuem!.x + caixaQuem!.width + 1,
+            caixaMeta!.x + caixaMeta!.width + 1,
           );
-          expect(caixaSelo!.y).toBeGreaterThanOrEqual(caixaQuem!.y - 1);
+          expect(caixaSelo!.y).toBeGreaterThanOrEqual(caixaMeta!.y - 1);
           expect(caixaSelo!.y + caixaSelo!.height).toBeLessThanOrEqual(
-            caixaQuem!.y + caixaQuem!.height + 1,
+            caixaMeta!.y + caixaMeta!.height + 1,
           );
+          if (caixaFaixa) {
+            expect(caixaSelo!.x + caixaSelo!.width, "selo antes da faixa").toBeLessThanOrEqual(
+              caixaFaixa.x,
+            );
+          }
         }
         const caixaScore = await linha.locator(".scorecell").boundingBox();
         if (caixaLinha && caixaScore) {
