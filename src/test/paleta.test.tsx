@@ -135,4 +135,49 @@ describe("Busca de atletas", () => {
     expect(overlay?.parentElement).toBe(document.body);
     expect(container.querySelector(".cmdk-overlay")).toBeNull();
   });
+
+  describe("fechar pelo fundo", () => {
+    const abrirBusca = () => {
+      montar(
+        <PaletaDeAtletas
+          me={{
+            usuario: { papel: "atleta", fotoUrl: null },
+            atleta: { id: "a1", nome: "Helena Vasques" },
+            telas: ["painel"],
+          }}
+        />,
+      );
+      abrir();
+      const fundo = document.body.querySelector(".cmdk-overlay") as HTMLElement;
+      const caixa = document.body.querySelector(".cmdk") as HTMLElement;
+      return { fundo, caixa };
+    };
+
+    it("fecha com mousedown e click no próprio fundo", () => {
+      const { fundo } = abrirBusca();
+      fireEvent.mouseDown(fundo);
+      fireEvent.click(fundo);
+      expect(document.body.querySelector(".cmdk-overlay")).toBeNull();
+    });
+
+    it("não fecha quando o mouse foi pressionado dentro da caixa e solto no fundo", () => {
+      const { fundo, caixa } = abrirBusca();
+      fireEvent.mouseDown(caixa);
+      fireEvent.click(fundo);
+      expect(document.body.querySelector(".cmdk-overlay")).not.toBeNull();
+    });
+
+    it("não fecha com um click no fundo sem mousedown no fundo", () => {
+      const { fundo } = abrirBusca();
+      fireEvent.click(fundo);
+      expect(document.body.querySelector(".cmdk-overlay")).not.toBeNull();
+    });
+
+    it("não fecha ao clicar dentro da caixa", () => {
+      const { caixa } = abrirBusca();
+      fireEvent.mouseDown(caixa);
+      fireEvent.click(caixa);
+      expect(document.body.querySelector(".cmdk-overlay")).not.toBeNull();
+    });
+  });
 });
