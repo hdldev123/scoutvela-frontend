@@ -8,12 +8,6 @@
   margin: 0;
   font-size: 0.85rem;
 }
-.ct-acoes {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
 .ct-filtros {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
@@ -30,20 +24,12 @@
   max-width: 9rem;
   font-family: var(--f-mono);
 }
-.ct-sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
 /* Telas de senha e verificação: fora do layout autenticado. */
 .conta-qr {
   display: block;
   width: 12rem;
   height: 12rem;
-  background: #fff;
+  background: var(--paper);
   padding: 8px;
   border-radius: 8px;
   margin: 0 auto;
@@ -57,13 +43,13 @@
   max-height: 14rem;
   overflow-y: auto;
   white-space: pre-wrap;
-  border: 1px solid var(--line, #d0d7de);
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 12px;
   font-size: 0.9rem;
 }
 .ped-pedido {
-  border-top: 1px solid var(--line, #d0d7de);
+  border-top: 1px solid var(--line);
   padding-top: 8px;
   margin-top: 8px;
 }

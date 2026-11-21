@@ -35,19 +35,12 @@
   max-width: 6rem;
 }
 .par-kg[aria-invalid="true"] {
-  border-color: #b3261e;
+  border-color: var(--bad-ink);
 }
 .par-erro {
   margin: 6px 0 0;
-  color: #b3261e;
+  color: var(--bad-ink);
   font-size: 0.82rem;
-}
-.par-lista {
-  margin: 0;
-  padding-left: 1.1rem;
-  display: grid;
-  gap: 6px;
-  font-size: 0.9rem;
 }
 .par-linha {
   display: flex;
@@ -100,12 +93,10 @@
   font: inherit;
 }
 .par-rubricas-edit textarea[aria-invalid="true"] {
-  border-color: #b3261e;
+  border-color: var(--bad-ink);
 }
 .par-regra {
   margin-bottom: 18px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--line);
 }
 .par-regra-campos {
   display: grid;

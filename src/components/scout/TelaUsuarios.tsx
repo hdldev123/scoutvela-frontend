@@ -275,7 +275,7 @@ function ListaContas() {
                 <th>Conta</th>
                 <th>Situação</th>
                 <th className="acoes">
-                  <span className="ct-sr">Ações</span>
+                  <span className="sr-only">Ações</span>
                 </th>
               </tr>
             </thead>
@@ -483,7 +483,7 @@ function AtletasDoPiloto() {
                 <th>Termo</th>
                 <th>Conta</th>
                 <th className="acoes">
-                  <span className="ct-sr">Ação</span>
+                  <span className="sr-only">Ação</span>
                 </th>
               </tr>
             </thead>

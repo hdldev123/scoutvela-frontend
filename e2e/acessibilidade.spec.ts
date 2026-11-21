@@ -2,7 +2,8 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { entrar, CONTAS } from "./apoio";
 
-// WCAG 2.x A e AA em todas as telas, nos 4 papéis. Falha com qualquer violação.
+// WCAG 2.x A e AA em todas as telas, nos 4 papéis, em 3 larguras, e nos estados com
+// sobreposição (busca, gaveta, diálogo). Falha com qualquer violação.
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 const TELAS = {
@@ -22,6 +23,8 @@ const TELAS = {
   ibvar: ["investimento", "ranking"],
 } as const;
 
+const LARGURAS = [1280, 1024, 390] as const;
+
 async function varrer(page: Page, rotulo: string) {
   const r = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   const resumo = r.violations.map(
@@ -30,23 +33,62 @@ async function varrer(page: Page, rotulo: string) {
   expect(resumo, rotulo).toEqual([]);
 }
 
-test("login", async ({ page }) => {
-  await page.goto("/entrar");
-  await expect(page.getByLabel("E-mail")).toBeVisible();
-  await varrer(page, "/entrar");
-});
+for (const largura of LARGURAS) {
+  test.describe(`${largura} px`, () => {
+    test.use({ viewport: { width: largura, height: 800 } });
 
-for (const [conta, rotas] of Object.entries(TELAS)) {
-  test(`${conta}: telas sem violação WCAG AA`, async ({ page }) => {
-    await entrar(page, conta as keyof typeof CONTAS);
-    for (const rota of rotas) {
-      await page.goto(`/${rota}`);
+    test("login", async ({ page }) => {
+      await page.goto("/entrar");
+      await expect(page.getByLabel("E-mail")).toBeVisible();
+      await varrer(page, "/entrar");
+    });
+
+    for (const [conta, rotas] of Object.entries(TELAS)) {
+      test(`${conta}: telas sem violação WCAG AA`, async ({ page }) => {
+        await entrar(page, conta as keyof typeof CONTAS);
+        for (const rota of rotas) {
+          await page.goto(`/${rota}`);
+          await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+          await page.waitForLoadState("networkidle");
+          await varrer(page, `/${rota}`);
+        }
+      });
+    }
+
+    test("busca (Ctrl+K) aberta", async ({ page }) => {
+      await entrar(page, "gestor");
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await page.waitForLoadState("networkidle");
-      await varrer(page, `/${rota}`);
-    }
+      await page.keyboard.press("Control+k");
+      await expect(page.getByRole("dialog", { name: /Buscar/ })).toBeVisible();
+      await varrer(page, "busca aberta");
+    });
+
+    test("diálogo Pedir revisão de nota (atleta)", async ({ page }) => {
+      await entrar(page, "atleta");
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("button", { name: "Pedir revisão de nota" }).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await varrer(page, "diálogo Pedir revisão de nota");
+    });
   });
 }
+
+test.describe("390 px: gaveta", () => {
+  test.use({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
+
+  test("gaveta do menu aberta", async ({ page }) => {
+    await entrar(page, "gestor");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    const botao = page.getByRole("button", { name: /menu/i }).first();
+    await botao.click();
+    await expect(botao).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByRole("navigation", { name: "Telas" })).toBeVisible();
+    await varrer(page, "gaveta aberta");
+  });
+});
 
 test("ficha do atleta e modal Meu perfil", async ({ page }) => {
   await entrar(page, "gestor");

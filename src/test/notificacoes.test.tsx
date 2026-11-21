@@ -19,7 +19,11 @@ vi.mock("@/lib/api/cliente", async (importar) => ({
 vi.mock("@/components/scout/PaletaDeAtletas", () => ({ PaletaDeAtletas: () => null }));
 
 import { Shell } from "@/components/scout/Shell";
-import { invalidarNotificacoes, marcarPainelVisto } from "@/lib/api/notificacoes";
+import {
+  CHAVE_NOTIFICACOES,
+  invalidarNotificacoes,
+  marcarPainelVisto,
+} from "@/lib/api/notificacoes";
 import { useResponderRevisao } from "@/lib/api/revisoes";
 
 type Me = Parameters<typeof Shell>[0]["me"];
@@ -116,8 +120,10 @@ describe("Balões do menu lateral", () => {
 
   it("não mostra nada com 0", async () => {
     resposta({ revisoes: 0, cadastro: 0 });
-    await montar(GESTOR);
-    await waitFor(() => expect(GET).toHaveBeenCalledWith("/me/notificacoes"));
+    const qc = await montar(GESTOR);
+    // Só afirma a ausência depois que a consulta resolveu com os zeros.
+    await waitFor(() => expect(qc.getQueryState(CHAVE_NOTIFICACOES)?.status).toBe("success"));
+    expect(qc.getQueryData(CHAVE_NOTIFICACOES)).toMatchObject({ total: 0 });
     expect(document.querySelector(".balao")).toBeNull();
     expect(screen.getByRole("link", { name: "Revisões" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Abrir menu" })).toBeInTheDocument();
@@ -142,8 +148,9 @@ describe("Balões do menu lateral", () => {
       if (caminho === "/me/notificacoes") throw new Error("rede");
       return { data: [], error: undefined };
     });
-    await montar(GESTOR);
-    await waitFor(() => expect(GET).toHaveBeenCalledWith("/me/notificacoes"));
+    const qc = await montar(GESTOR);
+    // A consulta precisa ter falhado de fato (sem nova tentativa) antes de afirmar a ausência.
+    await waitFor(() => expect(qc.getQueryState(CHAVE_NOTIFICACOES)?.status).toBe("error"));
     expect(document.querySelector(".balao")).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
   });

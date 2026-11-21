@@ -40,6 +40,9 @@ export function CommandPalette({ itens, aoSelecionar }: CommandPaletteProps) {
   const botao = useRef<HTMLButtonElement>(null);
   const caixa = useRef<HTMLDivElement>(null);
   const atalho = useRotuloAtalho();
+  // O clique só fecha se o botão do mouse também foi pressionado no fundo (como no Dialogo):
+  // arrastar uma seleção de dentro da caixa para fora não pode fechar a busca.
+  const pressionouNoFundo = useRef(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -80,7 +83,17 @@ export function CommandPalette({ itens, aoSelecionar }: CommandPaletteProps) {
       {open &&
         typeof document !== "undefined" &&
         createPortal(
-          <div className="cmdk-overlay scout" onClick={() => setOpen(false)}>
+          <div
+            className="cmdk-overlay scout"
+            onMouseDown={(e) => {
+              pressionouNoFundo.current = e.target === e.currentTarget;
+            }}
+            onClick={(e) => {
+              const valeu = pressionouNoFundo.current && e.target === e.currentTarget;
+              pressionouNoFundo.current = false;
+              if (valeu) setOpen(false);
+            }}
+          >
             <Command
               ref={caixa}
               className="cmdk"
@@ -88,7 +101,6 @@ export function CommandPalette({ itens, aoSelecionar }: CommandPaletteProps) {
               role="dialog"
               aria-modal="true"
               aria-label="Buscar atleta"
-              onClick={(e) => e.stopPropagation()}
             >
               <Command.Input autoFocus placeholder="Nome, classe ou status do gate…" />
               <Command.List>

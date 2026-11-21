@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { entrar, CONTAS } from "./apoio";
+import { entrar, CONTAS, SEED } from "./apoio";
 
 const LARGURA = 390;
 
@@ -79,4 +79,38 @@ test("gaveta abre pelo botão e o menu leva à tela", async ({ page }) => {
     .click();
   await expect(page).toHaveURL(/\/ciclos$/);
   await expect(botao).toHaveAttribute("aria-expanded", "false");
+});
+
+test("avaliação: mudar uma nota mostra a barra fixa com o resumo e descartar a esconde", async ({
+  page,
+}) => {
+  await entrar(page, "gestor");
+  await page.goto("/avaliar");
+  const escolha = page.getByRole("combobox", { name: /^Atleta/ });
+  const valor = await escolha
+    .locator("option", { hasText: SEED.atleta.nome })
+    .getAttribute("value");
+  await escolha.selectOption(valor!);
+  const barra = page.getByRole("region", { name: "Resumo e ações da avaliação" });
+  await expect(page.getByRole("radiogroup").first()).toBeVisible();
+  await expect(barra).toHaveCount(0);
+
+  await page
+    .getByRole("radiogroup")
+    .first()
+    .locator("label:not(:has(input:checked))")
+    .first()
+    .click();
+  await expect(barra).toBeVisible();
+  // Sem evidência a nota não está pronta: a barra avisa em vez de mostrar o score.
+  await expect(barra).toContainText("Informe a evidência");
+  await page.getByLabel("Evidência (obrigatória)").first().fill("Observado no treino de sábado");
+  await expect(barra).toContainText(/Score:\s*\d+[.,]\d → \d+[.,]\d/);
+  // Fixa no rodapé da janela, sem rolagem horizontal.
+  const caixa = await barra.boundingBox();
+  expect(caixa!.y + caixa!.height).toBeGreaterThan(844 - 4);
+  await semRolagemHorizontal(page, "avaliar com barra");
+
+  await barra.getByRole("button", { name: "Descartar" }).click();
+  await expect(barra).toHaveCount(0);
 });

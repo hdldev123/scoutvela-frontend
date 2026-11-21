@@ -9,8 +9,6 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      radix:
-        patterns: ["@radix-ui/*"]
       tanstack:
         patterns: ["@tanstack/*"]
       dependencias-menores:

@@ -59,7 +59,13 @@ O login tenta, nesta ordem: `VITE_LOGIN_VIDEO_URL`; o arquivo `src/assets/login-
 
 O back é localizado por `scripts/caminho-back.mjs`, nesta ordem: variável `VELA_BACK_DIR`, `../vela-back`, `../scoutvela-backend`. Vale para `api:tipos`, `api:verificar` e para o E2E.
 
-O CI (`.github/workflows/ci.yml`) tem dois jobs. `verificar` roda tipos, lint, testes, build e `bun audit`. `e2e` baixa o `scoutvela-backend` (a mesma branch do PR, ou a base, ou `staging`), roda `api:verificar` e o E2E. Dispara para `main`, `staging` e `release-*`.
+O CI (`.github/workflows/ci.yml`) tem dois jobs. `verificar` roda tipos, lint, testes, build e `bun audit`. `e2e` baixa o `scoutvela-backend`, roda `api:verificar` e o E2E. Dispara para `main`, `staging` e `release-*`, e também manualmente (`workflow_dispatch`).
+
+**Branch do back no E2E.** O job tenta, nesta ordem, a branch do PR, a branch do PR que gerou o commit (num push), a base, a branch do push e `staging`. Só vale branch com o nome exato (`refs/heads/<nome>`).
+
+**Ordem de entrada: o back entra na `staging` antes do front.** Quando uma mudança mexe no contrato da API, o PR do back é mergeado primeiro; só depois o do front. Se o front entrar antes, o push em `staging` roda o E2E contra um back sem a rota nova e o `api:verificar` falha. O job procura a branch do PR do commit para amenizar a corrida, mas ela só ajuda enquanto a branch do back ainda existe: apagar a branch logo após o merge desfaz isso.
+
+**No Playwright, em CI:** `forbidOnly`, uma nova tentativa por teste e o reporter do GitHub. O log do back aparece na saída do job (`[WebServer]`), e o artefato `e2e-test-results` (traces e capturas das falhas) fica 7 dias.
 
 ## Deploy na Vercel
 

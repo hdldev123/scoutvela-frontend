@@ -280,6 +280,8 @@ describe("TelaPainel", () => {
     await waitFor(() =>
       expect(POST).toHaveBeenCalledWith("/termo/aceite", { body: { versao: "Piloto 18+ · v2" } }),
     );
+    // O aviso sai do hook, não do callback do mutate: o bloco some ao recarregar o painel.
+    await waitFor(() => expect(toastFn).toHaveBeenCalledWith("Termo aceito"));
   });
 
   it("mostra o termo e a nova versão quando o aceite está pendente", async () => {
@@ -331,6 +333,7 @@ describe("TelaPainel", () => {
     await waitFor(() =>
       expect(POST).toHaveBeenCalledWith("/termo/aceite", { body: { versao: "Piloto 18+ · v3" } }),
     );
+    await waitFor(() => expect(toastFn).toHaveBeenCalledWith("Nova versão do termo aceita"));
     await waitFor(() => {
       const chaves = inv.mock.calls.map((c) => JSON.stringify(c[0]?.queryKey));
       expect(chaves).toEqual(

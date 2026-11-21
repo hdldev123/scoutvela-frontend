@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api, paraErroApi } from "./cliente";
 import { invalidarNotificacoes } from "./notificacoes";
 import type { paths } from "./schema";
@@ -49,15 +50,20 @@ export function useTermoProxima(opcoes: { enabled?: boolean } = {}) {
   });
 }
 
-/** O atleta aceita a versão vigente do termo, ou a próxima publicada (aceite antecipado). */
+/**
+ * O atleta aceita a versão vigente do termo, ou a próxima publicada (aceite antecipado).
+ * O aviso sai aqui, não no `mutate`: ao aceitar, o painel recarrega e o bloco do termo some, e o
+ * callback do `mutate` não roda em componente já desmontado.
+ */
 export function useAceitarTermo() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (versao: string) => {
+    mutationFn: async ({ versao }: { versao: string; aviso: string }) => {
       const { error, response } = await api.POST("/termo/aceite", { body: { versao } });
       if (error) throw paraErroApi(response.status, error);
     },
-    onSuccess: async () => {
+    onSuccess: async (_dados, { aviso }) => {
+      toast(aviso);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["painel"] }),
         qc.invalidateQueries({ queryKey: ["me"] }),

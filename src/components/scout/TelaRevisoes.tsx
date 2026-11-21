@@ -267,7 +267,7 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                 <th className="rev-col-resp">Resposta</th>
                 {gestor && (
                   <th className="acoes">
-                    <span className="rev-sr">Ação</span>
+                    <span className="sr-only">Ação</span>
                   </th>
                 )}
               </tr>
@@ -471,7 +471,7 @@ function PedidosTitular() {
                 <th>Status</th>
                 <th className="rev-col-resp">Resposta</th>
                 <th className="acoes">
-                  <span className="rev-sr">Ação</span>
+                  <span className="sr-only">Ação</span>
                 </th>
               </tr>
             </thead>
