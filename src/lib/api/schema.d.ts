@@ -589,7 +589,7 @@ export interface paths {
         };
         /**
          * Remove a foto de perfil
-         * @description Idempotente: sem foto, também responde 204.
+         * @description Idempotente: sem foto, também responde 204. O arquivo sai do Storage antes de o caminho sair do banco: se o Storage falhar, responde 503 e a foto continua (tente de novo).
          */
         delete: {
             parameters: {
@@ -624,6 +624,19 @@ export interface paths {
                 };
                 /** @description Default Response */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -781,7 +794,7 @@ export interface paths {
         };
         /**
          * Ficha do atleta, conforme a matriz de acesso do papel
-         * @description Atleta fora do acesso do usuário e atleta inexistente dão o mesmo 404. IBVAR: sem indicadores sensíveis, Class Fit, contato e financeiro detalhado.
+         * @description Atleta fora do acesso do usuário e atleta inexistente dão o mesmo 404. IBVAR: sem indicadores sensíveis, Class Fit, contato, financeiro detalhado nem texto de evidência; o motivo do gate G1 vem genérico, sem a diferença em kg.
          */
         get: {
             parameters: {
@@ -1039,7 +1052,7 @@ export interface paths {
         };
         /**
          * Edita classe, treinador, número de vela ou situação do atleta
-         * @description Valida classe ativa e treinador ativo. numeroVela vazio limpa o campo.
+         * @description Valida classe ativa e treinador ativo. numeroVela vazio limpa o campo. Atleta anonimizado não pode ser alterado nem reativado: 409.
          */
         put: {
             parameters: {
@@ -1118,6 +1131,19 @@ export interface paths {
                 };
                 /** @description Default Response */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1517,6 +1543,19 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
             };
         };
         delete?: never;
@@ -1617,6 +1656,19 @@ export interface paths {
                 };
                 /** @description Default Response */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -2120,7 +2172,7 @@ export interface paths {
         put?: never;
         /**
          * Registra o aceite do termo do piloto recebido do atleta
-         * @description Não concede o compartilhamento com o IBVAR: essa decisão é do atleta (consentimento explícito). Depois do aceite o atleta entra no ranking.
+         * @description Aceita a versão vigente ou a próxima publicada (aceite antecipado, como em POST /termo/aceite). Não concede o compartilhamento com o IBVAR: essa decisão é do atleta (consentimento explícito). Depois do aceite o atleta entra no ranking.
          */
         post: {
             parameters: {
@@ -2397,12 +2449,19 @@ export interface paths {
                                 termoVersao: string | null;
                                 /** @description Versão do termo vigente hoje */
                                 termoVigenteVersao: string;
-                                /** @description true quando o atleta ainda não aceitou a versão vigente */
+                                /** @description true quando o atleta ainda não aceitou a versão vigente (nem uma mais nova, por aceite antecipado) */
                                 termoPendente: boolean;
                                 compartilharIbvar: boolean;
                                 /** @description Instante ISO da última decisão sobre o IBVAR */
                                 atualizadoEm: string | null;
                             };
+                            /** @description Próxima versão do termo, já publicada e ainda sem vigência, que o atleta não aceitou. O texto vem em GET /termo/proxima e o aceite antecipado em POST /termo/aceite. Nulo se não houver ou se já foi aceita. */
+                            termoProxima: {
+                                versao: string;
+                                titulo: string;
+                                /** @description Instante ISO em que passa a valer */
+                                vigenteDesde: string;
+                            } | null;
                         };
                     };
                 };
@@ -2597,7 +2656,7 @@ export interface paths {
                             termoVersao: string | null;
                             /** @description Versão do termo vigente hoje */
                             termoVigenteVersao: string;
-                            /** @description true quando o atleta ainda não aceitou a versão vigente */
+                            /** @description true quando o atleta ainda não aceitou a versão vigente (nem uma mais nova, por aceite antecipado) */
                             termoPendente: boolean;
                             compartilharIbvar: boolean;
                             /** @description Instante ISO da última decisão sobre o IBVAR */
@@ -3808,7 +3867,7 @@ export interface paths {
         put?: never;
         /**
          * Fecha o ciclo e congela o score e a faixa dos atletas do piloto
-         * @description Calcula score e faixa de todos os atletas ativos com o termo do piloto aceito, grava em scores_ciclo e marca o ciclo como fechado, numa transação. Alimenta o histórico de score da ficha.
+         * @description Calcula score e faixa de todos os atletas ativos com o termo do piloto aceito, grava em scores_ciclo e marca o ciclo como fechado, numa transação. Alimenta o histórico de score da ficha. Se nenhum atleta tiver o termo aceito mas houver atletas ativos, recusa com 409 (nada a congelar).
          */
         post: {
             parameters: {
@@ -4148,6 +4207,19 @@ export interface paths {
                 };
                 /** @description Default Response */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -4703,7 +4775,7 @@ export interface paths {
         get?: never;
         /**
          * Responde um pedido do titular
-         * @description Registra a resposta e fecha o pedido. A exclusão de dados NÃO é feita por esta rota: para pedido de exclusão use `POST /atletas/{id}/anonimizar`, que anonimiza o atleta e responde o pedido (a série histórica, que só aceita inserção, é mantida sem identificação direta). Pedido já respondido devolve 409 (código requisicao_invalida).
+         * @description Registra a resposta e fecha o pedido. Pedido de exclusão NÃO é fechado por aqui: devolve 409 apontando para `POST /atletas/{id}/anonimizar`, que anonimiza o atleta e responde o pedido. Única exceção: a recusa formal, `{ resposta, recusar: true }`, com justificativa de ao menos 20 caracteres; fecha o pedido sem anonimizar e fica na auditoria como `recusar_exclusao`. `recusar` só vale para pedido de exclusão (400 nos demais). Pedido já respondido devolve 409 (código requisicao_invalida).
          */
         put: {
             parameters: {
@@ -4718,6 +4790,8 @@ export interface paths {
                 content: {
                     "application/json": {
                         resposta: string;
+                        /** @description Só para pedido de exclusão: recusa formal, com justificativa de ao menos 20 caracteres. Sem isto, o pedido de exclusão é atendido pela anonimização. */
+                        recusar?: boolean;
                     };
                 };
             };
@@ -5071,6 +5145,19 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
             };
         };
         post?: never;
@@ -5252,6 +5339,19 @@ export interface paths {
                 };
                 /** @description Default Response */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -5612,7 +5712,7 @@ export interface paths {
         get?: never;
         /**
          * Edita nome ou ativa/desativa uma conta
-         * @description O gestor não desativa a própria conta. Conta inativa perde o acesso na próxima requisição.
+         * @description O gestor não desativa a própria conta. Conta inativa perde o acesso na próxima requisição. Conta ligada a atleta anonimizado não pode ser alterada: 409.
          */
         put: {
             parameters: {
@@ -5697,6 +5797,19 @@ export interface paths {
                 };
                 /** @description Default Response */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -5848,7 +5961,7 @@ export interface paths {
         };
         /**
          * Termo de consentimento vigente
-         * @description Texto da versão vigente (a de maior vigente_desde que já começou). Qualquer usuário autenticado lê.
+         * @description Texto da versão vigente (a de maior vigente_desde que já começou). Qualquer usuário autenticado lê. A próxima versão publicada, ainda sem vigência, vem em GET /termo/proxima.
          */
         get: {
             parameters: {
@@ -5910,6 +6023,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/termo/proxima": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Próxima versão do termo, já publicada e ainda sem vigência
+         * @description A de menor vigente_desde no futuro, com o texto, para o atleta ler e aceitar antes de ela valer (POST /termo/aceite). Só atleta e gestor. 404 quando não há versão futura publicada.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            versao: string;
+                            titulo: string;
+                            texto: string;
+                            /** @description Instante ISO em que passa a valer */
+                            vigenteDesde: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/termo/aceite": {
         parameters: {
             query?: never;
@@ -5920,8 +6117,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * O atleta aceita o termo vigente
-         * @description A versão enviada precisa ser a vigente. Não concede o compartilhamento com o IBVAR (consentimento separado, em PUT /consentimento).
+         * O atleta aceita o termo vigente ou a próxima versão publicada
+         * @description A versão enviada precisa ser a vigente ou a próxima publicada (aceite antecipado: com TERMO_EXIGE_REACEITE ligada, quem aceitou a próxima versão não sai do ranking quando ela entra em vigor). Aceitar uma versão mais nova vale também para as anteriores. Não concede o compartilhamento com o IBVAR (consentimento separado, em PUT /consentimento).
          */
         post: {
             parameters: {
