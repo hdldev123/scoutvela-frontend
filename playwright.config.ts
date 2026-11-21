@@ -14,9 +14,12 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   workers: 1,
+  // No CI, um `test.only` esquecido falha a execução, e uma falha pontual ganha uma nova tentativa.
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 1 : 0,
   timeout: 60_000,
   expect: { timeout: 15_000 },
-  reporter: [["list"]],
+  reporter: process.env.CI ? [["github"], ["list"]] : [["list"]],
   use: {
     baseURL: "http://localhost:8080",
     channel: process.env.E2E_CANAL ?? "chrome",
@@ -29,6 +32,8 @@ export default defineConfig({
       cwd: caminhoDoBack(),
       url: `${API}/health`,
       env: { DADOS_LOCAIS_DIR: ".dados-e2e" },
+      // O log do back (erros da API, links de convite) aparece na saída do teste que falhou.
+      stdout: "pipe",
       reuseExistingServer: false,
       timeout: 180_000,
     },
