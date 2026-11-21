@@ -102,9 +102,20 @@ for (const largura of [800, 900, 1000]) {
         expect(trilhas.linhas, `linhas da linha #${i + 1}`).toBe(3);
         const caixaLinha = await linha.boundingBox();
         const selo = linha.locator(".who .pill");
-        if (caixaLinha && (await selo.count())) {
+        if (await selo.count()) {
+          // O selo "Parcial" fica dentro do bloco do atleta (depois da meta), nunca numa
+          // célula implícita da grade. A posição horizontal depende do tamanho da meta.
           const caixaSelo = await selo.first().boundingBox();
-          expect(caixaSelo?.x ?? 0).toBeLessThan(caixaLinha.x + caixaLinha.width / 2);
+          const caixaQuem = await linha.locator(".who").boundingBox();
+          expect(caixaSelo && caixaQuem, "selo e bloco do atleta").toBeTruthy();
+          expect(caixaSelo!.x).toBeGreaterThanOrEqual(caixaQuem!.x - 1);
+          expect(caixaSelo!.x + caixaSelo!.width).toBeLessThanOrEqual(
+            caixaQuem!.x + caixaQuem!.width + 1,
+          );
+          expect(caixaSelo!.y).toBeGreaterThanOrEqual(caixaQuem!.y - 1);
+          expect(caixaSelo!.y + caixaSelo!.height).toBeLessThanOrEqual(
+            caixaQuem!.y + caixaQuem!.height + 1,
+          );
         }
         const caixaScore = await linha.locator(".scorecell").boundingBox();
         if (caixaLinha && caixaScore) {
