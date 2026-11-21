@@ -56,6 +56,7 @@ describe("pills e strip", () => {
     );
     expect(container.querySelectorAll("i")).toHaveLength(2);
     expect(container.querySelector("i.empty")).toHaveAttribute("title", "B: sem nota");
+    expect(screen.getByRole("img")).toHaveAccessibleName("Notas dos 2 pilares: A 5,0; B sem nota");
   });
 });
 

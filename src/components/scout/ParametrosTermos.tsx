@@ -39,7 +39,12 @@ export function SecaoTermos() {
       ) : q.data.length === 0 ? (
         <EstadoVazio icone="file-text" titulo="Nenhuma versão publicada" />
       ) : (
-        <div className="table-scroll" tabIndex={0}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de versões do termo, role para ver todas as colunas"
+        >
           <table className="data interativa">
             <thead>
               <tr>

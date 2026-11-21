@@ -798,6 +798,7 @@ function AnexoDaNota({
         rotulo={`Anexar evidência de ${indicador.nome}`}
         accept={ACEITA_ARQUIVO}
         textoBotao="Anexar evidência"
+        contexto={indicador.nome}
         dica="PDF, JPG ou PNG, até 5 MB"
         arquivo={arquivo}
         desabilitado={enviar.isPending}

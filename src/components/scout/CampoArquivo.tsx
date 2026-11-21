@@ -6,6 +6,8 @@ type Props = {
   rotulo: string;
   accept: string;
   textoBotao?: string;
+  /** Contexto que desambigua botões iguais (ex.: nome do indicador); entra no nome acessível. */
+  contexto?: string;
   dica?: string;
   arquivo?: File | null;
   aoEscolher: (f: File | undefined) => void;
@@ -18,6 +20,7 @@ export function CampoArquivo({
   rotulo,
   accept,
   textoBotao = "Escolher arquivo",
+  contexto,
   dica,
   arquivo,
   aoEscolher,
@@ -44,26 +47,33 @@ export function CampoArquivo({
       <button
         type="button"
         className="btn"
+        aria-label={contexto ? `${textoBotao} — ${contexto}` : undefined}
         disabled={desabilitado}
         onClick={() => entrada.current?.click()}
       >
         <i className="ph ph-paperclip" aria-hidden="true" /> {textoBotao}
       </button>
-      {arquivo ? (
-        <>
-          <span className="campo-arquivo-nome">{arquivo.name}</span>
-          <button
-            type="button"
-            className="btn sm ghost"
-            disabled={desabilitado}
-            aria-label={`Remover ${arquivo.name}`}
-            onClick={() => aoEscolher(undefined)}
-          >
-            <i className="ph ph-x" aria-hidden="true" />
-          </button>
-        </>
-      ) : (
-        dica && <span className="campo-arquivo-nome">{dica}</span>
+      {/* A região fica sempre no DOM para o leitor de tela anunciar o arquivo escolhido. */}
+      <span className="campo-arquivo-nome" aria-live="polite" aria-atomic="true">
+        {arquivo ? (
+          <>
+            <span className="sr-only">Arquivo escolhido: </span>
+            {arquivo.name}
+          </>
+        ) : (
+          dica
+        )}
+      </span>
+      {arquivo && (
+        <button
+          type="button"
+          className="btn sm ghost"
+          disabled={desabilitado}
+          aria-label={`Remover ${arquivo.name}`}
+          onClick={() => aoEscolher(undefined)}
+        >
+          <i className="ph ph-x" aria-hidden="true" />
+        </button>
       )}
     </div>
   );

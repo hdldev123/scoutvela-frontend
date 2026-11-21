@@ -331,7 +331,12 @@ function TermosPendentes() {
           <EstadoVazio icone="seal-check" titulo="Nenhum termo pendente" />
         </div>
       ) : (
-        <div className="table-scroll" tabIndex={0}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de termos pendentes, role para ver todas as colunas"
+        >
           <table className="data">
             <thead>
               <tr>
@@ -531,7 +536,12 @@ function ImportarCsv() {
             </span>
           </div>
           {resultado.erros.length > 0 && (
-            <div className="table-scroll" tabIndex={0}>
+            <div
+              className="table-scroll"
+              tabIndex={0}
+              role="region"
+              aria-label="Tabela de erros por linha da importação, role para ver todas as colunas"
+            >
               <table className="data">
                 <caption className="cad-sr">Erros por linha</caption>
                 <thead>

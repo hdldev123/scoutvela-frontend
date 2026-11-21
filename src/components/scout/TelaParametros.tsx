@@ -295,7 +295,12 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
           </span>
         </div>
         <p className="panel-dica">A altura é informativa (não entra no score nem nos gates).</p>
-        <div className="table-scroll" tabIndex={0}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de faixas de peso e altura por classe, role para ver todas as colunas"
+        >
           <table className="data interativa par-classes">
             <thead>
               <tr>

@@ -312,7 +312,12 @@ function ListaPendencias({ p }: { p: PendenciasCiclo }) {
                     {plural(t.atletasPendentes.length, "atleta pendente", "atletas pendentes")}
                   </span>
                 </summary>
-                <div className="table-scroll" tabIndex={0}>
+                <div
+                  className="table-scroll"
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Tabela de pendências do ciclo, role para ver todas as colunas"
+                >
                   <table className="data">
                     <caption className="cic-sr">Atletas pendentes de {t.nome}</caption>
                     <thead>
@@ -348,7 +353,12 @@ function ListaPendencias({ p }: { p: PendenciasCiclo }) {
             <EstadoVazio icone="check-circle" titulo="Nenhum atleta com questionário pendente." />
           </div>
         ) : (
-          <div className="table-scroll" tabIndex={0}>
+          <div
+            className="table-scroll"
+            tabIndex={0}
+            role="region"
+            aria-label="Tabela de questionário dos atletas, role para ver todas as colunas"
+          >
             <table className="data">
               <caption className="cic-sr">Atletas com questionário pendente</caption>
               <thead>
@@ -461,7 +471,12 @@ function TabelaCiclos({ itens }: { itens: Ciclo[] }) {
           <EstadoVazio icone="calendar-blank" titulo="Nenhum ciclo cadastrado." />
         </div>
       ) : (
-        <div className="table-scroll" tabIndex={0}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de ciclos de avaliação, role para ver todas as colunas"
+        >
           <table className="data">
             <thead>
               <tr>
