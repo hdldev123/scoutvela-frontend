@@ -181,15 +181,15 @@ describe("TelaUsuarios", () => {
       "section",
     )!;
     const linha = async (nome: string) =>
-      (await within(bloco).findByRole("cell", { name: nome })).closest("tr")!;
+      (await within(bloco).findByRole("cell", { name: new RegExp(`^${nome}`) })).closest("tr")!;
     expect(await linha("Bruno Lima")).toHaveTextContent(
-      "Bruno LimaMG-T15ILCA 7Ana RibeiroBRA 1766AtivoAceitoSem conta",
+      "Bruno LimaTreinador: Ana Ribeiro · BRA 1766MG-T15ILCA 7Ana RibeiroBRA 1766AtivoAceitoSem conta",
     );
     expect(await linha("Carla Sem Termo")).toHaveTextContent("Pendente");
     expect(within(await linha("Carla Sem Termo")).getByText("Pendente").className).toContain(
       "st-cond",
     );
-    expect(await linha("Davi Inativo")).toHaveTextContent("—BRA 1766Inativo");
+    expect(await linha("Davi Inativo")).toHaveTextContent("BRA 1766Inativo");
     expect(await linha("Eva Com Conta")).toHaveTextContent("Com conta");
     expect(GET).toHaveBeenCalledWith("/atletas", { params: { query: {} } });
   });
@@ -199,16 +199,16 @@ describe("TelaUsuarios", () => {
     const bloco = (await screen.findByRole("heading", { name: "Atletas do piloto" })).closest(
       "section",
     )!;
-    await within(bloco).findByRole("cell", { name: "Davi Inativo" });
+    await within(bloco).findByRole("cell", { name: /^Davi Inativo/ });
 
     fireEvent.change(within(bloco).getByLabelText("Situação"), { target: { value: "false" } });
     await waitFor(() =>
       expect(GET).toHaveBeenCalledWith("/atletas", { params: { query: { ativo: "false" } } }),
     );
     await waitFor(() =>
-      expect(within(bloco).queryByRole("cell", { name: "Bruno Lima" })).toBeNull(),
+      expect(within(bloco).queryByRole("cell", { name: /^Bruno Lima/ })).toBeNull(),
     );
-    expect(within(bloco).getByRole("cell", { name: "Davi Inativo" })).toBeTruthy();
+    expect(within(bloco).getByRole("cell", { name: /^Davi Inativo/ })).toBeTruthy();
 
     fireEvent.change(within(bloco).getByLabelText("Situação"), { target: { value: "" } });
     fireEvent.change(within(bloco).getByLabelText("Termo"), { target: { value: "false" } });
@@ -218,9 +218,9 @@ describe("TelaUsuarios", () => {
         params: { query: { busca: "carla", termoAceito: "false" } },
       }),
     );
-    expect(await within(bloco).findByRole("cell", { name: "Carla Sem Termo" })).toBeTruthy();
+    expect(await within(bloco).findByRole("cell", { name: /^Carla Sem Termo/ })).toBeTruthy();
     await waitFor(() =>
-      expect(within(bloco).queryByRole("cell", { name: "Bruno Lima" })).toBeNull(),
+      expect(within(bloco).queryByRole("cell", { name: /^Bruno Lima/ })).toBeNull(),
     );
   });
 

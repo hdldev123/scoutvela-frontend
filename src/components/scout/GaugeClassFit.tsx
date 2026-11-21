@@ -44,11 +44,15 @@ export function GaugeClassFit({
   const hi = Math.max(max, valor) + margem;
   const X = (v: number) => 16 + ((v - lo) / (hi - lo)) * (W - 32);
   const cor = COR[status];
+  // Faixa estreita no eixo (atleta longe da faixa): o rótulo da média desce para uma 2ª linha,
+  // senão ele se sobrepõe aos de mínimo e máximo.
+  const empilha = X(max) - X(min) < 150;
+  const altura = empilha ? 100 : 86;
   const rotulo =
     `${grandeza} de ${fmt(valor)} ${unidade}` +
     `${situacao ? `, ${situacao}` : ""}, faixa da classe ${classe} de ${fmt(min)} a ${fmt(max)} ${unidade}, média ${fmt(media)}`;
   return (
-    <svg viewBox={`0 0 ${W} 86`} width="100%" role="img" aria-label={rotulo}>
+    <svg viewBox={`0 0 ${W} ${altura}`} width="100%" role="img" aria-label={rotulo}>
       <line x1="16" x2={W - 16} y1="44" y2="44" stroke="var(--line)" strokeWidth="2" />
       <rect
         x={X(min)}
@@ -67,7 +71,7 @@ export function GaugeClassFit({
       <text x={X(max) + 4} y="76" textAnchor="start" fill="var(--ink-2)" {...FONTE}>
         {fmt(max)}
       </text>
-      <text x={X(media)} y="76" textAnchor="middle" fill="var(--sea)" {...FONTE}>
+      <text x={X(media)} y={empilha ? 92 : 76} textAnchor="middle" fill="var(--sea)" {...FONTE}>
         média {fmt(media)}
       </text>
       <path d={`M${X(valor) - 7} 20 L${X(valor) + 7} 20 L${X(valor)} 32 Z`} fill={cor} />

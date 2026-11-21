@@ -4,6 +4,7 @@ import { AvisoAmbiente } from "./AvisoAmbiente";
 import { Avatar } from "./Avatar";
 import { PerfilDialog } from "./PerfilDialog";
 import { PaletaDeAtletas } from "./PaletaDeAtletas";
+import { useSobreposicao } from "./sobreposicoes";
 import { useNotificacoes } from "@/lib/api/notificacoes";
 import {
   contagemDaTela,
@@ -69,16 +70,29 @@ export function Shell({ me, onSair, children }: ShellProps) {
     });
   }, [caminho]);
 
-  useEffect(() => {
-    if (!aberta) return;
-    const aoTeclar = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
+  // A gaveta entra na pilha de sobreposições: com um diálogo por cima, o Esc fecha só o diálogo.
+  useSobreposicao({
+    ativa: aberta,
+    modal: false,
+    aoEsc: () => {
       setAberta(false);
       botao.current?.focus();
-    };
-    document.addEventListener("keydown", aoTeclar);
-    return () => document.removeEventListener("keydown", aoTeclar);
-  }, [aberta]);
+    },
+  });
+
+  // O perfil abre por cima da gaveta: ela fecha antes, e o foco volta ao botão do menu.
+  const veioDaGaveta = useRef(false);
+  const abrirPerfil = () => {
+    veioDaGaveta.current = aberta;
+    setAberta(false);
+    setPerfilAberto(true);
+  };
+  useEffect(() => {
+    if (!perfilAberto && veioDaGaveta.current) {
+      veioDaGaveta.current = false;
+      botao.current?.focus();
+    }
+  }, [perfilAberto]);
 
   return (
     <div className="scout">
@@ -140,7 +154,7 @@ export function Shell({ me, onSair, children }: ShellProps) {
             })}
           </nav>
           <div className="side-foot">
-            {me && <UsuarioDoShell me={me} aoAbrirPerfil={() => setPerfilAberto(true)} />}
+            {me && <UsuarioDoShell me={me} aoAbrirPerfil={abrirPerfil} />}
             <button className="side-logout" type="button" onClick={onSair}>
               <i className="ph ph-sign-out" aria-hidden="true" /> Sair
             </button>

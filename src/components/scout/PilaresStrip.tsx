@@ -8,8 +8,11 @@ export interface PilarNota {
 
 /** Barras dos pilares (altura = nota/5); tracejado quando o pilar ainda não tem nota. */
 export function PilaresStrip({ pilares }: { pilares: PilarNota[] }) {
+  const rotulo = `Notas dos ${pilares.length} pilares: ${pilares
+    .map((p) => `${p.nomeCurto} ${p.nota == null ? "sem nota" : fmt1(p.nota)}`)
+    .join("; ")}`;
   return (
-    <span className="strip" role="img" aria-label={`Notas dos ${pilares.length} pilares`}>
+    <span className="strip" role="img" aria-label={rotulo}>
       {pilares.map((p) =>
         p.nota == null ? (
           <i key={p.id} className="empty" title={`${p.nomeCurto}: sem nota`} />

@@ -44,7 +44,7 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 import { Shell } from "@/components/scout/Shell";
-import { recorteQuadrado, validarFoto } from "@/lib/foto";
+import { recorteQuadrado, validarFoto, validarRecorte } from "@/lib/foto";
 
 type Papel = "atleta" | "treinador" | "gestor" | "ibvar";
 
@@ -248,10 +248,33 @@ describe("Modal Meu perfil", () => {
     });
     expect(await screen.findByText("Use uma imagem JPG ou PNG.")).toBeInTheDocument();
     const grande = new File(["x"], "a.jpg", { type: "image/jpeg" });
-    Object.defineProperty(grande, "size", { value: 3 * 1024 * 1024 });
+    Object.defineProperty(grande, "size", { value: 16 * 1024 * 1024 });
     fireEvent.change(entrada, { target: { files: [grande] } });
-    expect(await screen.findByText("A foto precisa ter até 2 MB.")).toBeInTheDocument();
+    expect(await screen.findByText("A foto precisa ter até 15 MB.")).toBeInTheDocument();
     expect(preparar).not.toHaveBeenCalled();
+  });
+
+  it("aceita original grande e recusa só se o recorte passa de 2 MB", async () => {
+    montar("gestor");
+    await abrir();
+    const original = new File(["x"], "a.jpg", { type: "image/jpeg" });
+    Object.defineProperty(original, "size", { value: 10 * 1024 * 1024 });
+    preparar.mockResolvedValueOnce({
+      tipoMime: "image/jpeg",
+      conteudoBase64: "A".repeat(Math.ceil(((2 * 1024 * 1024 + 10) * 4) / 3)),
+      previa: "data:image/jpeg;base64,AAAA",
+    });
+    fireEvent.change(await screen.findByLabelText("Escolher foto"), {
+      target: { files: [original] },
+    });
+    expect(await screen.findByText(/depois de reduzida, ainda passa de 2 MB/)).toBeInTheDocument();
+    preparar.mockResolvedValueOnce({
+      tipoMime: "image/jpeg",
+      conteudoBase64: "QUJD",
+      previa: "data:image/jpeg;base64,QUJD",
+    });
+    fireEvent.change(screen.getByLabelText("Escolher foto"), { target: { files: [original] } });
+    expect(await screen.findByRole("button", { name: "Salvar foto" })).toBeInTheDocument();
   });
 
   it("envia a foto recortada", async () => {
@@ -310,6 +333,63 @@ describe("Modal Meu perfil", () => {
     await waitFor(() => expect(updateUser).toHaveBeenCalledWith({ password: "senha-longa-1" }));
   });
 
+  it("e-mail inválido mostra o erro sob o campo", async () => {
+    montar("atleta");
+    await abrir();
+    const campo = await screen.findByLabelText("E-mail de contato");
+    fireEvent.change(campo, { target: { value: "sem-arroba" } });
+    const msg = await screen.findByText(/Informe um e-mail válido/);
+    expect(campo).toHaveAttribute("aria-invalid", "true");
+    expect(campo).toHaveAttribute("aria-describedby", msg.id);
+    expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
+    expect(PUT).not.toHaveBeenCalled();
+  });
+
+  it("mostra o erro por campo do 400 sob o nome", async () => {
+    montar("gestor");
+    await abrir();
+    PUT.mockResolvedValue({
+      error: {
+        erro: "validacao",
+        mensagem: "Dados inválidos.",
+        campos: [{ campo: "nome", mensagem: "Use no máximo 120 caracteres." }],
+      },
+      response: { status: 400 },
+    });
+    const campo = await screen.findByLabelText("Nome");
+    fireEvent.change(campo, { target: { value: "Ana S." } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    const msg = await screen.findByText("Use no máximo 120 caracteres.");
+    expect(campo).toHaveAttribute("aria-describedby", msg.id);
+  });
+
+  it("pedido de correção: o mínimo vale só para o texto escrito, sem prefixo pré-preenchido", async () => {
+    montar("atleta");
+    await abrir();
+    fireEvent.click(await screen.findByRole("button", { name: /Pedir correção/ }));
+    const campo = screen.getByLabelText("O que precisa ser corrigido?") as HTMLTextAreaElement;
+    expect(campo.value).toBe("");
+    fireEvent.change(campo, { target: { value: "curto" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enviar pedido" }));
+    expect(await screen.findByText(/Descreva a correção com 10 a 2000/)).toBeInTheDocument();
+    expect(campo).toHaveAttribute("aria-invalid", "true");
+    expect(POST).not.toHaveBeenCalled();
+  });
+
+  it("troca de senha exigindo verificação em duas etapas oferece 'Verificar agora'", async () => {
+    montar("gestor");
+    await abrir();
+    updateUser.mockResolvedValue({ error: { code: "insufficient_aal", message: "AAL2 required" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Trocar senha" }));
+    fireEvent.change(screen.getByLabelText("Nova senha"), { target: { value: "senha-longa-1" } });
+    fireEvent.change(screen.getByLabelText("Confirmar nova senha"), {
+      target: { value: "senha-longa-1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar senha" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/app autenticador/);
+    expect(screen.getAllByRole("link", { name: "Verificar agora" }).length).toBeGreaterThan(0);
+  });
+
   it("Esc fecha e devolve o foco a quem abriu", async () => {
     montar("gestor");
     const botao = screen.getByRole("button", { name: /Ana Souza/ });
@@ -340,8 +420,12 @@ describe("Modal Meu perfil", () => {
 describe("lib/foto", () => {
   it("valida tipo e tamanho", () => {
     expect(validarFoto({ type: "image/webp", size: 10 })).toMatch(/JPG ou PNG/);
-    expect(validarFoto({ type: "image/png", size: 2 * 1024 * 1024 + 1 })).toMatch(/2 MB/);
+    // O limite de 15 MB vale para o original; os 2 MB, para o recorte enviado.
+    expect(validarFoto({ type: "image/png", size: 15 * 1024 * 1024 + 1 })).toMatch(/15 MB/);
+    expect(validarFoto({ type: "image/jpeg", size: 8 * 1024 * 1024 })).toBeNull();
     expect(validarFoto({ type: "image/jpeg", size: 100 })).toBeNull();
+    expect(validarRecorte("A".repeat(100))).toBeNull();
+    expect(validarRecorte("A".repeat(Math.ceil(((2 * 1024 * 1024 + 1) * 4) / 3)))).toMatch(/2 MB/);
   });
 
   it("recorte quadrado centralizado", () => {

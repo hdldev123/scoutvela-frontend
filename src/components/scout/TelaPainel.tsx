@@ -4,11 +4,12 @@ import { toast } from "sonner";
 import "@/styles/contas.css";
 import "@/styles/painel.css";
 import { BigScore } from "./BigScore";
+import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
 import { Interruptor } from "./Interruptor";
 import { NotaRevisao } from "./NotaRevisao";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
-import { fmtData, primeiroNome } from "./formato";
+import { fmtData, fmtInstante, primeiroNome } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useFicha } from "@/lib/api/consultas";
 import { invalidarNotificacoes, marcarPainelVisto } from "@/lib/api/notificacoes";
@@ -29,6 +30,7 @@ import {
   useCriarPedidoTitular,
   usePedidosTitular,
   useTermo,
+  useTermoProxima,
   type TipoPedidoTitular,
 } from "@/lib/api/titular";
 
@@ -197,7 +199,7 @@ function Consentimento({ c }: { c: ConsentimentoPainel }) {
         <h2 id="painel-consent">Seus dados e consentimento</h2>
         <span className="muted" style={{ fontSize: ".85rem" }}>
           {c.termoAceitoEm
-            ? `Termo do piloto 18+${c.termoVersao ? ` (versão ${c.termoVersao})` : ""} · aceito em ${fmtData(c.termoAceitoEm)}`
+            ? `Termo do piloto 18+${c.termoVersao ? ` (versão ${c.termoVersao})` : ""} · aceito em ${fmtInstante(c.termoAceitoEm)}`
             : "Termo do piloto 18+ ainda não aceito"}
           {c.termoAceitoEm && c.termoPendente
             ? ` · aceite da versão ${c.termoVigenteVersao} pendente`
@@ -218,7 +220,7 @@ function Consentimento({ c }: { c: ConsentimentoPainel }) {
           aoMudar={(v) => alterar.mutate(v)}
           rotulo="Compartilhar meu score com o IBVAR"
           {...(c.atualizadoEm
-            ? { descricao: `Última decisão em ${fmtData(c.atualizadoEm)}.` }
+            ? { descricao: `Última decisão em ${fmtInstante(c.atualizadoEm)}.` }
             : {})}
           desabilitado={alterar.isPending}
         />
@@ -292,6 +294,114 @@ function TermoAceite({ novaVersao }: { novaVersao?: string | undefined }) {
             </button>
           </div>
         </>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Aviso de que há uma nova versão do termo já publicada, com vigência futura. O atleta lê o
+ * texto e pode aceitar agora (aceite antecipado), sem esperar a vigência para não cair do ranking.
+ */
+function TermoProximo({ proxima }: { proxima: NonNullable<PainelAtleta["termoProxima"]> }) {
+  const [lendo, setLendo] = useState(false);
+  const texto = useTermoProxima({ enabled: lendo });
+  const aceitar = useAceitarTermo();
+  const aceitarAgora = () =>
+    aceitar.mutate(proxima.versao, {
+      onSuccess: () => {
+        setLendo(false);
+        toast("Nova versão do termo aceita");
+      },
+    });
+  const erro = aceitar.error
+    ? mensagemDeErro(aceitar.error, "Não foi possível registrar o aceite.")
+    : "";
+  return (
+    <section className="panel" aria-labelledby="painel-termo-proxima">
+      <div className="panel-head">
+        <h2 id="painel-termo-proxima">
+          Nova versão do termo ({proxima.versao}) passa a valer em{" "}
+          {fmtInstante(proxima.vigenteDesde)}
+        </h2>
+      </div>
+      <p className="muted" style={{ marginTop: 0 }}>
+        {proxima.titulo}. Leia e aceite agora para continuar no piloto sem interrupção quando ela
+        entrar em vigor.
+      </p>
+      {erro && !lendo && (
+        <p className="note" role="alert">
+          {erro}
+        </p>
+      )}
+      <div className="btn-row">
+        <button type="button" className="btn" onClick={() => setLendo(true)}>
+          Ler a nova versão
+        </button>
+        <button
+          type="button"
+          className="btn primary"
+          disabled={aceitar.isPending}
+          onClick={aceitarAgora}
+        >
+          {aceitar.isPending ? "Registrando…" : "Aceitar agora"}
+        </button>
+      </div>
+      {lendo && (
+        <Dialogo
+          titulo={`Termo, versão ${proxima.versao}`}
+          aoFechar={() => setLendo(false)}
+          bloqueado={aceitar.isPending}
+        >
+          {texto.isPending && (
+            <p role="status" className="muted">
+              Carregando termo…
+            </p>
+          )}
+          {texto.isError && (
+            <p className="note" role="alert">
+              {mensagemDeErro(texto.error, "Não foi possível carregar o termo.")}
+            </p>
+          )}
+          {texto.data === null && (
+            <p className="note" role="alert">
+              Esta versão do termo já não está mais como próxima. Recarregue o painel.
+            </p>
+          )}
+          {texto.data && (
+            <>
+              <p className="muted" style={{ marginTop: 0 }}>
+                Passa a valer em {fmtInstante(texto.data.vigenteDesde)}.
+              </p>
+              <div className="ped-termo" tabIndex={0} role="region" aria-label="Texto do termo">
+                {texto.data.texto}
+              </div>
+            </>
+          )}
+          {erro && (
+            <p className="note" role="alert">
+              {erro}
+            </p>
+          )}
+          <div className="btn-row">
+            <button
+              type="button"
+              className="btn primary"
+              disabled={!texto.data || aceitar.isPending}
+              onClick={aceitarAgora}
+            >
+              {aceitar.isPending ? "Registrando…" : "Aceitar agora"}
+            </button>
+            <button
+              type="button"
+              className="btn"
+              disabled={aceitar.isPending}
+              onClick={() => setLendo(false)}
+            >
+              Fechar
+            </button>
+          </div>
+        </Dialogo>
       )}
     </section>
   );
@@ -413,12 +523,12 @@ function PedidosTitular() {
           </span>
           <p>{p.descricao}</p>
           <span className="muted" style={{ fontSize: ".82rem" }}>
-            Pedido em {fmtData(p.criadoEm)}
+            Pedido em {fmtInstante(p.criadoEm)}
           </span>
           {p.resposta && (
             <p>
               <b>Resposta:</b> {p.resposta}
-              {p.respondidoEm ? ` (${fmtData(p.respondidoEm)})` : ""}
+              {p.respondidoEm ? ` (${fmtInstante(p.respondidoEm)})` : ""}
             </p>
           )}
         </div>
@@ -491,7 +601,7 @@ function Revisoes({ atletaId }: { atletaId: string }) {
           </span>
           <p>{r.motivo}</p>
           <span className="muted" style={{ fontSize: ".82rem" }}>
-            Pedido em {fmtData(r.criadoEm)}
+            Pedido em {fmtInstante(r.criadoEm)}
           </span>
           {typeof r.notaNova === "number" && (
             <p>
@@ -501,7 +611,7 @@ function Revisoes({ atletaId }: { atletaId: string }) {
           {r.resposta && (
             <p>
               <b>Resposta do gestor:</b> {r.resposta}
-              {r.respondidoEm ? ` (${fmtData(r.respondidoEm)})` : ""}
+              {r.respondidoEm ? ` (${fmtInstante(r.respondidoEm)})` : ""}
             </p>
           )}
         </div>
@@ -550,6 +660,7 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
             }
           />
         )}
+        {painel.termoProxima && <TermoProximo proxima={painel.termoProxima} />}
         {painel.pendencias.length > 0 ? (
           <div className="note" role="status">
             <b>Pendências:</b> faltam suas respostas em {painel.pendencias.join(", ")}.

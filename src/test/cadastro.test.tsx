@@ -58,7 +58,12 @@ beforeEach(() => {
   ];
   GET.mockImplementation(async (caminho: string) => {
     if (caminho === "/parametros") {
-      return ok({ classes: [{ id: "ilca7", nome: "ILCA 7" }] });
+      return ok({
+        classes: [
+          { id: "ilca7", nome: "ILCA 7", ativa: true },
+          { id: "velha", nome: "Classe desativada", ativa: false },
+        ],
+      });
     }
     if (caminho === "/termo") {
       return ok({
@@ -118,6 +123,7 @@ describe("TelaCadastro", () => {
     const enviar = screen.getByRole("button", { name: "Enviar termo de consentimento" });
     expect((enviar as HTMLButtonElement).disabled).toBe(true);
     await screen.findByRole("option", { name: "ILCA 7" });
+    expect(screen.queryByRole("option", { name: "Classe desativada" })).toBeNull();
     await screen.findByRole("option", { name: "Ana Ribeiro" });
     fireEvent.change(screen.getByLabelText("Classe e função projetadas"), {
       target: { value: "ilca7" },
@@ -277,6 +283,35 @@ describe("TelaCadastro", () => {
     expect(chaves).toContain(JSON.stringify(["ranking"]));
   });
 
+  it("com próxima versão publicada, o gestor pode registrar o aceite dela", async () => {
+    const base = GET.getMockImplementation()!;
+    GET.mockImplementation(async (caminho: string, ...r: unknown[]) =>
+      caminho === "/termo/proxima"
+        ? ok({
+            versao: "Piloto 18+ · v3",
+            titulo: "Termo v3",
+            texto: "novo",
+            vigenteDesde: "2026-12-01T02:30:00.000Z",
+          })
+        : base(caminho, ...r),
+    );
+    POST.mockResolvedValue(ok({ ok: true }));
+    montar();
+    fireEvent.click(await screen.findByRole("button", { name: "Registrar aceite recebido" }));
+    const dialogo = await screen.findByRole("dialog");
+    const proxima = await within(dialogo).findByRole("radio", {
+      name: /Próxima, a valer em 30\/11\/2026/,
+    });
+    fireEvent.click(proxima);
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Confirmar aceite" }));
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith("/atletas/{id}/termo", {
+        params: { path: { id: "a9" } },
+        body: { versao: "Piloto 18+ · v3" },
+      }),
+    );
+  });
+
   it("importa CSV e mostra linhas ok, com erro e a tabela de erros", async () => {
     POST.mockResolvedValue(
       ok(
@@ -314,6 +349,29 @@ describe("TelaCadastro", () => {
         conteudo: "velaid;nivel\nSC-T01;brasileiro",
       },
     });
+  });
+
+  it("importar invalida ranking, atleta, investimento e pendentes, e não duplica o envio", async () => {
+    POST.mockResolvedValue(ok({ id: 1, linhasOk: 1, linhasErro: 0, erros: [] }, 201));
+    const inv = montar();
+    const arquivo = new File(["codigo;nome\nSC-T01;Ana"], "velaid.csv", { type: "text/csv" });
+    fireEvent.change(screen.getByLabelText("Arquivo CSV"), { target: { files: [arquivo] } });
+    const botao = screen.getByRole("button", { name: "Importar" });
+    // Dois cliques seguidos, antes de a leitura do arquivo terminar.
+    fireEvent.click(botao);
+    fireEvent.click(botao);
+    expect(await screen.findByText("1 linhas ok")).toBeTruthy();
+    expect(POST).toHaveBeenCalledTimes(1);
+    const chaves = inv.mock.calls.map((c) => JSON.stringify(c[0]?.queryKey));
+    expect(chaves).toEqual(
+      expect.arrayContaining([
+        '["ranking"]',
+        '["atleta"]',
+        '["atletas"]',
+        '["investimento"]',
+        '["notificacoes"]',
+      ]),
+    );
   });
 
   it("sem termos pendentes mostra o estado vazio", async () => {

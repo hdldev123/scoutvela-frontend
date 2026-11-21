@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const GET = vi.fn();
@@ -512,5 +512,123 @@ describe("TelaParametros", () => {
     });
     renderizar();
     expect(await screen.findByText("Sem permissão.")).toBeInTheDocument();
+  });
+});
+
+describe("TelaParametros: ressincronização e erros do servidor", () => {
+  beforeEach(() => {
+    GET.mockReset();
+    PUT.mockReset();
+    window.location.hash = "";
+    toastFn.success.mockReset();
+  });
+
+  it("adicionar rubrica de um pilar e salvar mostra os valores salvos, sem erro", async () => {
+    let atual: Parametros = {
+      ...params,
+      rubricas: [{ pilarId: null, nota: 0, descricao: "Sem evidência" }],
+    };
+    GET.mockImplementation(async (c: string) => ({
+      data: c === "/termos" ? [] : atual,
+      response: { status: 200 },
+    }));
+    PUT.mockImplementation(
+      async (_c: string, { body }: { body: { rubricas: Parametros["rubricas"] } }) => {
+        atual = { ...atual, rubricas: [...atual.rubricas, ...body.rubricas] };
+        return { data: atual, response: { status: 200 } };
+      },
+    );
+    renderizar();
+    fireEvent.click(await screen.findByRole("tab", { name: "Rubricas" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar rubrica para um pilar" }));
+    fireEvent.change(screen.getByLabelText("Pilar"), { target: { value: "cf" } });
+    for (let n = 0; n <= 5; n++) {
+      fireEvent.change(screen.getByLabelText(`Nova rubrica, descrição da nota ${n}`), {
+        target: { value: `Nível ${n} de Class Fit` },
+      });
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rubricas" }));
+    await waitFor(() => expect(PUT).toHaveBeenCalledTimes(1));
+    const campo = (await screen.findByLabelText(
+      "Descrição da nota 5, class fit",
+    )) as HTMLTextAreaElement;
+    expect(campo.value).toBe("Nível 5 de Class Fit");
+    expect(screen.queryByText(/Cada descrição editada precisa/)).toBeNull();
+    expect(screen.queryByRole("group", { name: "Nova rubrica de pilar" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Salvar rubricas" })).toBeDisabled();
+    await waitFor(() => expect(toastFn.success).toHaveBeenCalled());
+  });
+
+  it("quando outro gestor muda as faixas, o formulário mostra os valores novos", async () => {
+    GET.mockImplementation(async () => ({ data: params, response: { status: 200 } }));
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <TelaParametros />
+      </QueryClientProvider>,
+    );
+    const alto = (await screen.findByLabelText(
+      "Score mínimo de Alto potencial",
+    )) as HTMLInputElement;
+    expect(alto.value).toBe("75");
+    await act(async () => {
+      qc.setQueryData(["parametros"], {
+        ...params,
+        faixas: params.faixas.map((f) => (f.id === "f2" ? { ...f, scoreMin: 78 } : f)),
+      });
+    });
+    await waitFor(() =>
+      expect(
+        (screen.getByLabelText("Score mínimo de Alto potencial") as HTMLInputElement).value,
+      ).toBe("78"),
+    );
+  });
+
+  it("mostra sob o campo o erro por campo do 400 (faixas.1.scoreMin)", async () => {
+    PUT.mockResolvedValue({
+      error: {
+        erro: "validacao",
+        mensagem: "Dados inválidos.",
+        campos: [{ campo: "faixas.1.scoreMin", mensagem: "O valor máximo é 84." }],
+      },
+      response: { status: 400 },
+    });
+    montar();
+    const alto = await screen.findByLabelText("Score mínimo de Alto potencial");
+    fireEvent.change(alto, { target: { value: "80" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas" }));
+    const msg = await screen.findByText("O valor máximo é 84.");
+    expect(alto).toHaveAttribute("aria-invalid", "true");
+    expect(alto).toHaveAttribute("aria-describedby", msg.id);
+  });
+
+  it("mostra sob o peso e sob a classe os erros por campo do 400", async () => {
+    PUT.mockResolvedValue({
+      error: {
+        erro: "validacao",
+        mensagem: "Dados inválidos.",
+        campos: [
+          { campo: "pesos.perf", mensagem: "O valor máximo é 40." },
+          { campo: "classes.0.pesoMaxKg", mensagem: "O valor máximo é 200." },
+        ],
+      },
+      response: { status: 400 },
+    });
+    montar();
+    const perf = await screen.findByLabelText("Performance");
+    fireEvent.change(perf, { target: { value: "50" } });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Class Fit" }), {
+      target: { value: "50" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar pesos" }));
+    const msg = await screen.findByText("O valor máximo é 40.");
+    expect(perf).toHaveAttribute("aria-describedby", msg.id);
+    fireEvent.click(await screen.findByRole("tab", { name: "Class Fit" }));
+    const max = screen.getByLabelText("Máximo de ILCA 7, Individual (kg)");
+    fireEvent.change(max, { target: { value: "88,4" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
+    const msgClasse = await screen.findByText("O valor máximo é 200.");
+    expect(max).toHaveAttribute("aria-invalid", "true");
+    expect(max).toHaveAttribute("aria-describedby", msgClasse.id);
   });
 });

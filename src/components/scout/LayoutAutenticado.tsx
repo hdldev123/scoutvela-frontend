@@ -48,7 +48,7 @@ export function LayoutAutenticado() {
   return (
     <Shell me={me} onSair={sair}>
       <Outlet />
-      <Toaster position="bottom-center" />
+      <Toaster position="bottom-center" containerAriaLabel="Notificações" />
     </Shell>
   );
 }

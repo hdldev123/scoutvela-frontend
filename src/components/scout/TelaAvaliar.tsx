@@ -1,8 +1,12 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useBlocker, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Avatar } from "./Avatar";
 import { CampoArquivo } from "./CampoArquivo";
+import { Dialogo } from "./Dialogo";
+import { atributosDoCampo } from "./campo-util";
+import { MensagemCampo } from "./MensagemCampo";
 import { FaixaPill } from "./FaixaPill";
 import { textoDoStatus } from "./status-gate";
 import { fmt0, fmt1, fmtData } from "./formato";
@@ -15,16 +19,28 @@ import {
   type CorpoAvaliacao,
   type Parametros,
 } from "@/lib/api/avaliacao";
-import { mensagemDeErro } from "@/lib/api/cliente";
+import { errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
 import { invalidarNotificacoes } from "@/lib/api/notificacoes";
-import { ACEITA_ARQUIVO, enviarEvidencia, validarArquivo } from "@/lib/api/evidencias";
+import {
+  ACEITA_ARQUIVO,
+  enviarEvidencia,
+  removerEvidenciaOrfa,
+  validarArquivo,
+} from "@/lib/api/evidencias";
+import {
+  mensagemAltura,
+  mensagemEvidenciaMedida,
+  mensagemEvidenciaNota,
+  mensagemPeso,
+} from "@/lib/validacao";
 import { useFicha, useRanking, type FichaAtleta } from "@/lib/api/consultas";
 
 type Pilar = FichaAtleta["pilares"][number];
 type Indicador = NonNullable<Pilar["indicadores"]>[number];
 
-const EVID_MIN = 3;
 const EVID_MAX = 500;
+const MSG_PESO_VAZIO = "Informe o peso em kg, de 30 a 160.";
+const MSG_ALTURA_VAZIA = "Informe a altura em centímetros, de 120 a 230.";
 const ATRASO_PREVIA_MS = 400;
 
 /** Ponte entre os anexos (que sobem sozinhos) e o rascunho do Editor. */
@@ -44,7 +60,6 @@ interface Rascunho {
 
 const indicadoresDe = (p: Pilar): Indicador[] => p.indicadores ?? [];
 const pontuavel = (i: Indicador) => i.tipo !== "R" && !i.calculado;
-const evidenciaValida = (t: string) => t.trim().length >= EVID_MIN && t.trim().length <= EVID_MAX;
 
 /** undefined = campo intocado; null = valor inválido; número = válido. */
 function numero(texto: string | undefined): number | null | undefined {
@@ -200,13 +215,20 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
   const versaoRasc = useRef(0);
   const celular = useMedia("(max-width: 1180px)");
   const abaAtiva = useRef<HTMLButtonElement>(null);
+  const router = useRouter({ warn: false });
+  // Leituras de handlers e do desmonte: sempre o rascunho mais recente.
+  const rascRef = useRef(rasc);
+  rascRef.current = rasc;
+  const montado = useRef(true);
+  const gravado = useRef(false);
 
   const pilar = ficha.pilares.find((p) => p.id === pilarId) ?? ficha.pilares[0];
   const meta = params.pilares.find((p) => p.id === pilar?.id);
 
   // O que mudou: só isso vai para a API.
   const notas: NonNullable<CorpoAvaliacao["notas"]> = [];
-  const invalidos = new Set<string>();
+  // Erros de validação locais por campo: id do indicador, "peso", "altura" ou "evMedida".
+  const erros: Record<string, string> = {};
   const alterados = new Set<string>();
   for (const p of ficha.pilares) {
     for (const ind of indicadoresDe(p).filter(pontuavel)) {
@@ -217,7 +239,8 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
         continue;
       }
       alterados.add(p.id);
-      if (!evidenciaValida(evidencia)) invalidos.add(ind.id);
+      const falha = mensagemEvidenciaNota(evidencia);
+      if (falha) erros[ind.id] = falha;
       else notas.push({ indicadorId: ind.id, valor: r.valor, evidencia });
     }
   }
@@ -227,16 +250,22 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
   const alturaMudou = alturaN !== undefined && alturaN !== (ficha.classFit?.alturaCm ?? null);
   const medida: NonNullable<CorpoAvaliacao["medida"]> = {};
   if (pesoMudou) {
-    if (pesoN == null) invalidos.add("peso");
+    const falha = (peso ?? "").trim() === "" ? MSG_PESO_VAZIO : mensagemPeso(peso ?? "");
+    if (falha || pesoN == null) erros["peso"] = falha ?? MSG_PESO_VAZIO;
     else medida.pesoKg = pesoN;
   }
   if (alturaMudou) {
-    if (alturaN == null) invalidos.add("altura");
+    const falha = (altura ?? "").trim() === "" ? MSG_ALTURA_VAZIA : mensagemAltura(altura ?? "");
+    if (falha || alturaN == null) erros["altura"] = falha ?? MSG_ALTURA_VAZIA;
     else medida.alturaCm = alturaN;
   }
   const temMedida = medida.pesoKg !== undefined || medida.alturaCm !== undefined;
-  if (temMedida && evMedida.trim()) medida.evidencia = evMedida.trim();
-  if (pesoMudou || alturaMudou) alterados.add("cf");
+  if (pesoMudou || alturaMudou) {
+    const falha = mensagemEvidenciaMedida(evMedida);
+    if (falha) erros["evMedida"] = falha;
+    else if (temMedida && evMedida.trim()) medida.evidencia = evMedida.trim();
+    alterados.add("cf");
+  }
 
   const corpo: CorpoAvaliacao = { notas, ...(temMedida ? { medida } : {}) };
   // O anexo só vai na gravação; a prévia não precisa dele.
@@ -247,8 +276,9 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
       return anexoId ? { ...n, anexoId } : n;
     }),
   };
-  const mudou = notas.length > 0 || temMedida || invalidos.size > 0;
-  const pronto = invalidos.size === 0 && (notas.length > 0 || temMedida);
+  const nErros = Object.keys(erros).length;
+  const mudou = notas.length > 0 || temMedida || nErros > 0;
+  const pronto = nErros === 0 && (notas.length > 0 || temMedida);
   const chave = JSON.stringify(corpo);
   const chaveAtrasada = useAtrasado(chave, ATRASO_PREVIA_MS);
 
@@ -263,17 +293,47 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
   const salvar = useMutation({
     mutationFn: () => lancarAvaliacao(id, corpoEnvio),
     onSuccess: (r) => {
+      // Os anexos agora estão vinculados às notas: não são mais órfãos.
+      gravado.current = true;
       toast.success(`Avaliação lançada. Novo score: ${fmt1(r.depois.score)}.`);
       void qc.invalidateQueries({ queryKey: ["atleta", id] });
       void qc.invalidateQueries({ queryKey: ["ranking"] });
       void qc.invalidateQueries({ queryKey: ["investimento"] });
       void invalidarNotificacoes(qc);
       void qc.invalidateQueries({ queryKey: ["evidencias", id] });
-      limpar();
+      limpar(false);
     },
   });
 
-  function limpar() {
+  // Erros do 400 da API, por campo; "notas.N.evidencia" aponta para o N-ésimo item enviado.
+  const doServidor: Record<string, string> = {};
+  if (salvar.isError) {
+    for (const [campo, mensagem] of Object.entries(errosPorCampo(salvar.error))) {
+      const partes = campo.split(".");
+      let chaveCampo: string | undefined;
+      if (partes[0] === "notas" && partes[1] !== undefined) {
+        chaveCampo = notas[Number(partes[1])]?.indicadorId;
+      } else if (partes[0] === "medida") {
+        chaveCampo = { pesoKg: "peso", alturaCm: "altura", evidencia: "evMedida" }[partes[1] ?? ""];
+      }
+      if (chaveCampo && !(chaveCampo in doServidor)) doServidor[chaveCampo] = mensagem;
+    }
+  }
+  const errosCampo: Record<string, string> = { ...doServidor, ...erros };
+  const primeiroErro = Object.values(errosCampo)[0];
+
+  /** Qualquer edição tira o erro vindo do servidor: ele se refere ao envio anterior. */
+  const aoEditar = () => {
+    if (salvar.isError) salvar.reset();
+  };
+
+  /** Apaga anexos enviados que não vão para nenhuma nota (em segundo plano, sem aviso). */
+  const soltarAnexos = (ids: Array<string | undefined>) => {
+    for (const a of ids) if (a) void removerEvidenciaOrfa(a);
+  };
+
+  function limpar(soltar = true) {
+    if (soltar) soltarAnexos(Object.values(rascRef.current).map((r) => r.anexoId));
     versaoRasc.current += 1;
     setRasc({});
     setPeso(undefined);
@@ -287,8 +347,32 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
   useEffect(() => {
     abaAtiva.current?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
   }, [pilarId]);
-  const mudarRasc = (indId: string, parte: Partial<Rascunho>) =>
-    setRasc((r) => ({ ...r, [indId]: { evidencia: "", ...r[indId], ...parte } }));
+  // Sair do editor (trocar de atleta, navegar, descartar na confirmação) com anexo não salvo.
+  useEffect(() => {
+    montado.current = true;
+    return () => {
+      montado.current = false;
+      if (!gravado.current) {
+        for (const r of Object.values(rascRef.current)) {
+          if (r.anexoId) void removerEvidenciaOrfa(r.anexoId);
+        }
+      }
+    };
+  }, []);
+  const mudarRasc = (indId: string, parte: Partial<Rascunho>) => {
+    aoEditar();
+    const atual = rascRef.current[indId];
+    let proximo = parte;
+    // Voltar a nota ao valor original tira a nota do envio: o anexo ficaria sem destino.
+    if (parte.valor !== undefined && parte.valor === notaAtual(indId) && atual?.anexoId) {
+      proximo = { ...parte, anexoId: undefined, anexoNome: undefined };
+    }
+    // Remover ou trocar o anexo: o antigo vira órfão.
+    if (atual?.anexoId && "anexoId" in proximo && proximo.anexoId !== atual.anexoId) {
+      soltarAnexos([atual.anexoId]);
+    }
+    setRasc((r) => ({ ...r, [indId]: { evidencia: "", ...r[indId], ...proximo } }));
+  };
   const notaAtual = (indId: string) =>
     ficha.pilares.flatMap(indicadoresDe).find((i) => i.id === indId)?.nota ?? undefined;
   const envioDe = (indId: string): Envio => ({
@@ -297,13 +381,24 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
       return versaoRasc.current;
     },
     concluir: (versao, anexo) => {
-      setEnviando((n) => Math.max(0, n - 1));
-      if (!anexo || versao !== versaoRasc.current) return;
-      // Só anexa a um rascunho que ainda existe: sem nota alterada, o anexo seria órfão.
+      if (montado.current) setEnviando((n) => Math.max(0, n - 1));
+      if (!anexo) return;
+      const atual = rascRef.current[indId];
+      // Só anexa a um rascunho que ainda existe: sem nota alterada (ou com o editor já
+      // descartado ou fechado), o anexo recém-enviado seria órfão.
+      const serve =
+        montado.current &&
+        versao === versaoRasc.current &&
+        !!atual &&
+        atual.valor !== undefined &&
+        atual.valor !== notaAtual(indId);
+      if (!serve) return soltarAnexos([anexo.id]);
+      // Trocar o anexo: o anterior vira órfão.
+      if (atual.anexoId && atual.anexoId !== anexo.id) soltarAnexos([atual.anexoId]);
       setRasc((r) => {
-        const atual = r[indId];
-        if (!atual || atual.valor === undefined || atual.valor === notaAtual(indId)) return r;
-        return { ...r, [indId]: { ...atual, anexoId: anexo.id, anexoNome: anexo.nome } };
+        const a = r[indId];
+        if (!a) return r;
+        return { ...r, [indId]: { ...a, anexoId: anexo.id, anexoNome: anexo.nome } };
       });
     },
   });
@@ -316,6 +411,9 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
     .sort((a, b) => a.nota - b.nota);
   const dep = previa.data?.depois;
   const ant = previa.data?.antes;
+  // Do clique até a resposta: atraso do debounce, requisição e dado velho mantido na tela.
+  const recalculando =
+    pronto && (chave !== chaveAtrasada || previa.isFetching || previa.isPlaceholderData);
   const acoes = (
     <>
       <button
@@ -359,6 +457,7 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
           </button>
         ))}
       </div>
+      {router && <BloqueioRascunho ativo={mudou || enviando > 0} />}
       <div className="grid-2">
         <section className="panel">
           <div className="panel-head">
@@ -384,7 +483,7 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
                 escala={escala}
                 evidenciaPadrao={meta?.evidenciaPadrao ?? ""}
                 rascunho={rasc[ind.id]}
-                invalido={invalidos.has(ind.id)}
+                erro={errosCampo[ind.id]}
                 atletaId={id}
                 envio={envioDe(ind.id)}
                 aoMudar={(parte) => mudarRasc(ind.id, parte)}
@@ -396,8 +495,9 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
                   setPeso,
                   setAltura,
                   setEvidencia: setEvMedida,
-                  pesoInvalido: invalidos.has("peso"),
-                  alturaInvalida: invalidos.has("altura"),
+                  erroPeso: errosCampo["peso"],
+                  erroAltura: errosCampo["altura"],
+                  erroEvidencia: errosCampo["evMedida"],
                 }}
               />
             ))}
@@ -409,20 +509,21 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
           )}
           {!celular && <div className="avaliar-rodape">{acoes}</div>}
         </section>
-        <aside className="panel preview avaliar-previa">
+        <aside
+          className={`panel preview avaliar-previa${recalculando && dep ? " avaliar-previa-recalc" : ""}`}
+          aria-busy={recalculando}
+        >
           <div className="eyebrow">Prévia do cálculo</div>
           <h3 style={{ marginTop: 8 }}>{ficha.atleta.nome}</h3>
           <div aria-live="polite" aria-atomic="true">
-            {invalidos.size > 0 && (
+            {nErros > 0 && (
               <p className="muted">
-                Informe a evidência (de {EVID_MIN} a {EVID_MAX} caracteres) e valores válidos para
-                ver a prévia.
+                Corrija os campos indicados (evidência, peso e altura) para ver a prévia.
               </p>
             )}
             {!mudou && <p className="muted">Escolha uma nota para ver o efeito no score.</p>}
-            {pronto && previa.isFetching && !previa.data && (
-              <p className="muted">Calculando prévia…</p>
-            )}
+            {pronto && recalculando && !dep && <p className="muted">Calculando prévia…</p>}
+            {pronto && recalculando && dep && <p className="muted">Recalculando…</p>}
             {pronto && previa.isError && (
               <div className="note" role="alert">
                 {mensagemDeErro(previa.error)}
@@ -479,8 +580,8 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
                   {fmt1(ant.score)} → {fmt1(dep.score)}
                 </b>
               </>
-            ) : invalidos.size > 0 ? (
-              "Falta evidência"
+            ) : primeiroErro !== undefined ? (
+              primeiroErro
             ) : (
               "Calculando…"
             )}
@@ -500,8 +601,9 @@ interface CamposMedida {
   setPeso: (v: string) => void;
   setAltura: (v: string) => void;
   setEvidencia: (v: string) => void;
-  pesoInvalido: boolean;
-  alturaInvalida: boolean;
+  erroPeso: string | undefined;
+  erroAltura: string | undefined;
+  erroEvidencia: string | undefined;
 }
 
 interface LinhaProps {
@@ -509,7 +611,7 @@ interface LinhaProps {
   escala: Parametros["rubricas"];
   evidenciaPadrao: string;
   rascunho: Rascunho | undefined;
-  invalido: boolean;
+  erro: string | undefined;
   atletaId: string;
   envio: Envio;
   aoMudar: (p: Partial<Rascunho>) => void;
@@ -521,7 +623,7 @@ function LinhaIndicador({
   escala,
   evidenciaPadrao,
   rascunho,
-  invalido,
+  erro,
   atletaId,
   envio,
   aoMudar,
@@ -555,43 +657,52 @@ function LinhaIndicador({
           </small>
         </div>
         <div className="avaliar-peso">
-          <label className="field" htmlFor="av-peso">
-            Peso (kg)
-            <input
-              id="av-peso"
-              type="number"
-              inputMode="decimal"
-              step="0.1"
-              min="0"
-              value={pesoTxt}
-              aria-invalid={medida.pesoInvalido}
-              onChange={(e) => medida.setPeso(e.target.value)}
-            />
-          </label>
-          <label className="field" htmlFor="av-altura">
-            Altura (cm)
-            <input
-              id="av-altura"
-              type="number"
-              inputMode="decimal"
-              step="1"
-              min="0"
-              value={altTxt}
-              aria-invalid={medida.alturaInvalida}
-              onChange={(e) => medida.setAltura(e.target.value)}
-            />
-          </label>
+          <div className="avaliar-campo-med">
+            <label className="field" htmlFor="av-peso">
+              Peso (kg)
+              <input
+                id="av-peso"
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                min="0"
+                value={pesoTxt}
+                {...atributosDoCampo("av-peso-erro", medida.erroPeso)}
+                onChange={(e) => medida.setPeso(e.target.value)}
+              />
+            </label>
+            <MensagemCampo id="av-peso-erro" texto={medida.erroPeso} />
+          </div>
+          <div className="avaliar-campo-med">
+            <label className="field" htmlFor="av-altura">
+              Altura (cm)
+              <input
+                id="av-altura"
+                type="number"
+                inputMode="decimal"
+                step="any"
+                min="0"
+                value={altTxt}
+                {...atributosDoCampo("av-altura-erro", medida.erroAltura)}
+                onChange={(e) => medida.setAltura(e.target.value)}
+              />
+            </label>
+            <MensagemCampo id="av-altura-erro" texto={medida.erroAltura} />
+          </div>
         </div>
-        <label className="field ev" htmlFor="av-ev-medida">
-          Evidência da medida (opcional)
-          <input
-            id="av-ev-medida"
-            maxLength={EVID_MAX}
-            placeholder="Ex.: pesagem oficial da regata"
-            value={medida.evidencia}
-            onChange={(e) => medida.setEvidencia(e.target.value)}
-          />
-        </label>
+        <div className="avaliar-campo-med ev">
+          <label className="field ev" htmlFor="av-ev-medida">
+            Evidência da medida (opcional)
+            <input
+              id="av-ev-medida"
+              placeholder="Ex.: pesagem oficial da regata"
+              value={medida.evidencia}
+              {...atributosDoCampo("av-ev-medida-erro", medida.erroEvidencia)}
+              onChange={(e) => medida.setEvidencia(e.target.value)}
+            />
+          </label>
+          <MensagemCampo id="av-ev-medida-erro" texto={medida.erroEvidencia} />
+        </div>
       </div>
     );
   }
@@ -602,7 +713,7 @@ function LinhaIndicador({
       escala={escala}
       evidenciaPadrao={evidenciaPadrao}
       rascunho={rascunho}
-      invalido={invalido}
+      erro={erro}
       atletaId={atletaId}
       envio={envio}
       aoMudar={aoMudar}
@@ -617,7 +728,7 @@ function LinhaNota({
   escala,
   evidenciaPadrao,
   rascunho,
-  invalido,
+  erro,
   atletaId,
   envio,
   aoMudar,
@@ -716,8 +827,7 @@ function LinhaNota({
               maxLength={EVID_MAX}
               placeholder={evidenciaPadrao ? `Ex.: ${evidenciaPadrao}` : ""}
               value={rascunho?.evidencia ?? ""}
-              aria-invalid={invalido}
-              aria-describedby={invalido ? `ev-erro-${ind.id}` : undefined}
+              {...atributosDoCampo(`ev-erro-${ind.id}`, erro)}
               onChange={(e) => aoMudar({ evidencia: e.target.value })}
             />
           </label>
@@ -733,11 +843,7 @@ function LinhaNota({
               Usar «{evidenciaPadrao}»
             </button>
           )}
-          {invalido && (
-            <span id={`ev-erro-${ind.id}`} className="avaliar-erro-campo">
-              Informe a evidência, de {EVID_MIN} a {EVID_MAX} caracteres.
-            </span>
-          )}
+          <MensagemCampo id={`ev-erro-${ind.id}`} texto={erro} />
           <AnexoDaNota
             atletaId={atletaId}
             indicador={ind}
@@ -798,6 +904,7 @@ function AnexoDaNota({
         rotulo={`Anexar evidência de ${indicador.nome}`}
         accept={ACEITA_ARQUIVO}
         textoBotao="Anexar evidência"
+        contexto={indicador.nome}
         dica="PDF, JPG ou PNG, até 5 MB"
         arquivo={arquivo}
         desabilitado={enviar.isPending}
@@ -811,5 +918,36 @@ function AnexoDaNota({
         </span>
       )}
     </div>
+  );
+}
+
+/**
+ * Confirma antes de sair da avaliação com alterações: trocar de atleta, menu, busca ou voltar.
+ * Fechar a aba também avisa (`beforeunload`). Só entra quando há um roteador (a rota).
+ */
+function BloqueioRascunho({ ativo }: { ativo: boolean }) {
+  const ativoRef = useRef(ativo);
+  ativoRef.current = ativo;
+  const bloqueio = useBlocker({
+    shouldBlockFn: () => ativoRef.current,
+    enableBeforeUnload: () => ativoRef.current,
+    withResolver: true,
+  });
+  if (bloqueio.status !== "blocked") return null;
+  return (
+    <Dialogo titulo="Descartar a avaliação em andamento?" aoFechar={bloqueio.reset}>
+      <p>
+        As notas, evidências e anexos que você ainda não salvou serão descartados. Essa ação não
+        pode ser desfeita.
+      </p>
+      <div className="avaliar-rodape">
+        <button type="button" className="btn primary" onClick={bloqueio.reset}>
+          Continuar editando
+        </button>
+        <button type="button" className="btn ghost" onClick={bloqueio.proceed}>
+          Descartar e sair
+        </button>
+      </div>
+    </Dialogo>
   );
 }

@@ -18,9 +18,12 @@ export function Interruptor({ id, ligado, aoMudar, rotulo, descricao, desabilita
         aria-checked={ligado}
         aria-label={rotulo}
         aria-describedby={descricao ? `${id}-desc` : undefined}
-        disabled={desabilitado}
+        aria-disabled={desabilitado ? true : undefined}
         className="interruptor-botao"
-        onClick={() => aoMudar(!ligado)}
+        onClick={() => {
+          // aria-disabled (e não disabled) mantém o foco no botão durante a gravação.
+          if (!desabilitado) aoMudar(!ligado);
+        }}
       >
         <span className="interruptor-bolinha" aria-hidden="true" />
       </button>

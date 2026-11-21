@@ -14,7 +14,7 @@ import { ResultadoDialog } from "./ResultadoDialog";
 import { SemAcesso } from "./SemAcesso";
 import { SparkScore } from "./SparkScore";
 import { StatusPill } from "./StatusPill";
-import { fmt0, fmt1, fmtData, rotuloCiclo } from "./formato";
+import { fmt0, fmt1, fmtData, fmtInstante, rotuloCiclo } from "./formato";
 import { rotuloNivelHistorico } from "./niveis";
 import { textoDoStatus } from "./status-gate";
 import { seloApoio, seloAutonomia } from "./financeiro-util";
@@ -84,7 +84,7 @@ function HistoricoDialog({
               <div className="ficha-historico-topo">
                 <span className="nota">{l.valor}</span>
                 <span>
-                  {fmtData(l.lancadoEm)}
+                  {fmtInstante(l.lancadoEm)}
                   {l.cicloNome ? ` · ${l.cicloNome}` : ""}
                   {l.pesoKg != null ? ` · ${fmt1(l.pesoKg)} kg` : ""}
                 </span>
@@ -152,7 +152,7 @@ function LinhaIndicador({ ind, atletaId }: { ind: Indicador; atletaId: string })
         ? `Resposta do atleta · nota de ${ind.avaliador?.nome ?? "avaliador"}`
         : ind.avaliador?.nome;
     origem =
-      [ind.evidencia, quem, ind.lancadoEm ? fmtData(ind.lancadoEm) : null]
+      [ind.evidencia, quem, ind.lancadoEm ? fmtInstante(ind.lancadoEm) : null]
         .filter(Boolean)
         .join(" · ") + resp;
   }
@@ -324,7 +324,13 @@ function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
         )}
       </dl>
       {completo ? (
-        <div className="table-scroll" tabIndex={0} style={{ marginTop: 12 }}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de componentes do financeiro da campanha, role para ver todas as colunas"
+          style={{ marginTop: 12 }}
+        >
           <table className="data tabela-fin">
             <thead>
               <tr>
@@ -521,7 +527,10 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
         </p>
       )}
       <div className="ficha-grid">
-        <div className="ficha-col">
+        {/* Duas colunas reais no DOM: a esquerda inteira, depois a direita. No celular, essa
+            sequência é a ordem de leitura e de foco (pilares, gates, histórico, Class Fit,
+            financeiro, plano, evidências); no desktop, as colunas ficam lado a lado. */}
+        <div className="ficha-col ficha-col-a">
           <section className="panel ordem-pilares">
             <div className="panel-head">
               <h2>Os 9 pilares</h2>
@@ -551,6 +560,27 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               />
             ))}
           </section>
+          <section className="panel ordem-gates">
+            <div className="panel-head">
+              <h2>Gates aos 18</h2>
+              <StatusPill status={gates.statusFinal} ponto />
+            </div>
+            {gates.itens.map((g) => (
+              <LinhaGate
+                key={g.gate}
+                gate={g}
+                editavel={papel === "gestor"}
+                ocupado={alterarGate.isPending}
+                aoAlterar={(status) => alterarGate.mutate({ gate: g.gate, status })}
+              />
+            ))}
+            <p className="panel-dica">
+              Sugestão automática por regra provisória (P7).{" "}
+              {papel === "gestor"
+                ? "O gestor confirma ou ajusta cada gate."
+                : "Quem decide é o gestor."}
+            </p>
+          </section>
           <section className="panel ordem-historico">
             <div className="panel-head">
               <h2>Histórico competitivo</h2>
@@ -563,7 +593,12 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
             <p className="pts-total">
               <b>{fmt0(ficha.pontosCbvela)}</b> pts no Ranking CBVela
             </p>
-            <div className="table-scroll" tabIndex={0}>
+            <div
+              className="table-scroll"
+              tabIndex={0}
+              role="region"
+              aria-label="Tabela de histórico competitivo, role para ver todas as colunas"
+            >
               <table className="data tabela-hist">
                 <thead>
                   <tr>
@@ -619,37 +654,8 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               lançados com o link do resultado oficial.
             </p>
           </section>
-          {papel !== "ibvar" && (
-            <EvidenciasSecao
-              atletaId={atleta.id}
-              papel={papel}
-              indicadores={indicadoresEvidencia}
-              className="ordem-evidencias"
-            />
-          )}
         </div>
-        <div className="ficha-col">
-          <section className="panel ordem-gates">
-            <div className="panel-head">
-              <h2>Gates aos 18</h2>
-              <StatusPill status={gates.statusFinal} ponto />
-            </div>
-            {gates.itens.map((g) => (
-              <LinhaGate
-                key={g.gate}
-                gate={g}
-                editavel={papel === "gestor"}
-                ocupado={alterarGate.isPending}
-                aoAlterar={(status) => alterarGate.mutate({ gate: g.gate, status })}
-              />
-            ))}
-            <p className="panel-dica">
-              Sugestão automática por regra provisória (P7).{" "}
-              {papel === "gestor"
-                ? "O gestor confirma ou ajusta cada gate."
-                : "Quem decide é o gestor."}
-            </p>
-          </section>
+        <div className="ficha-col ficha-col-b">
           <section className="panel ordem-classfit">
             <div className="panel-head">
               <h2>Class Fit</h2>
@@ -701,6 +707,14 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
             <BlocoFinanceiro fin={ficha.financeiro} />
           </section>
           <PlanoIndividual ficha={ficha} papel={papel} className="ordem-plano" />
+          {papel !== "ibvar" && (
+            <EvidenciasSecao
+              atletaId={atleta.id}
+              papel={papel}
+              indicadores={indicadoresEvidencia}
+              className="ordem-evidencias"
+            />
+          )}
         </div>
       </div>
       {lancandoResultado && (

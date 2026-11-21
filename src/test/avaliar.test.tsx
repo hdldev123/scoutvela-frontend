@@ -1,9 +1,20 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  createBrowserHistory,
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+  useNavigate,
+} from "@tanstack/react-router";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const GET = vi.fn();
 const POST = vi.fn();
+const DELETE = vi.fn();
 const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }));
 
 vi.mock("@/lib/api/cliente", async (importar) => ({
@@ -11,6 +22,7 @@ vi.mock("@/lib/api/cliente", async (importar) => ({
   api: {
     GET: (...a: unknown[]) => GET(...a),
     POST: (...a: unknown[]) => POST(...a),
+    DELETE: (...a: unknown[]) => DELETE(...a),
   },
 }));
 vi.mock("sonner", () => ({ toast: toastFn }));
@@ -198,6 +210,7 @@ const nota = (indicador: string, n: number) =>
 beforeEach(() => {
   vi.clearAllMocks();
   preparar();
+  DELETE.mockResolvedValue({ response: { status: 204 } });
 });
 
 describe("TelaAvaliar", () => {
@@ -584,5 +597,277 @@ describe("TelaAvaliar", () => {
         ).toBe(false),
       );
     });
+  });
+});
+
+describe("TelaAvaliar: erros por campo", () => {
+  async function abrirCf() {
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    fireEvent.click(screen.getByRole("button", { name: /Class Fit/ }));
+    return screen.findByLabelText("Peso (kg)");
+  }
+
+  it("altura em metros explica que é em centímetros, com aria-invalid e aria-describedby", async () => {
+    await abrirCf();
+    const altura = screen.getByLabelText("Altura (cm)");
+    fireEvent.change(altura, { target: { value: "1.82" } });
+    const msg = await screen.findByText(/A altura é em centímetros, não em metros/);
+    expect(altura.getAttribute("aria-invalid")).toBe("true");
+    expect(altura.getAttribute("aria-describedby")).toBe(msg.id);
+    expect(POST).not.toHaveBeenCalled();
+  });
+
+  it("peso fora de 30 a 160 kg e evidência da medida curta mostram mensagem sob o campo", async () => {
+    await abrirCf();
+    fireEvent.change(screen.getByLabelText("Peso (kg)"), { target: { value: "200" } });
+    expect(await screen.findByText("Informe o peso em kg, de 30 a 160.")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Peso (kg)"), { target: { value: "70" } });
+    fireEvent.change(screen.getByLabelText(/Evidência da medida/), { target: { value: "ab" } });
+    expect(await screen.findByText(/evidência da medida deve ter de 3 a 200/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Salvar avaliação" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+  });
+
+  it("no celular, a barra mostra o erro certo e não 'Falta evidência'", async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((q: string) => ({
+      matches: true,
+      media: q,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia;
+    try {
+      await abrirCf();
+      fireEvent.change(screen.getByLabelText("Peso (kg)"), { target: { value: "5" } });
+      const barra = await screen.findByRole("region", { name: /Resumo e ações/ });
+      expect(barra.textContent).toContain("Informe o peso em kg, de 30 a 160.");
+      expect(barra.textContent).not.toContain("Falta evidência");
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
+  it("mostra sob o campo a mensagem do 400 da API (notas.0.evidencia)", async () => {
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    fireEvent.change(evidencia(), { target: { value: "Regata de seleção" } });
+    const base = POST.getMockImplementation()!;
+    POST.mockImplementation((caminho: string, ...r: unknown[]) =>
+      caminho === "/atletas/{id}/avaliacoes"
+        ? Promise.resolve({
+            error: {
+              erro: "validacao",
+              mensagem: "Dados inválidos.",
+              campos: [{ campo: "notas.0.evidencia", mensagem: "Evidência já usada neste ciclo." }],
+            },
+            response: { status: 400 },
+          })
+        : base(caminho, ...r),
+    );
+    const salvar = screen.getByRole("button", { name: "Salvar avaliação" });
+    await waitFor(() => expect(salvar.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(salvar);
+    const msg = await screen.findByText("Evidência já usada neste ciclo.");
+    expect(evidencia().getAttribute("aria-invalid")).toBe("true");
+    expect(evidencia().getAttribute("aria-describedby")).toBe(msg.id);
+    fireEvent.change(evidencia(), { target: { value: "Outra evidência" } });
+    await waitFor(() => expect(screen.queryByText("Evidência já usada neste ciclo.")).toBeNull());
+  });
+});
+
+describe("TelaAvaliar: anexos órfãos", () => {
+  let contador = 0;
+  beforeEach(() => {
+    contador = 0;
+    const base = POST.getMockImplementation()!;
+    POST.mockImplementation((caminho: string, ...r: unknown[]) =>
+      caminho.endsWith("/evidencias")
+        ? Promise.resolve({
+            data: { id: `anx${++contador}`, nomeArquivo: "regata.pdf", indicadorId: "tec_1" },
+            response: { status: 201 },
+          })
+        : base(caminho, ...r),
+    );
+  });
+
+  const arquivo = (nome = "regata.pdf") => new File(["abc"], nome, { type: "application/pdf" });
+
+  async function comAnexo(): Promise<void> {
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 3);
+    fireEvent.change(evidencia(), { target: { value: "Regata de seleção" } });
+    fireEvent.change(screen.getByLabelText("Anexar evidência de Leitura de vento"), {
+      target: { files: [arquivo()] },
+    });
+    await screen.findByText(/Anexo segue junto da nota/);
+  }
+  const apagados = () => DELETE.mock.calls.map((c) => c[1].params.path.id);
+
+  it("remover (x) o anexo apaga o anexo no servidor", async () => {
+    await comAnexo();
+    fireEvent.click(screen.getByRole("button", { name: "Remover regata.pdf" }));
+    await waitFor(() => expect(apagados()).toEqual(["anx1"]));
+  });
+
+  it("trocar o anexo apaga o anterior", async () => {
+    await comAnexo();
+    fireEvent.change(screen.getByLabelText("Anexar evidência de Leitura de vento"), {
+      target: { files: [arquivo("nova.pdf")] },
+    });
+    await waitFor(() => expect(apagados()).toEqual(["anx1"]));
+  });
+
+  it("descartar apaga o anexo", async () => {
+    await comAnexo();
+    fireEvent.click(screen.getByRole("button", { name: "Descartar" }));
+    await waitFor(() => expect(apagados()).toEqual(["anx1"]));
+  });
+
+  it("voltar a nota ao valor original apaga o anexo", async () => {
+    await comAnexo();
+    nota("Leitura de vento", 2);
+    await waitFor(() => expect(apagados()).toEqual(["anx1"]));
+  });
+
+  it("salvar não apaga nada: o anexo agora está vinculado", async () => {
+    await comAnexo();
+    const salvar = screen.getByRole("button", { name: "Salvar avaliação" });
+    await waitFor(() => expect(salvar.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(salvar);
+    await waitFor(() => expect(toastFn.success).toHaveBeenCalled());
+    cleanup();
+    expect(DELETE).not.toHaveBeenCalled();
+  });
+
+  it("sair do editor com anexo não salvo apaga o anexo", async () => {
+    await comAnexo();
+    cleanup();
+    await waitFor(() => expect(apagados()).toEqual(["anx1"]));
+  });
+
+  it("ignora 404, 410, 409 e falha de rede ao apagar, sem erro na tela", async () => {
+    for (const resposta of [
+      { response: { status: 409 } },
+      { response: { status: 404 } },
+      { response: { status: 410 } },
+    ]) {
+      DELETE.mockReset();
+      DELETE.mockResolvedValue(resposta);
+      await comAnexo();
+      fireEvent.click(screen.getByRole("button", { name: "Remover regata.pdf" }));
+      await waitFor(() => expect(DELETE).toHaveBeenCalledTimes(1));
+      expect(screen.queryByRole("alert")).toBeNull();
+      cleanup();
+    }
+    DELETE.mockReset();
+    DELETE.mockRejectedValue(new Error("rede"));
+    await comAnexo();
+    fireEvent.click(screen.getByRole("button", { name: "Remover regata.pdf" }));
+    await waitFor(() => expect(DELETE).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
+describe("TelaAvaliar: confirmação ao sair com rascunho", () => {
+  function montarComRota(inicial: string, navegador = false) {
+    const raiz = createRootRoute({ component: () => <Outlet /> });
+    const rota = createRoute({
+      getParentRoute: () => raiz,
+      path: "/avaliar",
+      validateSearch: (s: Record<string, unknown>): { atleta?: string } =>
+        typeof s["atleta"] === "string" ? { atleta: s["atleta"] } : {},
+      component: function Tela() {
+        const { atleta } = rota.useSearch();
+        const navigate = useNavigate();
+        return (
+          <TelaAvaliar
+            atletaId={atleta}
+            aoEscolher={(id) => void navigate({ to: "/avaliar", search: id ? { atleta: id } : {} })}
+          />
+        );
+      },
+    });
+    const fora = createRoute({
+      getParentRoute: () => raiz,
+      path: "/fora",
+      component: () => <p>Fora</p>,
+    });
+    const router = createRouter({
+      routeTree: raiz.addChildren([rota, fora]),
+      history: navegador
+        ? (window.history.replaceState({}, "", inicial), createBrowserHistory())
+        : createMemoryHistory({ initialEntries: [inicial] }),
+    });
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+    return router;
+  }
+
+  it("trocar de atleta no select com alterações pede confirmação; continuar mantém tudo", async () => {
+    const router = montarComRota("/avaliar?atleta=a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    fireEvent.change(await screen.findByLabelText("Atleta"), { target: { value: "a08" } });
+    const dialogo = await screen.findByRole("dialog", { name: /Descartar a avaliação/ });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Continuar editando" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(router.state.location.search).toEqual({ atleta: "a07" });
+    const quatro = within(
+      screen.getByRole("radiogroup", { name: "Nota de Leitura de vento" }),
+    ).getByRole("radio", { name: "4" }) as HTMLInputElement;
+    expect(quatro.checked).toBe(true);
+  });
+
+  it("descartar e sair navega e apaga os anexos órfãos", async () => {
+    const base = POST.getMockImplementation()!;
+    POST.mockImplementation((caminho: string, ...r: unknown[]) =>
+      caminho.endsWith("/evidencias")
+        ? Promise.resolve({
+            data: { id: "anx9", nomeArquivo: "regata.pdf", indicadorId: "tec_1" },
+            response: { status: 201 },
+          })
+        : base(caminho, ...r),
+    );
+    const router = montarComRota("/avaliar?atleta=a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    fireEvent.change(evidencia(), { target: { value: "Regata de seleção" } });
+    fireEvent.change(screen.getByLabelText("Anexar evidência de Leitura de vento"), {
+      target: { files: [new File(["abc"], "regata.pdf", { type: "application/pdf" })] },
+    });
+    await screen.findByText(/Anexo segue junto da nota/);
+    void router.navigate({ to: "/fora" as "/" });
+    const dialogo = await screen.findByRole("dialog", { name: /Descartar a avaliação/ });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Descartar e sair" }));
+    await screen.findByText("Fora");
+    await waitFor(() =>
+      expect(DELETE.mock.calls.map((c) => c[1].params.path.id)).toEqual(["anx9"]),
+    );
+  });
+
+  it("sem alterações, navega sem perguntar; beforeunload só com alteração", async () => {
+    const router = montarComRota("/avaliar?atleta=a07", true);
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    const evento = () => {
+      const e = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(e);
+      return e.defaultPrevented;
+    };
+    expect(evento()).toBe(false);
+    nota("Leitura de vento", 4);
+    expect(evento()).toBe(true);
+    nota("Leitura de vento", 2);
+    expect(evento()).toBe(false);
+    await router.navigate({ to: "/fora" as "/" });
+    await screen.findByText("Fora");
   });
 });

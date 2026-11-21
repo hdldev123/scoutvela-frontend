@@ -2,7 +2,7 @@ import { useEffect, useId, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
-import { fmtData } from "./formato";
+import { fmtInstante } from "./formato";
 import { useTreinadores } from "@/lib/api/cadastro";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useParametros } from "@/lib/api/parametros";
@@ -195,7 +195,7 @@ function SeloConta({ u }: { u: Usuario }) {
     return (
       <span className="ct-conta">
         <span className="pill st-cond">Convite enviado</span>
-        <small className="ct-sub-txt">em {fmtData(u.convidadoEm)}</small>
+        <small className="ct-sub-txt">em {fmtInstante(u.convidadoEm)}</small>
       </span>
     );
   }
@@ -260,7 +260,12 @@ function ListaContas() {
       ) : usuarios.data.length === 0 ? (
         <EstadoVazio icone="users-three" titulo="Nenhuma conta cadastrada" />
       ) : (
-        <div className="table-scroll" tabIndex={0}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de contas, role para ver todas as colunas"
+        >
           <table className="data interativa ct-tabela">
             <thead>
               <tr>
@@ -282,6 +287,9 @@ function ListaContas() {
                     <td className="ct-nome">
                       <span className="ct-nome-txt">{u.nome}</span>
                       <small className="ct-sub-txt">{u.email}</small>
+                      {u.atleta && (
+                        <small className="ct-sub-txt ct-vinculo">Atleta: {u.atleta.nome}</small>
+                      )}
                     </td>
                     <td className="nw">
                       <span className="pill st-neutro">{PAPEIS[u.papel] ?? u.papel}</span>
@@ -302,8 +310,10 @@ function ListaContas() {
                             type="button"
                             className="btn sm"
                             aria-label={`Reenviar convite para ${u.nome}`}
-                            disabled={reenviar.isPending}
-                            onClick={() => aoReenviar(u)}
+                            aria-disabled={reenviar.isPending ? true : undefined}
+                            onClick={() => {
+                              if (!reenviar.isPending) aoReenviar(u);
+                            }}
                           >
                             Reenviar convite
                           </button>
@@ -312,11 +322,14 @@ function ListaContas() {
                           type="button"
                           className={`btn sm${u.ativo ? " perigo" : ""}`}
                           aria-label={`${u.ativo ? "Desativar" : "Ativar"} conta de ${u.nome}`}
-                          disabled={alterar.isPending || (eu && u.ativo)}
+                          disabled={eu && u.ativo}
+                          aria-disabled={alterar.isPending ? true : undefined}
                           title={
                             eu && u.ativo ? "Você não pode desativar a própria conta." : undefined
                           }
-                          onClick={() => aoAlterar(u)}
+                          onClick={() => {
+                            if (!alterar.isPending) aoAlterar(u);
+                          }}
                         >
                           {u.ativo ? "Desativar" : "Ativar"}
                         </button>
@@ -452,7 +465,12 @@ function AtletasDoPiloto() {
           texto="Ajuste a busca ou os filtros."
         />
       ) : (
-        <div className="table-scroll" tabIndex={0}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de atletas do piloto, role para ver todas as colunas"
+        >
           <table className="data interativa ct-tabela">
             <thead>
               <tr>
@@ -472,7 +490,19 @@ function AtletasDoPiloto() {
             <tbody>
               {atletas.data.map((a) => (
                 <tr key={a.id} className={a.ativo ? undefined : "ct-inativo"}>
-                  <td className="nw">{a.nome}</td>
+                  <td className="ct-nome">
+                    <span className="ct-nome-txt">{a.nome}</span>
+                    {(a.treinador || a.numeroVela) && (
+                      <small className="ct-sub-txt ct-vinculo">
+                        {[
+                          a.treinador ? `Treinador: ${a.treinador.nome}` : null,
+                          a.numeroVela ?? null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </small>
+                    )}
+                  </td>
                   <td className="nw mono">{a.velaid}</td>
                   <td className="nw">{a.classe.nome}</td>
                   <td className="nw ct-col-treinador">{a.treinador?.nome ?? "—"}</td>

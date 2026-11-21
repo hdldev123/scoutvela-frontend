@@ -125,16 +125,35 @@ describe("TelaRanking", () => {
     expect(marcos.querySelector(".avatar")).toHaveTextContent("ML");
   });
 
-  it("a legenda não fala em ranking simulado", async () => {
+  it("a legenda não fala em ranking simulado e lê a janela dos parâmetros", async () => {
+    GET.mockImplementation(async (caminho: string) =>
+      caminho === "/parametros"
+        ? {
+            data: {
+              regras: [{ codigo: "RANKING_CBVELA", descricao: "x", valor: { janela_semanas: 26 } }],
+            },
+            response: { status: 200 },
+          }
+        : { data: resposta([item(1, "Helena Vasques", "ILCA 6")]), response: { status: 200 } },
+    );
+    montar(<TelaRanking papel="gestor" filtros={{}} aoMudarFiltros={() => {}} />);
+    expect(
+      await screen.findByText(/vêm do ranking oficial, últimas 26 semanas/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/simulad/i)).not.toBeInTheDocument();
+  });
+
+  it("sem acesso aos parâmetros (IBVAR), a legenda não crava número de semanas", async () => {
     GET.mockResolvedValue({
       data: resposta([item(1, "Helena Vasques", "ILCA 6")]),
       response: { status: 200 },
     });
-    montar(<TelaRanking papel="gestor" filtros={{}} aoMudarFiltros={() => {}} />);
+    montar(<TelaRanking papel="ibvar" filtros={{}} aoMudarFiltros={() => {}} />);
     expect(
-      await screen.findByText(/vêm do ranking oficial, últimas 52 semanas/),
+      await screen.findByText(/na janela de semanas definida nos parâmetros/),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/simulad/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/52 semanas/)).not.toBeInTheDocument();
+    expect(GET).not.toHaveBeenCalledWith("/parametros");
   });
 
   it("treinador vê 'Meus atletas'", async () => {

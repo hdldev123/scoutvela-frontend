@@ -114,6 +114,60 @@ describe("SecaoTermos", () => {
     expect(screen.getByRole("button", { name: "Revisar e publicar" })).toBeDisabled();
   });
 
+  it("título curto, vigência no passado e o texto grande demais mostram o erro sob o campo", async () => {
+    montar();
+    await preencher();
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "ab" } });
+    expect(screen.getByText("O título precisa ter ao menos 3 caracteres.")).toBeTruthy();
+    expect(screen.getByLabelText("Título")).toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Termo v4" } });
+    fireEvent.change(screen.getByLabelText("Vigente a partir de"), {
+      target: { value: "2020-01-01T09:00" },
+    });
+    const msg = screen.getByText("A vigência não pode estar no passado.");
+    expect(screen.getByLabelText("Vigente a partir de")).toHaveAttribute(
+      "aria-describedby",
+      msg.id,
+    );
+    expect(screen.getByLabelText("Vigente a partir de")).toHaveAttribute("min");
+    expect(screen.getByRole("button", { name: "Revisar e publicar" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Vigente a partir de"), {
+      target: { value: "2030-03-01T09:00" },
+    });
+    fireEvent.change(screen.getByLabelText("Texto"), { target: { value: "y".repeat(50001) } });
+    expect(screen.getByText(/no máximo 50\.000 caracteres/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Revisar e publicar" })).toBeDisabled();
+  });
+
+  it("'A partir de agora' preenche a vigência 5 minutos adiante", async () => {
+    montar();
+    await preencher();
+    const antes = Date.now();
+    fireEvent.click(screen.getByRole("button", { name: /A partir de agora \(em 5 minutos\)/ }));
+    const valor = (screen.getByLabelText("Vigente a partir de") as HTMLInputElement).value;
+    const delta = new Date(valor).getTime() - antes;
+    expect(delta).toBeGreaterThan(4 * 60_000);
+    expect(delta).toBeLessThan(6 * 60_000);
+    expect(screen.getByRole("button", { name: "Revisar e publicar" })).toBeEnabled();
+  });
+
+  it("mostra o erro por campo do 400 sob o campo", async () => {
+    POST.mockResolvedValue({
+      error: {
+        erro: "validacao",
+        mensagem: "Dados inválidos.",
+        campos: [{ campo: "versao", mensagem: "Versão já publicada." }],
+      },
+      response: { status: 400 },
+    });
+    montar();
+    await preencher();
+    fireEvent.click(screen.getByRole("button", { name: "Revisar e publicar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar e publicar" }));
+    const msg = await screen.findByText("Versão já publicada.");
+    expect(screen.getByLabelText("Versão")).toHaveAttribute("aria-describedby", msg.id);
+  });
+
   it("mostra o erro 400 da API no diálogo", async () => {
     POST.mockResolvedValue({
       error: { erro: "requisicao_invalida", mensagem: "Versão já publicada." },

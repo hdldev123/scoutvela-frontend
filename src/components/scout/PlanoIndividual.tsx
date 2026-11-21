@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
-import { fmtData } from "./formato";
+import { fmtInstante } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import type { FichaAtleta } from "@/lib/api/consultas";
 import { registrarPlano, type CorpoPlano } from "@/lib/api/mutacoes-ficha";
@@ -127,7 +127,7 @@ export function PlanoIndividual({
         <>
           {plano ? (
             <p className="panel-dica">
-              Registrado por {plano.registradoPor.nome} em {fmtData(plano.registradoEm)}
+              Registrado por {plano.registradoPor.nome} em {fmtInstante(plano.registradoEm)}
             </p>
           ) : (
             <p className="aviso-plano">

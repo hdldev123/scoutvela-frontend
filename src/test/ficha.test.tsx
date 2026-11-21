@@ -917,13 +917,22 @@ describe("TelaFicha: ordem dos blocos e selos do financeiro", () => {
     const selos2 = outra.querySelectorAll(".pill");
     expect(selos2[0]).toHaveClass("st-apto");
     expect(selos2[1]).toHaveClass("st-neutro");
-    const ordem = [
-      "ordem-pilares",
-      "ordem-gates",
-      "ordem-classfit",
-      "ordem-historico",
-      "ordem-financeiro",
-    ];
-    for (const c of ordem) expect(document.querySelector(`.${c}`)).not.toBeNull();
+    // Duas colunas reais: a esquerda inteira, depois a direita. A sequência do DOM é a ordem de
+    // leitura e de foco no celular.
+    const esquerda = ["ordem-pilares", "ordem-gates", "ordem-historico"];
+    const direita = ["ordem-classfit", "ordem-financeiro", "ordem-plano", "ordem-evidencias"];
+    const classesDe = (col: Element, ordem: string[]) =>
+      Array.from(col.children).map((el) => ordem.find((c) => el.classList.contains(c)) ?? "");
+    const grade = document.querySelector(".ficha-grid")!;
+    const colunas = Array.from(grade.children);
+    expect(colunas).toHaveLength(2);
+    expect(colunas.every((c) => c.classList.contains("ficha-col"))).toBe(true);
+    expect(classesDe(colunas[0]!, esquerda)).toEqual(esquerda);
+    expect(classesDe(colunas[1]!, direita)).toEqual(direita);
+    const leitura = [...esquerda, ...direita];
+    const noDom = Array.from(grade.querySelectorAll(".ficha-col > *")).map(
+      (el) => leitura.find((c) => el.classList.contains(c)) ?? "",
+    );
+    expect(noDom).toEqual(leitura);
   });
 });

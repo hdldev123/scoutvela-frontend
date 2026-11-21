@@ -74,3 +74,46 @@ for (const largura of [900, 1024]) {
     }
   });
 }
+
+// Cartão do ranking (até 1020 px): o selo "Parcial" não pode criar trilhas implícitas na grade.
+for (const largura of [800, 900, 1000]) {
+  test.describe(`ranking em cartão a ${largura} px`, () => {
+    test.use({ viewport: { width: largura, height: 860 } });
+
+    test("grade com 4 colunas e 3 linhas, selo dentro da linha e score à direita", async ({
+      page,
+    }) => {
+      await entrar(page, "gestor");
+      await page.goto("/ranking");
+      await page.waitForLoadState("networkidle");
+      const linhas = page.locator("a.rank-row");
+      const total = await linhas.count();
+      expect(total).toBeGreaterThan(0);
+      for (let i = 0; i < total; i++) {
+        const linha = linhas.nth(i);
+        const trilhas = await linha.evaluate((el) => {
+          const estilo = getComputedStyle(el);
+          return {
+            colunas: estilo.gridTemplateColumns.split(" ").length,
+            linhas: estilo.gridTemplateRows.split(" ").length,
+          };
+        });
+        expect(trilhas.colunas, `colunas da linha #${i + 1}`).toBe(4);
+        expect(trilhas.linhas, `linhas da linha #${i + 1}`).toBe(3);
+        const caixaLinha = await linha.boundingBox();
+        const selo = linha.locator(".who .pill");
+        if (caixaLinha && (await selo.count())) {
+          const caixaSelo = await selo.first().boundingBox();
+          expect(caixaSelo?.x ?? 0).toBeLessThan(caixaLinha.x + caixaLinha.width / 2);
+        }
+        const caixaScore = await linha.locator(".scorecell").boundingBox();
+        if (caixaLinha && caixaScore) {
+          expect(
+            caixaLinha.x + caixaLinha.width - (caixaScore.x + caixaScore.width),
+            "score encosta à direita",
+          ).toBeLessThan(24);
+        }
+      }
+    });
+  });
+}

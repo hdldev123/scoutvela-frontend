@@ -1,13 +1,16 @@
+import { useRouter } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import "@/styles/parametros.css";
 import { Abas, PainelAba } from "./Abas";
+import { atributosDoCampo } from "./campo-util";
+import { MensagemCampo } from "./MensagemCampo";
 import { fmt1 } from "./formato";
 import { SecaoFaixas, SecaoRubricas } from "./ParametrosFaixasRubricas";
 import { SecaoRegras } from "./ParametrosRegras";
 import { SecaoTermos } from "./ParametrosTermos";
 import { analisarAltura, MSG_SALVO } from "./parametros-util";
-import { mensagemDeErro } from "@/lib/api/cliente";
+import { errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
 import { useParametros, useSalvarParametros, type Parametros } from "@/lib/api/parametros";
 
 const POSICAO = { helm: "Timoneiro", crew: "Proeiro", ind: "Individual" } as const;
@@ -69,6 +72,7 @@ const ABAS = [
 /** Aba ativa guardada no hash da URL (#pesos, #classes...). Lê depois da montagem, para não divergir do SSR. */
 function useAbaNoHash(validas: string[]): [string, (id: string) => void] {
   const [ativa, setAtiva] = useState(validas[0] as string);
+  const router = useRouter({ warn: false });
   useEffect(() => {
     const ler = () => {
       const h = window.location.hash.replace("#", "");
@@ -82,7 +86,12 @@ function useAbaNoHash(validas: string[]): [string, (id: string) => void] {
   const mudar = (id: string) => {
     setAtiva(id);
     try {
-      window.history.replaceState(null, "", `#${id}`);
+      // Pelo roteador: `history.replaceState(null, ...)` apagaria o estado que ele guarda.
+      if (router) {
+        void router.navigate({ hash: id, replace: true, hashScrollIntoView: false });
+      } else {
+        window.history.replaceState(window.history.state, "", `#${id}`);
+      }
     } catch {
       /* sem acesso ao histórico: a aba segue só no estado */
     }
@@ -99,7 +108,7 @@ function ConteudoParametros({ dados, gestor }: { dados: Parametros; gestor: bool
       <PainelAba id="pesos" ativa={ativa === "pesos"} manter>
         <div className="par-duas">
           <SecaoPesos key={dados.pilares.map((p) => p.peso).join(",")} dados={dados} />
-          <SecaoFaixas dados={dados} />
+          <SecaoFaixas key={JSON.stringify(dados.faixas)} dados={dados} />
         </div>
       </PainelAba>
       <PainelAba id="classes" ativa={ativa === "classes"} manter>
@@ -114,7 +123,10 @@ function ConteudoParametros({ dados, gestor }: { dados: Parametros; gestor: bool
         />
       </PainelAba>
       <PainelAba id="rubricas" ativa={ativa === "rubricas"} manter>
-        <SecaoRubricas dados={dados} />
+        <SecaoRubricas
+          key={JSON.stringify([dados.rubricas, dados.pilares.map((p) => p.id)])}
+          dados={dados}
+        />
       </PainelAba>
       <PainelAba id="regras" ativa={ativa === "regras"} manter>
         <SecaoRegras dados={dados} />
@@ -137,6 +149,8 @@ function SecaoPesos({ dados }: { dados: Parametros }) {
     Object.fromEntries(dados.pilares.map((p) => [p.id, String(p.peso)])),
   );
   const num = (id: string) => (/^\d+$/.test(valores[id] ?? "") ? Number(valores[id]) : NaN);
+  // Erros do 400: "pesos.<id do pilar>".
+  const doServidor = errosPorCampo(salvar.error);
   const soma = dados.pilares.reduce((t, p) => t + (Number.isNaN(num(p.id)) ? 0 : num(p.id)), 0);
   const valido = dados.pilares.every((p) => !Number.isNaN(num(p.id))) && soma === 100;
 
@@ -161,19 +175,26 @@ function SecaoPesos({ dados }: { dados: Parametros }) {
         </div>
         <div className="par-pesos">
           {dados.pilares.map((p) => (
-            <label className="field" key={p.id} htmlFor={`peso-${p.id}`}>
-              {p.nomeCurto}
-              <input
-                id={`peso-${p.id}`}
-                type="number"
-                inputMode="numeric"
-                min={0}
-                max={100}
-                step={1}
-                value={valores[p.id] ?? ""}
-                onChange={(e) => setValores((v) => ({ ...v, [p.id]: e.target.value }))}
-              />
-            </label>
+            <div key={p.id}>
+              <label className="field" htmlFor={`peso-${p.id}`}>
+                {p.nomeCurto}
+                <input
+                  id={`peso-${p.id}`}
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={valores[p.id] ?? ""}
+                  {...atributosDoCampo(`peso-erro-${p.id}`, doServidor[`pesos.${p.id}`])}
+                  onChange={(e) => {
+                    if (salvar.isError) salvar.reset();
+                    setValores((v) => ({ ...v, [p.id]: e.target.value }));
+                  }}
+                />
+              </label>
+              <MensagemCampo id={`peso-erro-${p.id}`} texto={doServidor[`pesos.${p.id}`]} />
+            </div>
           ))}
         </div>
         {!valido && <p className="par-dica">A soma precisa dar 100 para salvar.</p>}
@@ -252,8 +273,30 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
     (r) => (r.pesoAlterado && r.a.erro) || (r.alturaAlterada && r.a.h.erro),
   );
 
-  const mudar = (id: string, campo: Campo, valor: string) =>
+  // Erros do 400: "classes.N.<campo>" aponta para a N-ésima classe enviada (as alteradas).
+  const doServidor = errosPorCampo(salvar.error);
+  const erroServidorDaClasse = (id: string, campos: string[]): string | undefined => {
+    const i = alteradas.findIndex((r) => r.c.id === id);
+    if (i < 0) return undefined;
+    for (const k of campos) {
+      const m = doServidor[`classes.${i}.${k}`];
+      if (m) return m;
+    }
+    return undefined;
+  };
+  const CAMPOS_API: Record<Campo, string> = {
+    min: "pesoMinKg",
+    med: "pesoMedioKg",
+    max: "pesoMaxKg",
+    aMin: "alturaMinCm",
+    aMed: "alturaMediaCm",
+    aMax: "alturaMaxCm",
+  };
+
+  const mudar = (id: string, campo: Campo, valor: string) => {
+    if (salvar.isError) salvar.reset();
     setLinhas((ls) => ({ ...ls, [id]: { ...ls[id]!, [campo]: valor } }));
+  };
 
   const enviar = (e: FormEvent) => {
     e.preventDefault();
@@ -279,7 +322,9 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
           ? `Altura ${rotulo} de ${c.nome}, ${POSICAO[c.posicao]} (cm)`
           : `${rotulo} de ${c.nome}, ${POSICAO[c.posicao]} (kg)`
       }
-      aria-invalid={erro}
+      {...(erroServidorDaClasse(c.id, [CAMPOS_API[k]])
+        ? atributosDoCampo(`classe-erro-${c.id}`, erroServidorDaClasse(c.id, [CAMPOS_API[k]]))
+        : { "aria-invalid": erro })}
       value={linhas[c.id]![k]}
       onChange={(e) => mudar(c.id, k, e.target.value)}
     />
@@ -295,7 +340,12 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
           </span>
         </div>
         <p className="panel-dica">A altura é informativa (não entra no score nem nos gates).</p>
-        <div className="table-scroll" tabIndex={0}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de faixas de peso e altura por classe, role para ver todas as colunas"
+        >
           <table className="data interativa par-classes">
             <thead>
               <tr>
@@ -337,6 +387,10 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
                         {a.h.erro}
                       </div>
                     )}
+                    <MensagemCampo
+                      id={`classe-erro-${c.id}`}
+                      texto={erroServidorDaClasse(c.id, Object.values(CAMPOS_API))}
+                    />
                   </td>
                   <td className="num">{campo(c, "min", "Mínimo", !!a.erro)}</td>
                   <td className="num">{campo(c, "med", "Média", !!a.erro)}</td>

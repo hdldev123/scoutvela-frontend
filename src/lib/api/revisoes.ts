@@ -30,10 +30,15 @@ export async function responderRevisao(
   return data;
 }
 
-export async function responderPedidoTitular(id: string, resposta: string): Promise<PedidoTitular> {
+/** `recusar: true` é a recusa formal de um pedido de exclusão (justificativa de 20+ caracteres). */
+export async function responderPedidoTitular(
+  id: string,
+  resposta: string,
+  recusar = false,
+): Promise<PedidoTitular> {
   const { data, error, response } = await api.PUT("/pedidos-titular/{id}", {
     params: { path: { id } },
-    body: { resposta },
+    body: recusar ? { resposta, recusar: true } : { resposta },
   });
   if (error || !data) throw paraErroApi(response.status, error);
   return data;
@@ -93,7 +98,8 @@ export function useResponderRevisao() {
 export function useResponderPedidoTitular() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { id: string; resposta: string }) => responderPedidoTitular(v.id, v.resposta),
+    mutationFn: (v: { id: string; resposta: string; recusar?: boolean }) =>
+      responderPedidoTitular(v.id, v.resposta, v.recusar),
     onSuccess: () =>
       Promise.all([
         qc.invalidateQueries({ queryKey: ["pedidos-titular"] }),

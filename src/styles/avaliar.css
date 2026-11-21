@@ -4,6 +4,9 @@
   flex-wrap: wrap;
   gap: 10px;
 }
+.ed-row .avaliar-peso {
+  grid-column: 1 / -1;
+}
 .avaliar-peso .field {
   min-width: 7rem;
 }
@@ -31,7 +34,7 @@
   justify-content: space-between;
   gap: 12px;
 }
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .ed-row {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -79,9 +82,14 @@
     inset 0 0 0 2px var(--sea),
     inset 0 0 0 4px var(--surface);
 }
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .seg-radio label {
     width: 2.8rem;
     padding: 10px 0;
   }
+}
+.avaliar-previa-recalc dl,
+.avaliar-previa-recalc ul {
+  opacity: 0.55;
+  transition: opacity 0.15s;
 }
