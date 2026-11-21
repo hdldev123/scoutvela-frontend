@@ -31,7 +31,7 @@
   justify-content: space-between;
   gap: 12px;
 }
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .ed-row {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -79,7 +79,7 @@
     inset 0 0 0 2px var(--sea),
     inset 0 0 0 4px var(--surface);
 }
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .seg-radio label {
     width: 2.8rem;
     padding: 10px 0;

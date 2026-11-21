@@ -15,7 +15,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .par-pesos {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -122,8 +122,4 @@
 .par-classes .par-grupo-col {
   text-align: center;
   border-bottom: 1px solid var(--line);
-}
-.par-classes .par-kg {
-  min-width: 4.25rem;
-  font-variant-numeric: tabular-nums;
 }
