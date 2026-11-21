@@ -353,7 +353,7 @@ function TermosPendentes() {
                 <th>Cadastrado em</th>
                 <th>Termo</th>
                 <th className="acoes">
-                  <span className="cad-sr">Ação</span>
+                  <span className="sr-only">Ação</span>
                 </th>
               </tr>
             </thead>
@@ -594,7 +594,7 @@ function ImportarCsv() {
               aria-label="Tabela de erros por linha da importação, role para ver todas as colunas"
             >
               <table className="data">
-                <caption className="cad-sr">Erros por linha</caption>
+                <caption className="sr-only">Erros por linha</caption>
                 <thead>
                   <tr>
                     <th className="num">Linha</th>

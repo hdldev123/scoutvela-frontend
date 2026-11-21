@@ -319,7 +319,7 @@ function ListaPendencias({ p }: { p: PendenciasCiclo }) {
                   aria-label="Tabela de pendências do ciclo, role para ver todas as colunas"
                 >
                   <table className="data">
-                    <caption className="cic-sr">Atletas pendentes de {t.nome}</caption>
+                    <caption className="sr-only">Atletas pendentes de {t.nome}</caption>
                     <thead>
                       <tr>
                         <th>Atleta</th>
@@ -360,7 +360,7 @@ function ListaPendencias({ p }: { p: PendenciasCiclo }) {
             aria-label="Tabela de questionário dos atletas, role para ver todas as colunas"
           >
             <table className="data">
-              <caption className="cic-sr">Atletas com questionário pendente</caption>
+              <caption className="sr-only">Atletas com questionário pendente</caption>
               <thead>
                 <tr>
                   <th>Atleta</th>
@@ -415,7 +415,7 @@ function AbrirCiclo() {
       </div>
       <form className="cic-form" onSubmit={enviar}>
         <fieldset className="cic-campos" disabled={abrir.isPending}>
-          <legend className="cic-sr">Dados do novo ciclo</legend>
+          <legend className="sr-only">Dados do novo ciclo</legend>
           <label className="field" htmlFor="cic-nome">
             Nome
             <input

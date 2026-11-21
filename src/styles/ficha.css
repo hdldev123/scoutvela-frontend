@@ -9,7 +9,7 @@
   gap: 10px;
 }
 .ficha-componentes {
-  border: 1px solid var(--line, #d8dde3);
+  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px 12px;
   display: grid;
@@ -90,20 +90,4 @@
 .ficha-clipe:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;
-}
-.ficha-anexo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  grid-column: 1 / -1;
-  font-size: 0.82rem;
-}
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
 }

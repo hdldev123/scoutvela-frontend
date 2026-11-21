@@ -18,7 +18,7 @@
   font-size: 0.82rem;
 }
 .avaliar-erro-campo {
-  color: var(--bad, #b3261e);
+  color: var(--bad);
   font-size: 0.78rem;
 }
 .avaliar-previa ul {
