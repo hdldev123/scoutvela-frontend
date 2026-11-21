@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { CampoArquivo } from "./CampoArquivo";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
-import { fmtData } from "./formato";
+import { fmtData, fmtInstante } from "./formato";
 import {
   LIMITE_CSV_BYTES,
   useBuscarVelaId,
@@ -20,7 +20,7 @@ import {
   type TipoImportacao,
 } from "@/lib/api/cadastro";
 import { ErroApi, mensagemDeErro } from "@/lib/api/cliente";
-import { useTermo } from "@/lib/api/titular";
+import { useTermo, useTermoProxima } from "@/lib/api/titular";
 import "@/styles/cadastro.css";
 
 const FORMATOS: Record<TipoImportacao, { nome: string; colunas: string; nota: string }> = {
@@ -221,11 +221,13 @@ function NovoAtleta() {
                     onChange={(e) => setClasseId(e.target.value)}
                   >
                     <option value="">Escolha</option>
-                    {(classes.data ?? []).map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome}
-                      </option>
-                    ))}
+                    {(classes.data ?? [])
+                      .filter((c) => c.ativa)
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nome}
+                        </option>
+                      ))}
                   </select>
                 </label>
                 <label className="field" htmlFor="cad-trein">
@@ -290,16 +292,21 @@ function TermosPendentes() {
   const pendentes = usePendentes();
   const registrar = useRegistrarTermo();
   const termo = useTermo();
+  // Com uma versão futura já publicada, o gestor pode registrar o aceite dela (aceite antecipado).
+  const proxima = useTermoProxima();
   const [alvo, setAlvo] = useState<AtletaPendente | null>(null);
   const [erro, setErro] = useState("");
+  const [qual, setQual] = useState<"vigente" | "proxima">("vigente");
+
+  const escolhida = qual === "proxima" && proxima.data ? proxima.data : termo.data;
 
   const confirmar = () => {
     if (!alvo) return;
     const atleta = alvo;
     setErro("");
-    if (!termo.data) return;
+    if (!escolhida) return;
     registrar.mutate(
-      { id: atleta.id, versao: termo.data.versao },
+      { id: atleta.id, versao: escolhida.versao },
       {
         onSuccess: () => {
           setAlvo(null);
@@ -331,7 +338,12 @@ function TermosPendentes() {
           <EstadoVazio icone="seal-check" titulo="Nenhum termo pendente" />
         </div>
       ) : (
-        <div className="table-scroll" tabIndex={0}>
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela de termos pendentes, role para ver todas as colunas"
+        >
           <table className="data">
             <thead>
               <tr>
@@ -353,7 +365,7 @@ function TermosPendentes() {
                     <code>{p.velaid}</code>
                   </td>
                   <td className="nw">{p.classe.nome}</td>
-                  <td className="nw">{fmtData(p.criadoEm)}</td>
+                  <td className="nw">{fmtInstante(p.criadoEm)}</td>
                   <td>
                     {p.termoAceitoVersao ? (
                       <span className="pill st-cond cad-termo">
@@ -369,6 +381,7 @@ function TermosPendentes() {
                       className="btn sm"
                       onClick={() => {
                         setErro("");
+                        setQual("vigente");
                         setAlvo(p);
                       }}
                     >
@@ -382,13 +395,42 @@ function TermosPendentes() {
         </div>
       )}
       {alvo && (
-        <Dialogo titulo="Registrar aceite do termo" aoFechar={() => setAlvo(null)}>
+        <Dialogo
+          titulo="Registrar aceite do termo"
+          aoFechar={() => setAlvo(null)}
+          bloqueado={registrar.isPending}
+        >
           <div className="stack" style={{ gap: 12 }}>
             <p>
-              Confirme que {alvo.nome} ({alvo.velaid}) devolveu aceito o termo vigente
-              {termo.data ? ` (${termo.data.versao})` : ""}. Depois disso o atleta entra no ranking.
-              O compartilhamento com o IBVAR continua sendo decisão do atleta.
+              Confirme que {alvo.nome} ({alvo.velaid}) devolveu aceito o termo{" "}
+              {qual === "proxima" ? "da próxima versão" : "vigente"}
+              {escolhida ? ` (${escolhida.versao})` : ""}. Depois disso o atleta entra no ranking. O
+              compartilhamento com o IBVAR continua sendo decisão do atleta.
             </p>
+            {proxima.data && (
+              <fieldset className="stack" style={{ gap: 6, border: 0, padding: 0, margin: 0 }}>
+                <legend>Versão aceita</legend>
+                <label>
+                  <input
+                    type="radio"
+                    name="cad-versao-termo"
+                    checked={qual === "vigente"}
+                    onChange={() => setQual("vigente")}
+                  />{" "}
+                  Vigente{termo.data ? ` (${termo.data.versao})` : ""}
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="cad-versao-termo"
+                    checked={qual === "proxima"}
+                    onChange={() => setQual("proxima")}
+                  />{" "}
+                  Próxima, a valer em {fmtInstante(proxima.data.vigenteDesde)} (
+                  {proxima.data.versao})
+                </label>
+              </fieldset>
+            )}
             {(erro || termo.isError) && (
               <div className="note" role="alert">
                 {erro || "Não foi possível carregar o termo vigente."}
@@ -399,11 +441,16 @@ function TermosPendentes() {
                 type="button"
                 className="btn primary"
                 onClick={confirmar}
-                disabled={registrar.isPending || !termo.data}
+                disabled={registrar.isPending || !escolhida}
               >
                 {registrar.isPending ? "Registrando…" : "Confirmar aceite"}
               </button>
-              <button type="button" className="btn" onClick={() => setAlvo(null)}>
+              <button
+                type="button"
+                className="btn"
+                disabled={registrar.isPending}
+                onClick={() => setAlvo(null)}
+              >
                 Cancelar
               </button>
             </div>
@@ -421,6 +468,7 @@ function ImportarCsv() {
   const [resultado, setResultado] = useState<ResultadoImportacao | null>(null);
   const [chave, setChave] = useState(0);
   const importar = useImportarCsv();
+  const [lendo, setLendo] = useState(false);
   const formato = FORMATOS[tipo];
 
   const escolher = (f: File | null) => {
@@ -437,11 +485,14 @@ function ImportarCsv() {
 
   const enviar = async (e: FormEvent) => {
     e.preventDefault();
-    if (!arquivo) return;
+    if (!arquivo || lendo || importar.isPending) return;
     setErro("");
     setResultado(null);
+    // Marca "enviando" antes de ler o arquivo: um segundo clique durante a leitura não duplica.
+    setLendo(true);
     try {
       const conteudo = await lerTexto(arquivo);
+      setLendo(false);
       if (!conteudo.trim()) {
         setErro("O arquivo está vazio.");
         return;
@@ -457,6 +508,7 @@ function ImportarCsv() {
         },
       );
     } catch (err) {
+      setLendo(false);
       setErro(mensagemDeErro(err));
     }
   };
@@ -517,8 +569,12 @@ function ImportarCsv() {
           </div>
         )}
         <div className="btn-row cad-importar">
-          <button type="submit" className="btn primary" disabled={!arquivo || importar.isPending}>
-            {importar.isPending ? "Importando…" : "Importar"}
+          <button
+            type="submit"
+            className="btn primary"
+            disabled={!arquivo || lendo || importar.isPending}
+          >
+            {lendo || importar.isPending ? "Importando…" : "Importar"}
           </button>
         </div>
       </form>
@@ -531,7 +587,12 @@ function ImportarCsv() {
             </span>
           </div>
           {resultado.erros.length > 0 && (
-            <div className="table-scroll" tabIndex={0}>
+            <div
+              className="table-scroll"
+              tabIndex={0}
+              role="region"
+              aria-label="Tabela de erros por linha da importação, role para ver todas as colunas"
+            >
               <table className="data">
                 <caption className="cad-sr">Erros por linha</caption>
                 <thead>

@@ -5,11 +5,21 @@ export const fmt1 = (v: number): string =>
 
 export const fmt0 = (v: number): string => Math.round(v).toLocaleString("pt-BR");
 
-/** "2026-11-06" ou instante ISO ("2026-11-06T10:00:00Z") -> "06/11/2026". */
+/** Data pura ("2026-11-06") -> "06/11/2026". Não serve para instantes: use `fmtInstante`. */
 export function fmtData(iso: string): string {
   const dia = iso.slice(0, 10);
   const partes = dia.split("-");
   return partes.length === 3 ? partes.reverse().join("/") : iso;
+}
+
+/**
+ * Instante ISO com fuso ("2026-11-07T02:30:00Z") -> "06/11/2026", no horário de Brasília.
+ * Cortar a string erraria o dia entre 21h e 23h59 (UTC-3).
+ */
+export function fmtInstante(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
 
 /** Diferença em kg com sinal: "+1,2 kg" / "−0,8 kg". */

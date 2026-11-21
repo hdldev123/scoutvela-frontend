@@ -74,3 +74,64 @@ for (const largura of [900, 1024]) {
     }
   });
 }
+
+// Cartão do ranking (até 1020 px): o selo "Parcial" não pode criar trilhas implícitas na grade.
+for (const largura of [800, 900, 1000]) {
+  test.describe(`ranking em cartão a ${largura} px`, () => {
+    test.use({ viewport: { width: largura, height: 860 } });
+
+    test("grade com 4 colunas e 3 linhas, selo dentro da linha e score à direita", async ({
+      page,
+    }) => {
+      await entrar(page, "gestor");
+      await page.goto("/ranking");
+      await page.waitForLoadState("networkidle");
+      const linhas = page.locator("a.rank-row");
+      const total = await linhas.count();
+      expect(total).toBeGreaterThan(0);
+      for (let i = 0; i < total; i++) {
+        const linha = linhas.nth(i);
+        const trilhas = await linha.evaluate((el) => {
+          const estilo = getComputedStyle(el);
+          return {
+            colunas: estilo.gridTemplateColumns.split(" ").length,
+            linhas: estilo.gridTemplateRows.split(" ").length,
+          };
+        });
+        expect(trilhas.colunas, `colunas da linha #${i + 1}`).toBe(4);
+        expect(trilhas.linhas, `linhas da linha #${i + 1}`).toBe(3);
+        const caixaLinha = await linha.boundingBox();
+        const selo = linha.locator(".who .pill");
+        if (await selo.count()) {
+          // O selo "Parcial" fica na linha da meta (depois do VelaID · classe · idade), nunca
+          // numa célula implícita da grade, e não encosta no selo de faixa. No cartão, .who e
+          // .who-txt são display: contents (sem caixa); a referência é o .meta.
+          const caixaSelo = await selo.first().boundingBox();
+          const caixaMeta = await linha.locator(".who .meta").boundingBox();
+          const caixaFaixa = await linha.locator(".faixacell").boundingBox();
+          expect(caixaSelo && caixaMeta, "selo e linha da meta").toBeTruthy();
+          expect(caixaSelo!.x).toBeGreaterThanOrEqual(caixaMeta!.x - 1);
+          expect(caixaSelo!.x + caixaSelo!.width).toBeLessThanOrEqual(
+            caixaMeta!.x + caixaMeta!.width + 1,
+          );
+          expect(caixaSelo!.y).toBeGreaterThanOrEqual(caixaMeta!.y - 1);
+          expect(caixaSelo!.y + caixaSelo!.height).toBeLessThanOrEqual(
+            caixaMeta!.y + caixaMeta!.height + 1,
+          );
+          if (caixaFaixa) {
+            expect(caixaSelo!.x + caixaSelo!.width, "selo antes da faixa").toBeLessThanOrEqual(
+              caixaFaixa.x,
+            );
+          }
+        }
+        const caixaScore = await linha.locator(".scorecell").boundingBox();
+        if (caixaLinha && caixaScore) {
+          expect(
+            caixaLinha.x + caixaLinha.width - (caixaScore.x + caixaScore.width),
+            "score encosta à direita",
+          ).toBeLessThan(24);
+        }
+      }
+    });
+  });
+}

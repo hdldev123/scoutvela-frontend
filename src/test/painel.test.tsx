@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -125,6 +125,8 @@ const TERMO = {
   vigenteDesde: "2026-11-01",
 };
 
+let proximaDoTermo: unknown = null;
+
 function montar(
   dados: PainelAtleta | { erro: number },
   revisoes: unknown[] = [],
@@ -146,6 +148,13 @@ function montar(
     if (caminho === "/pedidos-titular")
       return Promise.resolve({ data: pedidos, response: { status: 200 } });
     if (caminho === "/termo") return Promise.resolve({ data: TERMO, response: { status: 200 } });
+    if (caminho === "/termo/proxima") {
+      return Promise.resolve(
+        proximaDoTermo
+          ? { data: proximaDoTermo, response: { status: 200 } }
+          : { error: { erro: "nao_encontrado", mensagem: "Não há." }, response: { status: 404 } },
+      );
+    }
     if (caminho === "/meus-dados")
       return Promise.resolve({ data: { geradoEm: "2026-11-09" }, response: { status: 200 } });
     return Promise.resolve({ data: { pilares: [] }, response: { status: 200 } });
@@ -166,6 +175,7 @@ describe("TelaPainel", () => {
     PUT.mockReset();
     toastFn.mockReset();
     toastFn.error.mockReset();
+    proximaDoTermo = null;
   });
 
   it("mostra o primeiro nome, score e ciclo, sem o botão da ficha", async () => {
@@ -296,6 +306,44 @@ describe("TelaPainel", () => {
     ]);
     expect(await screen.findByText("2 → 4")).toBeInTheDocument();
     expect(screen.getByText("Nota nova: 3")).toBeInTheDocument();
+  });
+
+  it("mostra a nova versão do termo e aceita antes da vigência", async () => {
+    // 23h30 em Brasília de 30/11: em UTC já é 1º/12, e a tela mostra o dia de Brasília.
+    const proxima = {
+      versao: "Piloto 18+ · v3",
+      titulo: "Termo v3",
+      vigenteDesde: "2026-12-01T02:30:00.000Z",
+    };
+    proximaDoTermo = { ...proxima, texto: "Texto novo do termo." };
+    POST.mockResolvedValue({ data: { ok: true }, response: { status: 200 } });
+    const inv = vi.spyOn(QueryClient.prototype, "invalidateQueries");
+    montar(painel({ termoProxima: proxima }));
+    expect(
+      await screen.findByRole("heading", {
+        name: "Nova versão do termo (Piloto 18+ · v3) passa a valer em 30/11/2026",
+      }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Ler a nova versão" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Termo, versão Piloto 18+ · v3" });
+    expect(await within(dialogo).findByText("Texto novo do termo.")).toBeInTheDocument();
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Aceitar agora" }));
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith("/termo/aceite", { body: { versao: "Piloto 18+ · v3" } }),
+    );
+    await waitFor(() => {
+      const chaves = inv.mock.calls.map((c) => JSON.stringify(c[0]?.queryKey));
+      expect(chaves).toEqual(
+        expect.arrayContaining(['["painel"]', '["notificacoes"]', '["termo"]']),
+      );
+    });
+    inv.mockRestore();
+  });
+
+  it("sem próxima versão não mostra o aviso de nova versão", async () => {
+    montar(painel());
+    await screen.findByRole("heading", { level: 1, name: "Olá, Helena" });
+    expect(screen.queryByRole("button", { name: "Aceitar agora" })).toBeNull();
   });
 
   it("não mostra o termo quando já foi aceito", async () => {

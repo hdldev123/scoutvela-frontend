@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, paraErroApi } from "./cliente";
+import { invalidarNotificacoes } from "./notificacoes";
 import type { paths } from "./schema";
 
 /** Contas de acesso (GET/POST /usuarios, PUT /usuarios/{id}, convite) e edição de atletas (PUT /atletas/{id}). */
@@ -85,7 +86,8 @@ export function useAlterarAtivo() {
       if (error || !data) throw paraErroApi(response.status, error);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["usuarios"] }),
+    onSuccess: () =>
+      Promise.all([qc.invalidateQueries({ queryKey: ["usuarios"] }), invalidarNotificacoes(qc)]),
   });
 }
 
@@ -106,6 +108,9 @@ export function useEditarAtleta() {
         qc.invalidateQueries({ queryKey: ["atleta"] }),
         qc.invalidateQueries({ queryKey: ["usuarios"] }),
         qc.invalidateQueries({ queryKey: ["atletas-gestao"] }),
+        qc.invalidateQueries({ queryKey: ["investimento"] }),
+        // Ativar ou desativar muda quem tem pendência de avaliação.
+        invalidarNotificacoes(qc),
       ]);
     },
   });

@@ -167,7 +167,12 @@ export function TelaAuditoria() {
               texto="Amplie o período ou limpe os filtros para ver mais eventos."
             />
           ) : (
-            <div className="table-scroll" tabIndex={0}>
+            <div
+              className="table-scroll"
+              tabIndex={0}
+              role="region"
+              aria-label="Tabela de trilha de auditoria, role para ver todas as colunas"
+            >
               <table className="data interativa aud-tabela">
                 <thead>
                   <tr>

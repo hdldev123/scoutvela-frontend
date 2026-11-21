@@ -1,8 +1,9 @@
 import { Command } from "cmdk";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Avatar } from "./Avatar";
 import { fmt1 } from "./formato";
+import { temSobreposicao, useSobreposicao } from "./sobreposicoes";
 
 export type Visivel = {
   id: string;
@@ -21,35 +22,72 @@ export interface CommandPaletteProps {
   aoSelecionar: (id: string) => void;
 }
 
+/** Atalho da busca: "⌘K" no Mac e "Ctrl K" nos demais. Começa neutro para não divergir do SSR. */
+function useRotuloAtalho(): string {
+  const [rotulo, setRotulo] = useState("Ctrl K");
+  useEffect(() => {
+    const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+    const plataforma = nav.userAgentData?.platform ?? nav.platform ?? "";
+    if (/mac|iphone|ipad|ipod/i.test(plataforma)) setRotulo("⌘K");
+  }, []);
+  return rotulo;
+}
+
 export function CommandPalette({ itens, aoSelecionar }: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
+  const aberta = useRef(false);
+  aberta.current = open;
+  const botao = useRef<HTMLButtonElement>(null);
+  const caixa = useRef<HTMLDivElement>(null);
+  const atalho = useRotuloAtalho();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
+        // Com um diálogo (ou a gaveta) aberto, a busca não abre por baixo dele.
+        if (!aberta.current && temSobreposicao()) return;
         setOpen((o) => !o);
       }
-      if (e.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  useSobreposicao({ ativa: open, aoEsc: () => setOpen(false), caixa: () => caixa.current });
+
+  // Ao fechar, o foco volta ao botão "Buscar atleta".
+  const estavaAberta = useRef(false);
+  useEffect(() => {
+    if (estavaAberta.current && !open) botao.current?.focus();
+    estavaAberta.current = open;
+  }, [open]);
+
   return (
     <>
-      <button type="button" className="cmdk-trigger" onClick={() => setOpen(true)}>
+      <button
+        ref={botao}
+        type="button"
+        className="cmdk-trigger"
+        aria-haspopup="dialog"
+        aria-keyshortcuts="Control+K Meta+K"
+        onClick={() => setOpen(true)}
+      >
         <i className="ph ph-magnifying-glass" aria-hidden="true" />
         <span>Buscar atleta…</span>
-        <kbd>⌘K</kbd>
+        <kbd>{atalho}</kbd>
       </button>
       {open &&
         typeof document !== "undefined" &&
         createPortal(
           <div className="cmdk-overlay scout" onClick={() => setOpen(false)}>
             <Command
+              ref={caixa}
               className="cmdk"
-              label="Central de comando"
+              label="Buscar atleta"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Buscar atleta"
               onClick={(e) => e.stopPropagation()}
             >
               <Command.Input autoFocus placeholder="Nome, classe ou status do gate…" />

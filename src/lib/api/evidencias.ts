@@ -134,3 +134,19 @@ function baixarOuAbrir(url: string, nomeArquivo: string, novaAba: boolean): void
   a.click();
   a.remove();
 }
+
+/**
+ * `DELETE /evidencias/{id}`: remove um anexo que não foi vinculado a nenhuma nota (enviado e
+ * depois descartado). Falha em silêncio: 404 e 410 (já sumiu) e 409 (já vinculado) não pedem
+ * nada, e o resto o job do back limpa em 24 h. No desenvolvimento, a falha vai ao console.
+ */
+export async function removerEvidenciaOrfa(id: string): Promise<void> {
+  try {
+    const { response } = await api.DELETE("/evidencias/{id}", { params: { path: { id } } });
+    if (import.meta.env.DEV && response && ![204, 404, 409, 410].includes(response.status)) {
+      console.warn(`Anexo órfão ${id} não removido (HTTP ${response.status}).`);
+    }
+  } catch (e) {
+    if (import.meta.env.DEV) console.warn(`Anexo órfão ${id} não removido.`, e);
+  }
+}

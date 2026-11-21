@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { mensagemDeErro } from "@/lib/api/cliente";
+import { errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
 import { useSalvarParametros, type Parametros } from "@/lib/api/parametros";
 import { Dialogo } from "./Dialogo";
+import { atributosDoCampo } from "./campo-util";
+import { MensagemCampo } from "./MensagemCampo";
 import { MSG_SALVO } from "./parametros-util";
 
 function ErroApi({ erro }: { erro: unknown }) {
@@ -38,6 +40,9 @@ export function SecaoFaixas({ dados }: { dados: Parametros }) {
       avisos.push("A última faixa precisa começar em 0.");
   }
   const alterada = dados.faixas.some((f, i) => lidos[i] !== f.scoreMin);
+  // Erros do 400 por faixa: "faixas.N.scoreMin" aponta para a N-ésima faixa enviada.
+  const doServidor = errosPorCampo(salvar.error);
+  const erroDaFaixa = (i: number) => doServidor[`faixas.${i}.scoreMin`];
 
   const enviar = (e: FormEvent) => {
     e.preventDefault();
@@ -56,7 +61,7 @@ export function SecaoFaixas({ dados }: { dados: Parametros }) {
           </span>
         </div>
         <div className="par-faixas">
-          {dados.faixas.map((f) => (
+          {dados.faixas.map((f, i) => (
             <div className="par-linha" key={f.id}>
               <span className="par-faixa-nome">{f.nome}</span>
               <input
@@ -64,10 +69,16 @@ export function SecaoFaixas({ dados }: { dados: Parametros }) {
                 type="text"
                 inputMode="numeric"
                 aria-label={`Score mínimo de ${f.nome}`}
-                aria-invalid={avisos.length > 0}
+                {...(erroDaFaixa(i)
+                  ? atributosDoCampo(`faixa-erro-${f.id}`, erroDaFaixa(i))
+                  : { "aria-invalid": avisos.length > 0 })}
                 value={valores[f.id] ?? ""}
-                onChange={(e) => setValores((v) => ({ ...v, [f.id]: e.target.value }))}
+                onChange={(e) => {
+                  if (salvar.isError) salvar.reset();
+                  setValores((v) => ({ ...v, [f.id]: e.target.value }));
+                }}
               />
+              <MensagemCampo id={`faixa-erro-${f.id}`} texto={erroDaFaixa(i)} />
             </div>
           ))}
         </div>
@@ -132,6 +143,20 @@ export function SecaoRubricas({ dados }: { dados: Parametros }) {
       }
     }
   }
+  // Erros do 400: "rubricas.N.descricao" aponta para a N-ésima rubrica enviada (alteradas, depois
+  // as 6 do pilar novo).
+  const doServidor = errosPorCampo(salvar.error);
+  const enviadas: { pilarId: string | null; nota: number }[] = alteradas.map((a) => ({
+    pilarId: a.pilarId,
+    nota: a.nota,
+  }));
+  if (novoPilar !== null && novoPilar !== "" && novas.every(descricaoValida)) {
+    NOTAS.forEach((nota) => enviadas.push({ pilarId: novoPilar, nota }));
+  }
+  const erroServidorDe = (pilarId: string | null, nota: number) => {
+    const i = enviadas.findIndex((e) => e.pilarId === pilarId && e.nota === nota);
+    return i < 0 ? undefined : doServidor[`rubricas.${i}.descricao`];
+  };
   const novoAberto = novoPilar !== null && novoPilar !== "";
   const novoCompleto = novoAberto && novas.every(descricaoValida);
   const novoIncompleto = novoAberto && !novoCompleto;
@@ -156,7 +181,10 @@ export function SecaoRubricas({ dados }: { dados: Parametros }) {
 
   const campo = (pilarId: string | null, nota: number, quem: string) => {
     const k = chave(pilarId, nota);
-    const erro = alteradas.some((a) => a.pilarId === pilarId && a.nota === nota && !a.ok);
+    const erroLocal = alteradas.some((a) => a.pilarId === pilarId && a.nota === nota && !a.ok);
+    const msgServidor = erroServidorDe(pilarId, nota);
+    const erro = erroLocal || !!msgServidor;
+    const idErro = `rub-erro-${k}`;
     return (
       <li key={k}>
         <span className="escala-nota" aria-hidden="true">
@@ -167,9 +195,14 @@ export function SecaoRubricas({ dados }: { dados: Parametros }) {
           maxLength={300}
           aria-label={`Descrição da nota ${nota}, ${quem}`}
           aria-invalid={erro}
+          {...(msgServidor ? { "aria-describedby": idErro } : {})}
           value={valores[k] ?? ""}
-          onChange={(e) => setValores((v) => ({ ...v, [k]: e.target.value }))}
+          onChange={(e) => {
+            if (salvar.isError) salvar.reset();
+            setValores((v) => ({ ...v, [k]: e.target.value }));
+          }}
         />
+        <MensagemCampo id={idErro} texto={msgServidor} />
       </li>
     );
   };
@@ -242,11 +275,14 @@ export function SecaoRubricas({ dados }: { dados: Parametros }) {
                       rows={2}
                       maxLength={300}
                       aria-label={`Nova rubrica, descrição da nota ${n}`}
+                      {...atributosDoCampo(`rub-novo-erro-${n}`, erroServidorDe(novoPilar, n))}
                       value={novas[i]}
-                      onChange={(e) =>
-                        setNovas((ns) => ns.map((x, j) => (j === i ? e.target.value : x)))
-                      }
+                      onChange={(e) => {
+                        if (salvar.isError) salvar.reset();
+                        setNovas((ns) => ns.map((x, j) => (j === i ? e.target.value : x)));
+                      }}
                     />
+                    <MensagemCampo id={`rub-novo-erro-${n}`} texto={erroServidorDe(novoPilar, n)} />
                   </li>
                 ))}
               </ul>

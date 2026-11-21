@@ -123,6 +123,15 @@ export function useImportarCsv() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: importarCsv,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["ranking"] }),
+    // Importar muda ranking, ficha, investimento e a lista de pendentes (`["atletas", ...]`).
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ["ranking"] }),
+        qc.invalidateQueries({ queryKey: ["atleta"] }),
+        qc.invalidateQueries({ queryKey: ["atletas"] }),
+        qc.invalidateQueries({ queryKey: ["atletas-gestao"] }),
+        qc.invalidateQueries({ queryKey: ["investimento"] }),
+        invalidarNotificacoes(qc),
+      ]),
   });
 }
