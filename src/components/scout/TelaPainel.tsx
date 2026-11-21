@@ -286,9 +286,7 @@ function TermoAceite({ novaVersao }: { novaVersao?: string | undefined }) {
               type="button"
               className="btn primary"
               disabled={aceitar.isPending}
-              onClick={() =>
-                aceitar.mutate(termo.data.versao, { onSuccess: () => toast("Termo aceito") })
-              }
+              onClick={() => aceitar.mutate({ versao: termo.data.versao, aviso: "Termo aceito" })}
             >
               {aceitar.isPending ? "Registrando…" : "Li e aceito"}
             </button>
@@ -308,12 +306,10 @@ function TermoProximo({ proxima }: { proxima: NonNullable<PainelAtleta["termoPro
   const texto = useTermoProxima({ enabled: lendo });
   const aceitar = useAceitarTermo();
   const aceitarAgora = () =>
-    aceitar.mutate(proxima.versao, {
-      onSuccess: () => {
-        setLendo(false);
-        toast("Nova versão do termo aceita");
-      },
-    });
+    aceitar.mutate(
+      { versao: proxima.versao, aviso: "Nova versão do termo aceita" },
+      { onSuccess: () => setLendo(false) },
+    );
   const erro = aceitar.error
     ? mensagemDeErro(aceitar.error, "Não foi possível registrar o aceite.")
     : "";
