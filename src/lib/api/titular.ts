@@ -8,6 +8,7 @@ import type { paths } from "./schema";
 type Json<T> = T extends { content: { "application/json": infer C } } ? C : never;
 
 export type Termo = Json<paths["/termo"]["get"]["responses"][200]>;
+export type TermoProxima = Json<paths["/termo/proxima"]["get"]["responses"][200]>;
 export type PedidoTitular = Json<paths["/pedidos-titular"]["get"]["responses"][200]>[number];
 export type CorpoPedidoTitular =
   paths["/pedidos-titular"]["post"]["requestBody"]["content"]["application/json"];
@@ -30,7 +31,25 @@ export function useTermo(opcoes: { enabled?: boolean } = {}) {
   });
 }
 
-/** O atleta aceita a versão vigente do termo. */
+/**
+ * `GET /termo/proxima` (chave `['termo', 'proxima']`): próxima versão publicada, ainda sem
+ * vigência. A API responde 404 quando não há; aqui isso vira `null`.
+ */
+export function useTermoProxima(opcoes: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: ["termo", "proxima"],
+    enabled: opcoes.enabled ?? true,
+    retry: false,
+    queryFn: async (): Promise<TermoProxima | null> => {
+      const { data, error, response } = await api.GET("/termo/proxima");
+      if (response.status === 404) return null;
+      if (error || !data) throw paraErroApi(response.status, error);
+      return data;
+    },
+  });
+}
+
+/** O atleta aceita a versão vigente do termo, ou a próxima publicada (aceite antecipado). */
 export function useAceitarTermo() {
   const qc = useQueryClient();
   return useMutation({
@@ -42,6 +61,7 @@ export function useAceitarTermo() {
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["painel"] }),
         qc.invalidateQueries({ queryKey: ["me"] }),
+        qc.invalidateQueries({ queryKey: ["termo"] }),
         invalidarNotificacoes(qc),
       ]);
     },

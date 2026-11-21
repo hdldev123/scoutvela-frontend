@@ -20,7 +20,7 @@ import {
   type TipoImportacao,
 } from "@/lib/api/cadastro";
 import { ErroApi, mensagemDeErro } from "@/lib/api/cliente";
-import { useTermo } from "@/lib/api/titular";
+import { useTermo, useTermoProxima } from "@/lib/api/titular";
 import "@/styles/cadastro.css";
 
 const FORMATOS: Record<TipoImportacao, { nome: string; colunas: string; nota: string }> = {
@@ -290,16 +290,21 @@ function TermosPendentes() {
   const pendentes = usePendentes();
   const registrar = useRegistrarTermo();
   const termo = useTermo();
+  // Com uma versão futura já publicada, o gestor pode registrar o aceite dela (aceite antecipado).
+  const proxima = useTermoProxima();
   const [alvo, setAlvo] = useState<AtletaPendente | null>(null);
   const [erro, setErro] = useState("");
+  const [qual, setQual] = useState<"vigente" | "proxima">("vigente");
+
+  const escolhida = qual === "proxima" && proxima.data ? proxima.data : termo.data;
 
   const confirmar = () => {
     if (!alvo) return;
     const atleta = alvo;
     setErro("");
-    if (!termo.data) return;
+    if (!escolhida) return;
     registrar.mutate(
-      { id: atleta.id, versao: termo.data.versao },
+      { id: atleta.id, versao: escolhida.versao },
       {
         onSuccess: () => {
           setAlvo(null);
@@ -374,6 +379,7 @@ function TermosPendentes() {
                       className="btn sm"
                       onClick={() => {
                         setErro("");
+                        setQual("vigente");
                         setAlvo(p);
                       }}
                     >
@@ -387,13 +393,42 @@ function TermosPendentes() {
         </div>
       )}
       {alvo && (
-        <Dialogo titulo="Registrar aceite do termo" aoFechar={() => setAlvo(null)}>
+        <Dialogo
+          titulo="Registrar aceite do termo"
+          aoFechar={() => setAlvo(null)}
+          bloqueado={registrar.isPending}
+        >
           <div className="stack" style={{ gap: 12 }}>
             <p>
-              Confirme que {alvo.nome} ({alvo.velaid}) devolveu aceito o termo vigente
-              {termo.data ? ` (${termo.data.versao})` : ""}. Depois disso o atleta entra no ranking.
-              O compartilhamento com o IBVAR continua sendo decisão do atleta.
+              Confirme que {alvo.nome} ({alvo.velaid}) devolveu aceito o termo{" "}
+              {qual === "proxima" ? "da próxima versão" : "vigente"}
+              {escolhida ? ` (${escolhida.versao})` : ""}. Depois disso o atleta entra no ranking. O
+              compartilhamento com o IBVAR continua sendo decisão do atleta.
             </p>
+            {proxima.data && (
+              <fieldset className="stack" style={{ gap: 6, border: 0, padding: 0, margin: 0 }}>
+                <legend>Versão aceita</legend>
+                <label>
+                  <input
+                    type="radio"
+                    name="cad-versao-termo"
+                    checked={qual === "vigente"}
+                    onChange={() => setQual("vigente")}
+                  />{" "}
+                  Vigente{termo.data ? ` (${termo.data.versao})` : ""}
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="cad-versao-termo"
+                    checked={qual === "proxima"}
+                    onChange={() => setQual("proxima")}
+                  />{" "}
+                  Próxima, a valer em {fmtInstante(proxima.data.vigenteDesde)} (
+                  {proxima.data.versao})
+                </label>
+              </fieldset>
+            )}
             {(erro || termo.isError) && (
               <div className="note" role="alert">
                 {erro || "Não foi possível carregar o termo vigente."}
@@ -404,11 +439,16 @@ function TermosPendentes() {
                 type="button"
                 className="btn primary"
                 onClick={confirmar}
-                disabled={registrar.isPending || !termo.data}
+                disabled={registrar.isPending || !escolhida}
               >
                 {registrar.isPending ? "Registrando…" : "Confirmar aceite"}
               </button>
-              <button type="button" className="btn" onClick={() => setAlvo(null)}>
+              <button
+                type="button"
+                className="btn"
+                disabled={registrar.isPending}
+                onClick={() => setAlvo(null)}
+              >
                 Cancelar
               </button>
             </div>

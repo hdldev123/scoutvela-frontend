@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import "@/styles/contas.css";
 import "@/styles/painel.css";
 import { BigScore } from "./BigScore";
+import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
 import { Interruptor } from "./Interruptor";
 import { NotaRevisao } from "./NotaRevisao";
@@ -29,6 +30,7 @@ import {
   useCriarPedidoTitular,
   usePedidosTitular,
   useTermo,
+  useTermoProxima,
   type TipoPedidoTitular,
 } from "@/lib/api/titular";
 
@@ -297,6 +299,114 @@ function TermoAceite({ novaVersao }: { novaVersao?: string | undefined }) {
   );
 }
 
+/**
+ * Aviso de que há uma nova versão do termo já publicada, com vigência futura. O atleta lê o
+ * texto e pode aceitar agora (aceite antecipado), sem esperar a vigência para não cair do ranking.
+ */
+function TermoProximo({ proxima }: { proxima: NonNullable<PainelAtleta["termoProxima"]> }) {
+  const [lendo, setLendo] = useState(false);
+  const texto = useTermoProxima({ enabled: lendo });
+  const aceitar = useAceitarTermo();
+  const aceitarAgora = () =>
+    aceitar.mutate(proxima.versao, {
+      onSuccess: () => {
+        setLendo(false);
+        toast("Nova versão do termo aceita");
+      },
+    });
+  const erro = aceitar.error
+    ? mensagemDeErro(aceitar.error, "Não foi possível registrar o aceite.")
+    : "";
+  return (
+    <section className="panel" aria-labelledby="painel-termo-proxima">
+      <div className="panel-head">
+        <h2 id="painel-termo-proxima">
+          Nova versão do termo ({proxima.versao}) passa a valer em{" "}
+          {fmtInstante(proxima.vigenteDesde)}
+        </h2>
+      </div>
+      <p className="muted" style={{ marginTop: 0 }}>
+        {proxima.titulo}. Leia e aceite agora para continuar no piloto sem interrupção quando ela
+        entrar em vigor.
+      </p>
+      {erro && !lendo && (
+        <p className="note" role="alert">
+          {erro}
+        </p>
+      )}
+      <div className="btn-row">
+        <button type="button" className="btn" onClick={() => setLendo(true)}>
+          Ler a nova versão
+        </button>
+        <button
+          type="button"
+          className="btn primary"
+          disabled={aceitar.isPending}
+          onClick={aceitarAgora}
+        >
+          {aceitar.isPending ? "Registrando…" : "Aceitar agora"}
+        </button>
+      </div>
+      {lendo && (
+        <Dialogo
+          titulo={`Termo, versão ${proxima.versao}`}
+          aoFechar={() => setLendo(false)}
+          bloqueado={aceitar.isPending}
+        >
+          {texto.isPending && (
+            <p role="status" className="muted">
+              Carregando termo…
+            </p>
+          )}
+          {texto.isError && (
+            <p className="note" role="alert">
+              {mensagemDeErro(texto.error, "Não foi possível carregar o termo.")}
+            </p>
+          )}
+          {texto.data === null && (
+            <p className="note" role="alert">
+              Esta versão do termo já não está mais como próxima. Recarregue o painel.
+            </p>
+          )}
+          {texto.data && (
+            <>
+              <p className="muted" style={{ marginTop: 0 }}>
+                Passa a valer em {fmtInstante(texto.data.vigenteDesde)}.
+              </p>
+              <div className="ped-termo" tabIndex={0} role="region" aria-label="Texto do termo">
+                {texto.data.texto}
+              </div>
+            </>
+          )}
+          {erro && (
+            <p className="note" role="alert">
+              {erro}
+            </p>
+          )}
+          <div className="btn-row">
+            <button
+              type="button"
+              className="btn primary"
+              disabled={!texto.data || aceitar.isPending}
+              onClick={aceitarAgora}
+            >
+              {aceitar.isPending ? "Registrando…" : "Aceitar agora"}
+            </button>
+            <button
+              type="button"
+              className="btn"
+              disabled={aceitar.isPending}
+              onClick={() => setLendo(false)}
+            >
+              Fechar
+            </button>
+          </div>
+        </Dialogo>
+      )}
+    </section>
+  );
+}
+
 function MeusDados() {
   const [baixando, setBaixando] = useState(false);
   async function baixar() {
@@ -550,6 +660,7 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
             }
           />
         )}
+        {painel.termoProxima && <TermoProximo proxima={painel.termoProxima} />}
         {painel.pendencias.length > 0 ? (
           <div className="note" role="status">
             <b>Pendências:</b> faltam suas respostas em {painel.pendencias.join(", ")}.

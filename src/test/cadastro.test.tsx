@@ -277,6 +277,35 @@ describe("TelaCadastro", () => {
     expect(chaves).toContain(JSON.stringify(["ranking"]));
   });
 
+  it("com próxima versão publicada, o gestor pode registrar o aceite dela", async () => {
+    const base = GET.getMockImplementation()!;
+    GET.mockImplementation(async (caminho: string, ...r: unknown[]) =>
+      caminho === "/termo/proxima"
+        ? ok({
+            versao: "Piloto 18+ · v3",
+            titulo: "Termo v3",
+            texto: "novo",
+            vigenteDesde: "2026-12-01T02:30:00.000Z",
+          })
+        : base(caminho, ...r),
+    );
+    POST.mockResolvedValue(ok({ ok: true }));
+    montar();
+    fireEvent.click(await screen.findByRole("button", { name: "Registrar aceite recebido" }));
+    const dialogo = await screen.findByRole("dialog");
+    const proxima = await within(dialogo).findByRole("radio", {
+      name: /Próxima, a valer em 30\/11\/2026/,
+    });
+    fireEvent.click(proxima);
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Confirmar aceite" }));
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith("/atletas/{id}/termo", {
+        params: { path: { id: "a9" } },
+        body: { versao: "Piloto 18+ · v3" },
+      }),
+    );
+  });
+
   it("importa CSV e mostra linhas ok, com erro e a tabela de erros", async () => {
     POST.mockResolvedValue(
       ok(
