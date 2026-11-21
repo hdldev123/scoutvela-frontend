@@ -98,6 +98,7 @@ function painel(extra: Partial<PainelAtleta> = {}): PainelAtleta {
       compartilharIbvar: false,
       atualizadoEm: "2026-10-15T12:00:00.000Z",
     },
+    termoProxima: null,
     ...extra,
   };
 }

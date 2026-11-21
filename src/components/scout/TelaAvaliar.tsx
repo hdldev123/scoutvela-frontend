@@ -27,6 +27,14 @@ const EVID_MIN = 3;
 const EVID_MAX = 500;
 const ATRASO_PREVIA_MS = 400;
 
+/** Ponte entre os anexos (que sobem sozinhos) e o rascunho do Editor. */
+interface Envio {
+  /** Registra um upload em andamento e devolve a versão do rascunho em que ele começou. */
+  iniciar: () => number;
+  /** Encerra o upload; o anexo só entra no rascunho se a versão ainda for a mesma. */
+  concluir: (versao: number, anexo?: { id: string; nome: string }) => void;
+}
+
 interface Rascunho {
   valor?: number;
   evidencia: string;
@@ -186,6 +194,10 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
   const [peso, setPeso] = useState<string | undefined>();
   const [altura, setAltura] = useState<string | undefined>();
   const [evMedida, setEvMedida] = useState("");
+  // Uploads de anexo em andamento e versão do rascunho: limpar() a incrementa e, com isso,
+  // um upload iniciado antes não recria o rascunho depois de gravado ou descartado.
+  const [enviando, setEnviando] = useState(0);
+  const versaoRasc = useRef(0);
   const celular = useMedia("(max-width: 1180px)");
   const abaAtiva = useRef<HTMLButtonElement>(null);
 
@@ -262,6 +274,7 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
   });
 
   function limpar() {
+    versaoRasc.current += 1;
     setRasc({});
     setPeso(undefined);
     setAltura(undefined);
@@ -276,6 +289,24 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
   }, [pilarId]);
   const mudarRasc = (indId: string, parte: Partial<Rascunho>) =>
     setRasc((r) => ({ ...r, [indId]: { evidencia: "", ...r[indId], ...parte } }));
+  const notaAtual = (indId: string) =>
+    ficha.pilares.flatMap(indicadoresDe).find((i) => i.id === indId)?.nota ?? undefined;
+  const envioDe = (indId: string): Envio => ({
+    iniciar: () => {
+      setEnviando((n) => n + 1);
+      return versaoRasc.current;
+    },
+    concluir: (versao, anexo) => {
+      setEnviando((n) => Math.max(0, n - 1));
+      if (!anexo || versao !== versaoRasc.current) return;
+      // Só anexa a um rascunho que ainda existe: sem nota alterada, o anexo seria órfão.
+      setRasc((r) => {
+        const atual = r[indId];
+        if (!atual || atual.valor === undefined || atual.valor === notaAtual(indId)) return r;
+        return { ...r, [indId]: { ...atual, anexoId: anexo.id, anexoNome: anexo.nome } };
+      });
+    },
+  });
 
   if (!pilar) return null;
   const rubricas = params.rubricas.filter((r) => r.pilarId === pilar.id);
@@ -290,12 +321,17 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
       <button
         type="button"
         className="btn primary"
-        disabled={!pronto || salvar.isPending}
+        disabled={!pronto || salvar.isPending || enviando > 0}
         onClick={() => salvar.mutate()}
       >
-        {salvar.isPending ? "Salvando…" : "Salvar avaliação"}
+        {salvar.isPending ? "Salvando…" : enviando > 0 ? "Enviando anexo…" : "Salvar avaliação"}
       </button>
-      <button type="button" className="btn ghost" disabled={!mudou} onClick={descartar}>
+      <button
+        type="button"
+        className="btn ghost"
+        disabled={!mudou || enviando > 0}
+        onClick={descartar}
+      >
         Descartar
       </button>
     </>
@@ -350,6 +386,7 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
                 rascunho={rasc[ind.id]}
                 invalido={invalidos.has(ind.id)}
                 atletaId={id}
+                envio={envioDe(ind.id)}
                 aoMudar={(parte) => mudarRasc(ind.id, parte)}
                 medida={{
                   peso,
@@ -474,6 +511,7 @@ interface LinhaProps {
   rascunho: Rascunho | undefined;
   invalido: boolean;
   atletaId: string;
+  envio: Envio;
   aoMudar: (p: Partial<Rascunho>) => void;
   medida: CamposMedida;
 }
@@ -485,6 +523,7 @@ function LinhaIndicador({
   rascunho,
   invalido,
   atletaId,
+  envio,
   aoMudar,
   medida,
 }: LinhaProps) {
@@ -565,6 +604,7 @@ function LinhaIndicador({
       rascunho={rascunho}
       invalido={invalido}
       atletaId={atletaId}
+      envio={envio}
       aoMudar={aoMudar}
     />
   );
@@ -579,6 +619,7 @@ function LinhaNota({
   rascunho,
   invalido,
   atletaId,
+  envio,
   aoMudar,
 }: PropsNota) {
   const valor = rascunho?.valor ?? ind.nota ?? undefined;
@@ -592,11 +633,8 @@ function LinhaNota({
   const mostraEvidencia =
     mudouNota || (rascunho?.evidencia.trim() ?? "") !== "" || !!rascunho?.anexoId;
   const campoEvidencia = useRef<HTMLInputElement>(null);
-  const jaMostrava = useRef(mostraEvidencia);
-  useEffect(() => {
-    if (mostraEvidencia && !jaMostrava.current) campoEvidencia.current?.focus();
-    jaMostrava.current = mostraEvidencia;
-  }, [mostraEvidencia]);
+  // O foco fica nas notas (WCAG 3.2.2): o campo novo é anunciado, não recebe foco sozinho.
+  const faltaEvidencia = mostraEvidencia && (rascunho?.evidencia.trim() ?? "") === "";
 
   return (
     <div className="ed-row">
@@ -661,8 +699,15 @@ function LinhaNota({
           </small>
         </div>
       )}
+      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {faltaEvidencia ? `Evidência obrigatória para a nova nota de ${ind.nome}` : ""}
+      </span>
       {mostraEvidencia && (
-        <div className="avaliar-evidencia">
+        <div
+          className={
+            faltaEvidencia ? "avaliar-evidencia avaliar-evidencia-nova" : "avaliar-evidencia"
+          }
+        >
           <label className="field ev" htmlFor={`ev-${ind.id}`}>
             Evidência (obrigatória)
             <input
@@ -697,7 +742,8 @@ function LinhaNota({
             atletaId={atletaId}
             indicador={ind}
             anexoNome={rascunho?.anexoNome}
-            aoAnexar={(anexoId, anexoNome) => aoMudar({ anexoId, anexoNome })}
+            envio={envio}
+            aoRemover={() => aoMudar({ anexoId: undefined, anexoNome: undefined })}
           />
         </div>
       )}
@@ -710,23 +756,29 @@ function AnexoDaNota({
   atletaId,
   indicador,
   anexoNome,
-  aoAnexar,
+  envio,
+  aoRemover,
 }: {
   atletaId: string;
   indicador: Indicador;
   anexoNome: string | undefined;
-  aoAnexar: (anexoId: string | undefined, anexoNome: string | undefined) => void;
+  envio: Envio;
+  aoRemover: () => void;
 }) {
   const qc = useQueryClient();
   const [erro, setErro] = useState("");
   const enviar = useMutation({
     mutationFn: (arquivo: File) => enviarEvidencia(atletaId, arquivo, indicador.id),
-    onSuccess: (r) => {
+    onSuccess: (r, _arquivo, versao) => {
       setErro("");
-      aoAnexar(r.id, r.nomeArquivo);
+      envio.concluir(versao, { id: r.id, nome: r.nomeArquivo });
       void qc.invalidateQueries({ queryKey: ["evidencias", atletaId] });
     },
-    onError: (e) => setErro(mensagemDeErro(e, "Não foi possível anexar o arquivo.")),
+    onError: (e, _arquivo, versao) => {
+      setErro(mensagemDeErro(e, "Não foi possível anexar o arquivo."));
+      envio.concluir(versao ?? -1);
+    },
+    onMutate: () => envio.iniciar(),
   });
 
   function escolher(arquivo: File | undefined) {
@@ -749,7 +801,7 @@ function AnexoDaNota({
         dica="PDF, JPG ou PNG, até 5 MB"
         arquivo={arquivo}
         desabilitado={enviar.isPending}
-        aoEscolher={(f) => (f ? escolher(f) : aoAnexar(undefined, undefined))}
+        aoEscolher={(f) => (f ? escolher(f) : aoRemover())}
       />
       {enviar.isPending && <span className="muted">Enviando…</span>}
       {anexoNome && !enviar.isPending && <span className="muted">Anexo segue junto da nota.</span>}

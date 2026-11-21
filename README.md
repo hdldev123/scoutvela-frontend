@@ -89,7 +89,8 @@ Decisões da CSP:
 - `script-src 'self' 'unsafe-inline'`: o HTML do TanStack Start traz scripts inline (restauração de scroll e o fluxo de hidratação com os dados do servidor), com conteúdo diferente a cada requisição. Hash não serve e nonce exigiria gerar a CSP por requisição no servidor. É a parte mais frouxa da política; o `connect-src` fechado e a ausência de `eval` limitam o estrago. Evolução possível: nonce por requisição.
 - `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`: o CSS vem do próprio build e das fontes do Google (`__root.tsx`); `unsafe-inline` por causa dos atributos `style` do React (barras de progresso, gráficos).
 - `font-src 'self' data: https://fonts.gstatic.com`: Plus Jakarta Sans e JetBrains Mono vêm do Google Fonts; a fonte dos ícones Phosphor é empacotada no build (`@phosphor-icons/web`, importada em `styles.css`), logo `'self'`.
-- `img-src 'self' data: blob:` e `media-src 'self' blob:`: imagens e o vídeo da tela de login servidos pelo próprio domínio.
+- `img-src 'self' data: blob: https://*.supabase.co`: as fotos dos atletas vêm de links assinados do Supabase Storage (`/storage/v1/object/sign/...`); sem o domínio liberado, o `Avatar` cai nas iniciais sem avisar.
+- `media-src 'self' blob: https://*.supabase.co`: o vídeo do login vem do próprio domínio (`src/assets/login-bg.mp4`) ou, se `VITE_LOGIN_VIDEO_URL` apontar para o Storage do Supabase, do `supabase.co`. Um vídeo em outro CDN exige acrescentar o domínio ao `media-src` em `vercel.json` (o `vite.config.ts` lê o mesmo arquivo).
 - `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`.
 
 ## Pendências conhecidas
