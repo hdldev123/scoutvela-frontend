@@ -135,6 +135,7 @@ const TERMO = {
 };
 
 let proximaDoTermo: unknown = null;
+let avisosDoAtleta: unknown[] = [];
 
 function montar(
   dados: PainelAtleta | { erro: number },
@@ -151,6 +152,12 @@ function montar(
             }
           : { data: dados, response: { status: 200 } },
       );
+    }
+    if (caminho === "/me/avisos") {
+      return Promise.resolve({
+        data: { itens: avisosDoAtleta, proximoAntesDe: null, naoLidos: avisosDoAtleta.length },
+        response: { status: 200 },
+      });
     }
     if (caminho === "/revisoes")
       return Promise.resolve({ data: revisoes, response: { status: 200 } });
@@ -185,6 +192,55 @@ describe("TelaPainel", () => {
     toastFn.mockReset();
     toastFn.error.mockReset();
     proximaDoTermo = null;
+    avisosDoAtleta = [];
+  });
+
+  it("destaca os pedidos de ajuste não lidos e marca como lido", async () => {
+    avisosDoAtleta = [
+      {
+        id: "7",
+        tipo: "pedido_ajuste",
+        criadoEm: "2026-11-24T12:00:00.000Z",
+        lidoEm: null,
+        atleta: { id: "a07", nome: "Helena Vasques" },
+        referencia: { pedidoAjusteId: "3" },
+        criadoPor: { nome: "Ana Ribeiro", papel: "treinador" },
+        mensagem: "Você preencheu <b>tática</b> diferente, revise.",
+        indicador: { id: "tat_leitura", nome: "Leitura de jogo" },
+      },
+      {
+        id: "8",
+        tipo: "atleta_respondeu",
+        criadoEm: "2026-11-24T12:00:00.000Z",
+        lidoEm: null,
+        atleta: null,
+        referencia: {},
+        criadoPor: null,
+        mensagem: null,
+        indicador: null,
+      },
+    ];
+    PUT.mockResolvedValue({ response: { status: 204 } });
+    montar(painel());
+    const secao = await screen.findByRole("region", { name: "Você tem um pedido de ajuste" });
+    expect(
+      within(secao).getByText("Pedido de ajuste de Ana Ribeiro em Leitura de jogo"),
+    ).toBeInTheDocument();
+    // Texto puro: as tags aparecem como texto, não viram elementos.
+    expect(
+      within(secao).getByText("Você preencheu <b>tática</b> diferente, revise."),
+    ).toBeInTheDocument();
+    expect(secao.querySelector("b")).toBeNull();
+    fireEvent.click(within(secao).getByRole("button", { name: /Marcar como lido/ }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/me/avisos/{id}/lido", { params: { path: { id: "7" } } }),
+    );
+  });
+
+  it("sem pedidos de ajuste não mostra o destaque", async () => {
+    montar(painel());
+    await screen.findByRole("heading", { level: 1, name: "Olá, Helena" });
+    expect(screen.queryByRole("region", { name: /pedido de ajuste/ })).not.toBeInTheDocument();
   });
 
   it("mostra o primeiro nome, score e ciclo, sem o botão da ficha", async () => {

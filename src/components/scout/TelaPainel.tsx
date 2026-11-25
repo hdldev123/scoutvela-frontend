@@ -11,8 +11,10 @@ import { NotaRevisao } from "./NotaRevisao";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
 import { RecursoRevisaoDialog } from "./RecursoRevisaoDialog";
 import { andamentoRevisao, rotuloPapelAtleta } from "./revisao-util";
+import { fraseDoAviso } from "./avisos-util";
 import { fmtData, fmtInstante, primeiroNome } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
+import { usePedidosDeAjuste, useMarcarAvisoLido } from "@/lib/api/avisos";
 import { useFicha } from "@/lib/api/consultas";
 import { invalidarNotificacoes, marcarPainelVisto } from "@/lib/api/notificacoes";
 import {
@@ -644,6 +646,49 @@ function Revisoes({ atletaId }: { atletaId: string }) {
   );
 }
 
+/** Pedidos de ajuste não lidos do treinador ou do gestor, em destaque no topo do painel (D8). */
+function PedidosDeAjuste() {
+  const consulta = usePedidosDeAjuste();
+  const marcar = useMarcarAvisoLido();
+  const itens = consulta.data ?? [];
+  if (itens.length === 0) return null;
+  return (
+    <section className="panel aj-destaque" aria-labelledby="painel-ajuste">
+      <h2 id="painel-ajuste">
+        {itens.length === 1
+          ? "Você tem um pedido de ajuste"
+          : `Você tem ${itens.length} pedidos de ajuste`}
+      </h2>
+      <ul className="aj-lista">
+        {itens.map((a) => (
+          <li key={a.id} className="aj-item">
+            <strong>{fraseDoAviso(a)}</strong>
+            {/* Texto puro: nunca interpretado como HTML. */}
+            {a.mensagem && <p className="aj-msg">{a.mensagem}</p>}
+            <span className="muted">{fmtInstante(a.criadoEm)}</span>
+            <div className="btn-row">
+              <button
+                type="button"
+                className="btn sm"
+                disabled={marcar.isPending}
+                onClick={() => marcar.mutate(a.id)}
+              >
+                Marcar como lido
+                <span className="sr-only">: {fraseDoAviso(a)}</span>
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      {marcar.isError && (
+        <p className="note" role="alert">
+          {mensagemDeErro(marcar.error)}
+        </p>
+      )}
+    </section>
+  );
+}
+
 function Conteudo({ painel }: { painel: PainelAtleta }) {
   const queryClient = useQueryClient();
   const [aberto, setAberto] = useState<string | null>(null);
@@ -674,6 +719,7 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
         <BigScore score={painel.score} faixa={painel.faixa} parcial={!painel.completo} />
       </div>
       <div className="stack">
+        <PedidosDeAjuste />
         {(!painel.consentimento.termoAceitoEm || painel.consentimento.termoPendente) && (
           <TermoAceite
             novaVersao={

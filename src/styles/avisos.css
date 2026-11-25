@@ -1,0 +1,96 @@
+.scout .topo-app {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.scout .btn.sino {
+  position: relative;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 1.25rem;
+}
+.sino-balao {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+}
+.avisos-topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.avisos-contagem {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.avisos-lista {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.avisos-regiao {
+  max-height: 55vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.aviso-item {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.aviso-item.nao-lido {
+  border-left: 4px solid var(--sea);
+  font-weight: 600;
+}
+.aviso-item:hover {
+  background: var(--muted);
+}
+.aviso-msg {
+  font-weight: 400;
+  white-space: pre-wrap;
+}
+.aviso-data {
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+.aj-destaque {
+  border-left: 4px solid var(--sea);
+}
+.aj-lista {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.aj-item {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.aj-msg {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.aj-contador {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}

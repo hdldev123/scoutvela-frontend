@@ -4,6 +4,7 @@ import { AvisoAmbiente } from "./AvisoAmbiente";
 import { Avatar } from "./Avatar";
 import { PerfilDialog } from "./PerfilDialog";
 import { PaletaDeAtletas } from "./PaletaDeAtletas";
+import { SinoAvisos } from "./SinoAvisos";
 import { useSobreposicao } from "./sobreposicoes";
 import { useNotificacoes } from "@/lib/api/notificacoes";
 import {
@@ -50,6 +51,9 @@ function UsuarioDoShell({
     </button>
   );
 }
+
+/** Quem recebe avisos (D8). O IBVAR não: a API devolve lista vazia e o sino nem aparece. */
+const PAPEIS_COM_AVISOS = new Set(["gestor", "treinador", "atleta"]);
 
 export function Shell({ me, onSair, children }: ShellProps) {
   const itens = me ? itensDeNavegacao(me) : [];
@@ -164,6 +168,11 @@ export function Shell({ me, onSair, children }: ShellProps) {
       {perfilAberto && <PerfilDialog aoFechar={() => setPerfilAberto(false)} />}
       {aberta && <div className="side-fundo" aria-hidden="true" onClick={() => setAberta(false)} />}
       <main className="wrap" id="app">
+        {me && PAPEIS_COM_AVISOS.has(me.usuario.papel) && (
+          <div className="topo-app">
+            <SinoAvisos naoLidos={contagens?.["avisos"] ?? 0} />
+          </div>
+        )}
         {children}
         <AvisoAmbiente />
       </main>

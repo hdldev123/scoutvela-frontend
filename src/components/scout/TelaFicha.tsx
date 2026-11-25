@@ -10,6 +10,7 @@ import { Dialogo } from "./Dialogo";
 import { EvidenciasSecao, AbrirEvidencia, VerVideo } from "./EvidenciasSecao";
 import { FinanceiroDialog } from "./FinanceiroDialog";
 import { GaugeClassFit } from "./GaugeClassFit";
+import { PedirAjusteDialog } from "./PedirAjusteDialog";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
 import { PlanoIndividual } from "./PlanoIndividual";
 import { ResultadoDialog } from "./ResultadoDialog";
@@ -462,6 +463,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
   const queryClient = useQueryClient();
   const [abertos, setAbertos] = useState<Record<string, boolean>>({});
   const [pedindoRevisao, setPedindoRevisao] = useState(false);
+  const [pedindoAjuste, setPedindoAjuste] = useState(false);
   const [lancandoResultado, setLancandoResultado] = useState(false);
   const [editandoFinanceiro, setEditandoFinanceiro] = useState(false);
   const { atleta, pilares, gates, classFit, resultados } = ficha;
@@ -590,6 +592,11 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               {papel === "atleta" && (
                 <button type="button" className="btn sm" onClick={() => setPedindoRevisao(true)}>
                   Pedir revisão de uma nota
+                </button>
+              )}
+              {podeLancar && (
+                <button type="button" className="btn sm" onClick={() => setPedindoAjuste(true)}>
+                  Pedir ajuste
                 </button>
               )}
               {podeLancar && (
@@ -782,6 +789,18 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
           atletaId={atleta.id}
           atual={ficha.financeiro}
           aoFechar={() => setEditandoFinanceiro(false)}
+        />
+      )}
+      {pedindoAjuste && (
+        <PedirAjusteDialog
+          atletaId={atleta.id}
+          atletaNome={atleta.nome}
+          aoFechar={() => setPedindoAjuste(false)}
+          pilares={pilares.map((p) => ({
+            id: p.id,
+            nome: p.nome,
+            indicadores: (p.indicadores ?? []).map((i) => ({ id: i.id, nome: i.nome })),
+          }))}
         />
       )}
       {pedindoRevisao && (
