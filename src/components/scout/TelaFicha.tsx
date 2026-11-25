@@ -14,6 +14,7 @@ import { GaugeClassFit } from "./GaugeClassFit";
 import { PedirAjusteDialog } from "./PedirAjusteDialog";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
 import { PesagensPendentes } from "./PesagensPendentes";
+import { ResultadosParaValidar } from "./ResultadosParaValidar";
 import { PlanoIndividual } from "./PlanoIndividual";
 import { ResultadoDialog } from "./ResultadoDialog";
 import { SemAcesso } from "./SemAcesso";
@@ -31,6 +32,7 @@ import {
   type LancamentoHistorico,
 } from "@/lib/api/consultas";
 import { atualizarGate } from "@/lib/api/mutacoes-ficha";
+import { INDICADORES_DE_RESULTADO, ROTULO_STATUS_RESULTADO } from "@/lib/api/resultados";
 import "@/styles/ficha.css";
 
 type Pilar = FichaAtleta["pilares"][number];
@@ -60,6 +62,15 @@ const ORIGEM_LANCAMENTO: Record<LancamentoHistorico["origem"], string> = {
   autoavaliacao: "Autoavaliação do atleta, aguardando avaliador",
   autoavaliacao_aprovada: "Autoavaliação do atleta aprovada",
   calculado: "Calculada pela pesagem",
+};
+const ORIGEM_RESULTADO = "Calculado pelo resultado validado";
+const rotuloFonte = (fonte: string, papel: string) =>
+  papel === "ibvar" ? "Lançado" : (FONTE_RESULTADO[fonte] ?? "Lançado");
+const ehResultado = (id: string) => INDICADORES_DE_RESULTADO.includes(id);
+const FONTE_RESULTADO: Record<string, string> = {
+  ranking_cbvela: "Ranking CBVela",
+  manual: "Lançado",
+  atleta: "Atleta",
 };
 
 /** Lançamentos do indicador, do mais novo para o mais antigo. Mostra só o que a API devolve ao papel. */
@@ -100,13 +111,23 @@ function HistoricoDialog({
                 </span>
               </div>
               <div className="src">
-                {[ORIGEM_LANCAMENTO[l.origem], l.avaliador?.nome].filter(Boolean).join(" · ")}
+                {[
+                  l.origem === "calculado" && ehResultado(ind.id)
+                    ? ORIGEM_RESULTADO
+                    : ORIGEM_LANCAMENTO[l.origem],
+                  l.avaliador?.nome,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </div>
               {l.justificativa && <div className="src">Justificativa: {l.justificativa}</div>}
               {l.evidencia ? (
                 <div className="src">Evidência: {l.evidencia}</div>
               ) : (
-                papel !== "ibvar" && <div className="src">{SEM_EVIDENCIA}</div>
+                papel !== "ibvar" &&
+                !(l.origem === "calculado" && ehResultado(ind.id)) && (
+                  <div className="src">{SEM_EVIDENCIA}</div>
+                )
               )}
               {l.link && <VerVideo url={l.link} />}
               {l.anexo && (
@@ -181,7 +202,10 @@ function LinhaIndicador({
     );
   }
   let origem: string;
-  if (ind.nota == null) {
+  if (ind.calculado && ehResultado(ind.id)) {
+    // Nota calculada pelos resultados validados: a API explica qual resultado vale.
+    origem = [ind.explicacao, ORIGEM_RESULTADO].filter(Boolean).join(" · ");
+  } else if (ind.nota == null) {
     origem = ind.tipo === "A" ? "Aguardando resposta do atleta" : "Ainda não avaliado neste ciclo";
   } else {
     const quem =
@@ -673,23 +697,26 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                   <tr>
                     <th>Data</th>
                     <th>Evento</th>
+                    <th className="r">Edição</th>
                     <th className="r">Posição</th>
                     <th className="r">Pts</th>
                     <th>Fonte</th>
+                    {papel !== "ibvar" && <th>Situação</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {resultados.map((r, i) => {
+                  {resultados.map((r) => {
                     const link = linkSeguro(r.linkOficial);
                     return (
-                      <tr key={`${r.data}-${r.evento}-${i}`}>
+                      <tr key={r.id}>
                         <td className="nw">{fmtData(r.data)}</td>
                         <td>
                           {r.evento}
                           <small className="sub">{rotuloNivelHistorico(r.nivel)}</small>
                         </td>
+                        <td className="r nw">{r.edicao}</td>
                         <td className="r nw">
-                          {r.posicao}º de {r.tamanhoFrota}
+                          {r.posicao}º{r.tamanhoFrota != null ? ` de ${r.tamanhoFrota}` : ""}
                         </td>
                         <td className="r num">
                           {r.pontosCbvela == null ? "—" : fmt0(r.pontosCbvela)}
@@ -703,15 +730,30 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                               href={link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              aria-label="Lançado + link oficial"
+                              aria-label={`${rotuloFonte(r.fonte, papel)} + link oficial`}
                             >
-                              Lançado
+                              {rotuloFonte(r.fonte, papel)}
                               <i className="ph ph-arrow-square-out" aria-hidden="true" />
                             </a>
                           ) : (
-                            <span className="pill st-neutro">Lançado</span>
+                            <span className="pill st-neutro">{rotuloFonte(r.fonte, papel)}</span>
                           )}
                         </td>
+                        {papel !== "ibvar" && (
+                          <td>
+                            <span className={`pill ${ROTULO_STATUS_RESULTADO[r.status].classe}`}>
+                              {ROTULO_STATUS_RESULTADO[r.status].rotulo}
+                            </span>
+                            {r.validadoPor && r.validadoEm && (
+                              <small className="sub">
+                                por {r.validadoPor.nome} em {fmtInstante(r.validadoEm)}
+                              </small>
+                            )}
+                            {r.status === "recusado" && r.motivo && (
+                              <small className="sub">Motivo: {r.motivo}</small>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -719,10 +761,11 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               </table>
             </div>
             <p className="panel-dica">
-              Resultados nacionais chegam do Ranking CBVela pelo código VelaID. Internacionais são
-              lançados com o link do resultado oficial.
+              Os pontos do Ranking CBVela são só informação e não entram na nota. A nota dos
+              indicadores de resultado sai dos resultados validados.
             </p>
           </section>
+          {podeLancar && <ResultadosParaValidar atletaId={atleta.id} />}
           {papel !== "ibvar" && (
             <ComparacaoAutoavaliacao
               atletaId={atleta.id}
