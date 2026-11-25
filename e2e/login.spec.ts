@@ -43,7 +43,9 @@ test("link de senha já usado, com o gestor logado, não mostra o formulário", 
   await expect(page.locator('input[type="password"]')).toHaveCount(0);
 });
 
-test("link de senha de outra conta, com o gestor logado, não mostra o formulário", async ({ page }) => {
+test("link de senha de outra conta, com o gestor logado, não mostra o formulário", async ({
+  page,
+}) => {
   await entrar(page, "gestor");
   const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
   const token = `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: "00000000-0000-4000-8000-000000000000" })}.x`;
