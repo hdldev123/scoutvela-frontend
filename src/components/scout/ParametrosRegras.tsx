@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useSalvarParametros, type Parametros } from "@/lib/api/parametros";
+import { FormPerfResultados } from "./ParametrosResultados";
 import { formatarValor, lerNumero, MSG_SALVO } from "./parametros-util";
 
 type Campo = {
@@ -254,7 +255,6 @@ function dataBr(iso: string): string {
 }
 
 const NOMES_LEITURA: Record<string, string> = {
-  PERF_PONTOS: "Nota sugerida pelos pontos do Ranking CBVela",
   TERMO_EXIGE_REACEITE: "Exigir aceite da versão vigente do termo",
 };
 
@@ -278,7 +278,10 @@ export function SecaoRegras({ dados }: { dados: Parametros }) {
   const editaveis = dados.regras
     .filter((r) => r.codigo in DEFINICOES)
     .sort((a, b) => ORDEM.indexOf(a.codigo) - ORDEM.indexOf(b.codigo));
-  const outras = dados.regras.filter((r) => !(r.codigo in DEFINICOES));
+  const resultados = dados.regras.find((r) => r.codigo === "PERF_RESULTADOS");
+  const outras = dados.regras.filter(
+    (r) => !(r.codigo in DEFINICOES) && r.codigo !== "PERF_RESULTADOS",
+  );
   return (
     <section className="panel">
       <div className="panel-head">
@@ -297,6 +300,13 @@ export function SecaoRegras({ dados }: { dados: Parametros }) {
             atualizadoEm={r.atualizadoEm}
           />
         ))}
+        {resultados && (
+          <FormPerfResultados
+            key={`${resultados.codigo}|${resultados.atualizadoEm}`}
+            valor={resultados.valor}
+            atualizadoEm={resultados.atualizadoEm}
+          />
+        )}
       </div>
       {outras.length > 0 && (
         <>

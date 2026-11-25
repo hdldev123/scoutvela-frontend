@@ -177,6 +177,7 @@ describe("TelaParametros", () => {
                   evidencia: "obrigatoria" as const,
                   exigeAnexo: false,
                   autoavaliacao: true,
+                  orientacao: null,
                 },
                 {
                   id: "tec_1",
@@ -186,6 +187,7 @@ describe("TelaParametros", () => {
                   evidencia: "opcional" as const,
                   exigeAnexo: false,
                   autoavaliacao: true,
+                  orientacao: null,
                 },
               ],
             }
@@ -201,6 +203,7 @@ describe("TelaParametros", () => {
                     evidencia: "obrigatoria" as const,
                     exigeAnexo: true,
                     autoavaliacao: false,
+                    orientacao: null,
                   },
                 ],
               }
@@ -243,6 +246,7 @@ describe("TelaParametros", () => {
       tipo: "T" as const,
       calculado: false,
       exigeAnexo: false,
+      orientacao: null,
     };
 
     function abrir(dados: Parametros) {
@@ -832,5 +836,199 @@ describe("TelaParametros: ressincronização e erros do servidor", () => {
     const msgClasse = await screen.findByText("O valor máximo é 200.");
     expect(max).toHaveAttribute("aria-invalid", "true");
     expect(max).toHaveAttribute("aria-describedby", msgClasse.id);
+  });
+});
+
+describe("TelaParametros: nota dos resultados e orientação (D10)", () => {
+  const REGRA = {
+    edicoes_max: 4,
+    sem_resultado: 0,
+    niveis: {
+      mundial: [
+        { ate: 3, nota: 5 },
+        { ate: 10, nota: 4 },
+        { ate: 25, nota: 3 },
+        { ate: null, nota: 2 },
+      ],
+      continental: [
+        { ate: 3, nota: 5 },
+        { ate: null, nota: 2 },
+      ],
+      nacional: [
+        { ate: 1, nota: 5 },
+        { ate: 2, nota: 4 },
+        { ate: 3, nota: 3 },
+        { ate: null, nota: 0 },
+      ],
+    },
+  };
+  const comRegra: Parametros = {
+    ...params,
+    regras: [
+      ...params.regras,
+      {
+        codigo: "PERF_RESULTADOS",
+        descricao: "Nota dos resultados",
+        valor: REGRA,
+        atualizadoEm: "2026-11-24T12:00:00.000Z",
+      },
+    ],
+  };
+  const NOME_SALVAR = "Salvar PERF_RESULTADOS · Nota dos resultados";
+
+  function abrir(dados: Parametros) {
+    GET.mockImplementation(async (caminho: string) => ({
+      data: caminho === "/termos" ? [] : dados,
+      response: { status: 200 },
+    }));
+    PUT.mockResolvedValue({ data: dados, response: { status: 200 } });
+    renderizar();
+  }
+
+  beforeEach(() => {
+    GET.mockReset();
+    PUT.mockReset();
+    window.location.hash = "";
+    toastFn.success.mockReset();
+  });
+
+  it("mostra o editor com os valores atuais e o aviso de regra provisória (P12)", async () => {
+    abrir(comRegra);
+    await screen.findByRole("tab", { name: "Regras provisórias" });
+    irPara("Regras provisórias");
+    expect(await screen.findByLabelText("Edições máximas")).toHaveValue("4");
+    expect(screen.getByLabelText("Nota sem resultado validado")).toHaveValue("0");
+    expect(screen.getByText(/Valores provisórios \(P12\)/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Mundial, faixa 2, até a colocação")).toHaveValue("10");
+    expect(screen.getByLabelText("Mundial, faixa 2, nota")).toHaveValue("4");
+    // A última faixa vale para as demais colocações e não tem limite digitável.
+    expect(screen.queryByLabelText("Mundial, faixa 4, até a colocação")).toBeNull();
+    expect(screen.getAllByText("Demais colocações")).toHaveLength(3);
+    expect(screen.getByRole("button", { name: NOME_SALVAR })).toBeDisabled();
+  });
+
+  it("envia a regra em snake_case, com a última faixa sem limite", async () => {
+    abrir(comRegra);
+    await screen.findByRole("tab", { name: "Regras provisórias" });
+    irPara("Regras provisórias");
+    fireEvent.change(await screen.findByLabelText("Edições máximas"), { target: { value: "5" } });
+    fireEvent.change(screen.getByLabelText("Nacional, faixa 3, nota"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: NOME_SALVAR }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          regras: {
+            PERF_RESULTADOS: {
+              ...REGRA,
+              edicoes_max: 5,
+              niveis: {
+                ...REGRA.niveis,
+                nacional: [
+                  { ate: 1, nota: 5 },
+                  { ate: 2, nota: 4 },
+                  { ate: 3, nota: 2 },
+                  { ate: null, nota: 0 },
+                ],
+              },
+            },
+          },
+        },
+      }),
+    );
+  });
+
+  it("adiciona e remove faixa, e valida como o back", async () => {
+    abrir(comRegra);
+    await screen.findByRole("tab", { name: "Regras provisórias" });
+    irPara("Regras provisórias");
+    const salvar = await screen.findByRole("button", { name: NOME_SALVAR });
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar faixa em Continental" }));
+    // A faixa nova nasce sem limite: não dá para salvar.
+    expect(screen.getByLabelText("Continental, faixa 2, até a colocação")).toHaveValue("");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /Continental, faixa 2: informe a colocação limite/,
+    );
+    expect(salvar).toBeDisabled();
+    const ate = screen.getByLabelText("Continental, faixa 2, até a colocação");
+    fireEvent.change(ate, { target: { value: "3" } });
+    expect(screen.getByRole("alert")).toHaveTextContent(/maior que a da faixa anterior/);
+    fireEvent.change(ate, { target: { value: "10" } });
+    // A nova faixa copia a nota da última (2); a última faixa (nota 2) não pode ficar acima da anterior (1).
+    fireEvent.change(screen.getByLabelText("Continental, faixa 2, nota"), {
+      target: { value: "1" },
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent(/a nota não pode ser maior/);
+    fireEvent.change(screen.getByLabelText("Continental, faixa 2, nota"), {
+      target: { value: "3" },
+    });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(salvar).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Remover Continental, faixa 2" }));
+    // Sobram duas faixas: a segunda volta a ser a última, sem limite digitável.
+    expect(screen.queryByLabelText("Continental, faixa 2, até a colocação")).toBeNull();
+    expect(screen.queryByLabelText("Continental, faixa 3, nota")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Edições máximas"), { target: { value: "21" } });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /Edições máximas: informe um inteiro de 1 a 20/,
+    );
+    expect(salvar).toBeDisabled();
+    expect(PUT).not.toHaveBeenCalled();
+  });
+
+  it("orientação por indicador: edita, envia e apaga com null", async () => {
+    const dados: Parametros = {
+      ...comRegra,
+      pilares: params.pilares.map((p) =>
+        p.id === "perf"
+          ? {
+              ...p,
+              indicadores: [
+                {
+                  id: "perf_mundial",
+                  nome: "Resultados mundiais",
+                  tipo: "T" as const,
+                  calculado: true,
+                  evidencia: "obrigatoria" as const,
+                  exigeAnexo: false,
+                  autoavaliacao: false,
+                  orientacao: "Informe cada edição com a súmula.",
+                },
+                {
+                  id: "tec_1",
+                  nome: "Leitura de vento",
+                  tipo: "T" as const,
+                  calculado: false,
+                  evidencia: "opcional" as const,
+                  exigeAnexo: false,
+                  autoavaliacao: true,
+                  orientacao: null,
+                },
+              ],
+            }
+          : p,
+      ),
+    };
+    abrir(dados);
+    await screen.findByRole("tab", { name: "Evidência" });
+    irPara("Evidência");
+    const calc = screen.getByLabelText("Orientação de Resultados mundiais");
+    expect(calc).toHaveValue("Informe cada edição com a súmula.");
+    expect(calc).toHaveAttribute("maxlength", "1000");
+    expect(screen.getByRole("button", { name: "Salvar alterações" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Orientação de Leitura de vento"), {
+      target: { value: "  Descreva o teste de campo.  " },
+    });
+    fireEvent.change(calc, { target: { value: "   " } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar 2 indicadores" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          indicadores: [
+            { id: "perf_mundial", orientacao: null },
+            { id: "tec_1", orientacao: "Descreva o teste de campo." },
+          ],
+        },
+      }),
+    );
   });
 });

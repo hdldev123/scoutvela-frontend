@@ -152,3 +152,34 @@
   gap: 2px;
   min-width: 0;
 }
+
+/* Faixas de colocação da regra PERF_RESULTADOS (D10). */
+.par-res-faixas {
+  width: 100%;
+  table-layout: fixed;
+}
+.par-res-faixas th,
+.par-res-faixas td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+.par-res-faixas input {
+  width: 100%;
+  min-width: 0;
+  max-width: 6rem;
+  min-height: 34px;
+}
+.par-res-faixas col:first-child,
+.par-res-faixas th:first-child {
+  width: 3.5rem;
+}
+.par-res-faixas th:last-child {
+  width: 3rem;
+}
+.par-evid-orientacao {
+  flex: 1 1 100%;
+}
+.par-evid-orientacao textarea {
+  width: 100%;
+  min-height: 3.5rem;
+}

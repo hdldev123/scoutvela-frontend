@@ -14,6 +14,8 @@ type IndicadorParam = Parametros["pilares"][number]["indicadores"][number];
 const comEvidencia = (i: IndicadorParam) => i.tipo !== "R" && !i.calculado;
 
 /** Só indicadores de nota do treinador (tipo T, não calculados) aceitam autoavaliação (D9). */
+const MAX_ORIENTACAO = 1000;
+
 const aceitaAutoavaliacao = (i: IndicadorParam) => i.tipo === "T" && !i.calculado;
 
 /**
@@ -30,12 +32,16 @@ export function SecaoEvidencia({ dados }: { dados: Parametros }) {
   const [auto, setAuto] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(todos.map((i) => [i.id, i.autoavaliacao])),
   );
+  const [orient, setOrient] = useState<Record<string, string>>(() =>
+    Object.fromEntries(todos.map((i) => [i.id, i.orientacao ?? ""])),
+  );
+  const mudouOrient = (i: IndicadorParam) => (orient[i.id] ?? "").trim() !== (i.orientacao ?? "");
   const mudouEvidencia = (i: IndicadorParam) => comEvidencia(i) && valores[i.id] !== i.evidencia;
   const mudouAuto = (i: IndicadorParam) => aceitaAutoavaliacao(i) && auto[i.id] !== i.autoavaliacao;
-  const alterados = todos.filter((i) => mudouEvidencia(i) || mudouAuto(i));
+  const alterados = todos.filter((i) => mudouEvidencia(i) || mudouAuto(i) || mudouOrient(i));
   // Erros do 400: "indicadores.N.evidencia" (ou ".autoavaliacao") aponta para o N-ésimo item enviado.
   const doServidor = errosPorCampo(salvar.error);
-  const erroDo = (id: string, campo: "evidencia" | "autoavaliacao") => {
+  const erroDo = (id: string, campo: "evidencia" | "autoavaliacao" | "orientacao") => {
     const n = alterados.findIndex((i) => i.id === id);
     return n < 0
       ? undefined
@@ -51,6 +57,7 @@ export function SecaoEvidencia({ dados }: { dados: Parametros }) {
           id: i.id,
           ...(mudouEvidencia(i) ? { evidencia: valores[i.id] as Regra } : {}),
           ...(mudouAuto(i) ? { autoavaliacao: auto[i.id] === true } : {}),
+          ...(mudouOrient(i) ? { orientacao: (orient[i.id] ?? "").trim() || null } : {}),
         })),
       },
       { onSuccess: () => toast.success(MSG_SALVO) },
@@ -61,77 +68,98 @@ export function SecaoEvidencia({ dados }: { dados: Parametros }) {
     <section className="panel">
       <form onSubmit={enviar} noValidate>
         <div className="panel-head">
-          <h2>Evidência e autoavaliação por indicador</h2>
+          <h2>Evidência, autoavaliação e orientação por indicador</h2>
         </div>
         <p className="panel-dica">
           Define se a nota exige texto de evidência, tanto na nota do treinador quanto na sugestão
           do atleta. O vídeo entra sempre como link, nunca como arquivo. A autoavaliação define em
           quais indicadores o atleta pode sugerir a nota; a sugestão não entra no score, só a nota
-          do treinador.
+          do treinador. A orientação é o texto de ajuda que aparece junto do indicador (até 1.000
+          caracteres); apagar o texto remove a orientação.
         </p>
         {dados.pilares
-          .filter((p) => p.indicadores.some((i) => comEvidencia(i) || i.exigeAnexo))
+          .filter((p) => p.indicadores.length > 0)
           .map((p) => (
             <fieldset key={p.id} className="par-evid-pilar">
               <legend>{p.nome}</legend>
               <ul className="par-evid-lista">
-                {p.indicadores
-                  .filter((i) => comEvidencia(i) || i.exigeAnexo)
-                  .map((i) => (
-                    <li key={i.id}>
-                      <span className="par-evid-nome">
-                        {i.nome}
-                        {i.exigeAnexo && (
-                          <small className="par-ajuda">
-                            Exige anexo: a nota depende de arquivo (foto da balança).
-                          </small>
-                        )}
-                      </span>
-                      {comEvidencia(i) ? (
-                        <>
-                          <select
-                            aria-label={`Evidência de ${i.nome}`}
-                            value={valores[i.id]}
-                            {...atributosDoCampo(`evid-erro-${i.id}`, erroDo(i.id, "evidencia"))}
-                            onChange={(e) => {
-                              if (salvar.isError) salvar.reset();
-                              setValores((v) => ({ ...v, [i.id]: e.target.value as Regra }));
-                            }}
-                          >
-                            <option value="obrigatoria">Obrigatória</option>
-                            <option value="opcional">Opcional</option>
-                          </select>
-                          <MensagemCampo
-                            id={`evid-erro-${i.id}`}
-                            texto={erroDo(i.id, "evidencia")}
-                          />
-                        </>
-                      ) : (
-                        <span className="pill st-neutro">Exige anexo</span>
+                {p.indicadores.map((i) => (
+                  <li key={i.id}>
+                    <span className="par-evid-nome">
+                      {i.nome}
+                      {i.exigeAnexo && (
+                        <small className="par-ajuda">
+                          Exige anexo: a nota depende de arquivo (foto da balança).
+                        </small>
                       )}
-                      <span className="par-evid-auto">
-                        <Interruptor
-                          id={`auto-${i.id}`}
-                          rotulo={`Autoavaliação de ${i.nome}`}
-                          ligado={auto[i.id] === true}
-                          desabilitado={!aceitaAutoavaliacao(i)}
-                          descricao={
-                            aceitaAutoavaliacao(i)
-                              ? "Autoavaliação"
-                              : "Autoavaliação indisponível: o indicador não tem nota do treinador"
-                          }
-                          aoMudar={(v) => {
+                      {i.calculado && !i.exigeAnexo && (
+                        <small className="par-ajuda">Nota calculada pelo sistema.</small>
+                      )}
+                    </span>
+                    {comEvidencia(i) ? (
+                      <>
+                        <select
+                          aria-label={`Evidência de ${i.nome}`}
+                          value={valores[i.id]}
+                          {...atributosDoCampo(`evid-erro-${i.id}`, erroDo(i.id, "evidencia"))}
+                          onChange={(e) => {
                             if (salvar.isError) salvar.reset();
-                            setAuto((a) => ({ ...a, [i.id]: v }));
+                            setValores((v) => ({ ...v, [i.id]: e.target.value as Regra }));
                           }}
-                        />
-                        <MensagemCampo
-                          id={`auto-erro-${i.id}`}
-                          texto={erroDo(i.id, "autoavaliacao")}
-                        />
+                        >
+                          <option value="obrigatoria">Obrigatória</option>
+                          <option value="opcional">Opcional</option>
+                        </select>
+                        <MensagemCampo id={`evid-erro-${i.id}`} texto={erroDo(i.id, "evidencia")} />
+                      </>
+                    ) : i.exigeAnexo ? (
+                      <span className="pill st-neutro">Exige anexo</span>
+                    ) : (
+                      <span className="pill st-neutro">
+                        {i.calculado ? "Calculado" : "Registro"}
                       </span>
-                    </li>
-                  ))}
+                    )}
+                    <span className="par-evid-auto">
+                      <Interruptor
+                        id={`auto-${i.id}`}
+                        rotulo={`Autoavaliação de ${i.nome}`}
+                        ligado={auto[i.id] === true}
+                        desabilitado={!aceitaAutoavaliacao(i)}
+                        descricao={
+                          aceitaAutoavaliacao(i)
+                            ? "Autoavaliação"
+                            : "Autoavaliação indisponível: o indicador não tem nota do treinador"
+                        }
+                        aoMudar={(v) => {
+                          if (salvar.isError) salvar.reset();
+                          setAuto((a) => ({ ...a, [i.id]: v }));
+                        }}
+                      />
+                      <MensagemCampo
+                        id={`auto-erro-${i.id}`}
+                        texto={erroDo(i.id, "autoavaliacao")}
+                      />
+                    </span>
+                    <div className="field par-evid-orientacao">
+                      <label htmlFor={`orient-${i.id}`}>Orientação de {i.nome}</label>
+                      <textarea
+                        id={`orient-${i.id}`}
+                        rows={2}
+                        maxLength={MAX_ORIENTACAO}
+                        value={orient[i.id] ?? ""}
+                        {...atributosDoCampo(`orient-erro-${i.id}`, erroDo(i.id, "orientacao"))}
+                        onChange={(e) => {
+                          if (salvar.isError) salvar.reset();
+                          setOrient((o) => ({ ...o, [i.id]: e.target.value }));
+                        }}
+                      />
+                      <MensagemCampo
+                        id={`orient-erro-${i.id}`}
+                        texto={erroDo(i.id, "orientacao")}
+                      />
+                    </div>
+                  </li>
+                ))}
               </ul>
             </fieldset>
           ))}
