@@ -159,3 +159,80 @@
   flex: 1 1 100%;
   font-size: 0.84rem;
 }
+
+/* Meus resultados (D10). */
+.res-form {
+  display: grid;
+  gap: 12px;
+}
+.res-cab {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 10px;
+  max-width: 40rem;
+}
+.res-orientacao {
+  margin: 0;
+  font-size: 0.86rem;
+  white-space: pre-line;
+}
+.res-linha {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.res-linha legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+.res-campos,
+.res-prova {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: 10px;
+  align-items: start;
+}
+.res-prova {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+.res-pend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+}
+
+/* Orientação e escala na autoavaliação (D9). */
+.auto-orientacao {
+  display: block;
+  white-space: pre-line;
+}
+.auto-escala {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+}
+.auto-escala summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.auto-escala dl {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 0;
+}
+.auto-escala dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+.auto-escala dt {
+  font-weight: 600;
+}
+.auto-escala dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

@@ -10,6 +10,7 @@ import { Interruptor } from "./Interruptor";
 import { MinhaAutoavaliacao } from "./MinhaAutoavaliacao";
 import { NotaRevisao } from "./NotaRevisao";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
+import { MeusResultados } from "./MeusResultados";
 import { PesagemAtleta } from "./PesagemAtleta";
 import { RecursoRevisaoDialog } from "./RecursoRevisaoDialog";
 import { andamentoRevisao, rotuloPapelAtleta } from "./revisao-util";
@@ -761,6 +762,7 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
           pilares={painel.modulos.map((m) => ({ id: m.pilarId, nome: m.nome }))}
           aoPedirRevisao={() => setPedindoRevisao(true)}
         />
+        <MeusResultados atletaId={painel.atleta.id} />
         <PesagemAtleta atletaId={painel.atleta.id} />
         <Consentimento c={painel.consentimento} />
         <PedidosTitular />
