@@ -81,6 +81,7 @@ function pilar(
         calculado: false,
         nota,
         evidencia: nota == null ? null : "Teste de campo",
+        link: null,
         origem: nota == null ? null : ("avaliacao" as const),
         avaliador: nota == null ? null : { id: "u1", nome: "Ana Ribeiro" },
         lancadoEm: nota == null ? null : "2026-11-05T12:00:00.000Z",
@@ -713,6 +714,7 @@ describe("TelaFicha", () => {
                 valor: 4,
                 pesoKg: null,
                 evidencia: "Brasileiro 2026",
+                link: "https://youtu.be/regata",
                 origem: "avaliacao",
                 pendente: false,
                 avaliador: { id: "u1", nome: "Ana Ribeiro" },
@@ -753,7 +755,42 @@ describe("TelaFicha", () => {
     expect(itens[0]).toHaveTextContent("Avaliação · Ana Ribeiro");
     expect(within(itens[0]!).getByRole("button", { name: "sumula.pdf" })).toBeInTheDocument();
     expect(itens[1]).toHaveTextContent("Sugestão do atleta, aguardando avaliador");
-    expect(itens[1]).not.toHaveTextContent("Evidência");
+    expect(itens[1]).not.toHaveTextContent("Evidência:");
+    expect(itens[1]).toHaveTextContent("Sem evidência registrada");
+    const video = within(itens[0]!).getByRole("link", { name: "Ver vídeo (abre em nova aba)" });
+    expect(video).toHaveAttribute("href", "https://youtu.be/regata");
+    expect(video).toHaveAttribute("target", "_blank");
+    expect(video).toHaveAttribute("rel", "noopener noreferrer");
+    expect(within(itens[1]!).queryByRole("link", { name: /Ver vídeo/ })).toBeNull();
+  });
+
+  it("indicador com link mostra Ver vídeo em nova aba e sem evidência mostra o aviso", async () => {
+    const f = ficha();
+    const base = f.pilares[0]!.indicadores![0]!;
+    f.pilares[0] = {
+      ...f.pilares[0]!,
+      indicadores: [{ ...base, evidencia: null, link: "https://vimeo.com/123" }],
+    };
+    montar("treinador", f);
+    fireEvent.click(await screen.findByRole("button", { name: /^Performance/ }));
+    const video = screen.getByRole("link", { name: "Ver vídeo (abre em nova aba)" });
+    expect(video).toHaveAttribute("href", "https://vimeo.com/123");
+    expect(video).toHaveAttribute("target", "_blank");
+    expect(video).toHaveAttribute("rel", "noopener noreferrer");
+    expect(screen.getByText(/Sem evidência registrada/)).toBeInTheDocument();
+  });
+
+  it("IBVAR não vê o aviso de evidência ausente nem link", async () => {
+    const f = ficha();
+    const base = f.pilares[0]!.indicadores![0]!;
+    f.pilares[0] = {
+      ...f.pilares[0]!,
+      indicadores: [{ ...base, evidencia: null, link: null }],
+    };
+    montar("ibvar", f);
+    fireEvent.click(await screen.findByRole("button", { name: /^Performance/ }));
+    expect(screen.queryByText(/Sem evidência registrada/)).toBeNull();
+    expect(screen.queryByRole("link", { name: /Ver vídeo/ })).toBeNull();
   });
 
   it("Ver histórico mostra a mensagem da API quando o papel não tem acesso", async () => {

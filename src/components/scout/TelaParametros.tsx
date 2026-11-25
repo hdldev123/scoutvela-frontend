@@ -6,6 +6,7 @@ import { Abas, PainelAba } from "./Abas";
 import { atributosDoCampo } from "./campo-util";
 import { MensagemCampo } from "./MensagemCampo";
 import { fmt1 } from "./formato";
+import { SecaoEvidencia } from "./ParametrosEvidencia";
 import { SecaoFaixas, SecaoRubricas } from "./ParametrosFaixasRubricas";
 import { SecaoRegras } from "./ParametrosRegras";
 import { SecaoTermos } from "./ParametrosTermos";
@@ -64,6 +65,7 @@ const ABAS = [
   { id: "pesos", rotulo: "Pesos e faixas" },
   { id: "classes", rotulo: "Class Fit" },
   { id: "rubricas", rotulo: "Rubricas" },
+  { id: "evidencia", rotulo: "Evidência" },
   { id: "regras", rotulo: "Regras provisórias" },
   { id: "termo", rotulo: "Termo de consentimento" },
   { id: "custos", rotulo: "Componentes de custo" },
@@ -125,6 +127,14 @@ function ConteudoParametros({ dados, gestor }: { dados: Parametros; gestor: bool
       <PainelAba id="rubricas" ativa={ativa === "rubricas"} manter>
         <SecaoRubricas
           key={JSON.stringify([dados.rubricas, dados.pilares.map((p) => p.id)])}
+          dados={dados}
+        />
+      </PainelAba>
+      <PainelAba id="evidencia" ativa={ativa === "evidencia"} manter>
+        <SecaoEvidencia
+          key={JSON.stringify(
+            dados.pilares.flatMap((p) => p.indicadores.map((i) => [i.id, i.evidencia])),
+          )}
           dados={dados}
         />
       </PainelAba>

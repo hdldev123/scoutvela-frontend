@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { BigScore } from "./BigScore";
 import { Dialogo } from "./Dialogo";
-import { EvidenciasSecao, AbrirEvidencia } from "./EvidenciasSecao";
+import { EvidenciasSecao, AbrirEvidencia, VerVideo } from "./EvidenciasSecao";
 import { FinanceiroDialog } from "./FinanceiroDialog";
 import { GaugeClassFit } from "./GaugeClassFit";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
@@ -41,6 +41,7 @@ const SUPORTE: Record<string, string> = {
 };
 const PATROCINIO = { sim: "Sim", em_negociacao: "Em negociação", nao: "Não" } as const;
 const STATUS_GATE = ["apto", "condicional", "alerta"] as const;
+const SEM_EVIDENCIA = "Sem evidência registrada";
 const TEXTO_NAO_VE =
   "Este perfil não vê a ficha deste atleta. Treinador vê só os próprios atletas; o IBVAR vê só quem consentiu.";
 
@@ -59,10 +60,12 @@ const ORIGEM_LANCAMENTO: Record<LancamentoHistorico["origem"], string> = {
 function HistoricoDialog({
   atletaId,
   ind,
+  papel,
   aoFechar,
 }: {
   atletaId: string;
   ind: Indicador;
+  papel: string;
   aoFechar: () => void;
 }) {
   const hist = useHistoricoIndicador(atletaId, ind.id);
@@ -93,7 +96,12 @@ function HistoricoDialog({
               <div className="src">
                 {[ORIGEM_LANCAMENTO[l.origem], l.avaliador?.nome].filter(Boolean).join(" · ")}
               </div>
-              {l.evidencia && <div className="src">Evidência: {l.evidencia}</div>}
+              {l.evidencia ? (
+                <div className="src">Evidência: {l.evidencia}</div>
+              ) : (
+                papel !== "ibvar" && <div className="src">{SEM_EVIDENCIA}</div>
+              )}
+              {l.link && <VerVideo url={l.link} />}
               {l.anexo && (
                 <AbrirEvidencia
                   id={l.anexo.id}
@@ -112,7 +120,15 @@ function HistoricoDialog({
   );
 }
 
-function BotaoHistorico({ atletaId, ind }: { atletaId: string; ind: Indicador }) {
+function BotaoHistorico({
+  atletaId,
+  ind,
+  papel,
+}: {
+  atletaId: string;
+  ind: Indicador;
+  papel: string;
+}) {
   const [aberto, setAberto] = useState(false);
   return (
     <>
@@ -125,13 +141,26 @@ function BotaoHistorico({ atletaId, ind }: { atletaId: string; ind: Indicador })
         Ver histórico
       </button>
       {aberto && (
-        <HistoricoDialog atletaId={atletaId} ind={ind} aoFechar={() => setAberto(false)} />
+        <HistoricoDialog
+          atletaId={atletaId}
+          ind={ind}
+          papel={papel}
+          aoFechar={() => setAberto(false)}
+        />
       )}
     </>
   );
 }
 
-function LinhaIndicador({ ind, atletaId }: { ind: Indicador; atletaId: string }) {
+function LinhaIndicador({
+  ind,
+  atletaId,
+  papel,
+}: {
+  ind: Indicador;
+  atletaId: string;
+  papel: string;
+}) {
   const resp = ind.resposta ? ` · resposta: “${ind.resposta}”` : "";
   if (ind.tipo === "R") {
     return (
@@ -153,7 +182,11 @@ function LinhaIndicador({ ind, atletaId }: { ind: Indicador; atletaId: string })
         ? `Resposta do atleta · nota de ${ind.avaliador?.nome ?? "avaliador"}`
         : ind.avaliador?.nome;
     origem =
-      [ind.evidencia, quem, ind.lancadoEm ? fmtInstante(ind.lancadoEm) : null]
+      [
+        ind.evidencia ?? (papel !== "ibvar" && !ind.calculado ? SEM_EVIDENCIA : null),
+        quem,
+        ind.lancadoEm ? fmtInstante(ind.lancadoEm) : null,
+      ]
         .filter(Boolean)
         .join(" · ") + resp;
   }
@@ -177,8 +210,13 @@ function LinhaIndicador({ ind, atletaId }: { ind: Indicador; atletaId: string })
             <span>{ind.anexo.nomeArquivo}</span>
           </AbrirEvidencia>
         )}
+        {ind.link && (
+          <div>
+            <VerVideo url={ind.link} />
+          </div>
+        )}
         <div>
-          <BotaoHistorico atletaId={atletaId} ind={ind} />
+          <BotaoHistorico atletaId={atletaId} ind={ind} papel={papel} />
         </div>
       </div>
       <span className={`nota ${ind.nota == null ? "na" : ""}`}>
@@ -194,12 +232,14 @@ function BlocoPilar({
   aoAlternar,
   maiorPerda,
   atletaId,
+  papel,
 }: {
   pilar: Pilar;
   aberto: boolean;
   aoAlternar: () => void;
   maiorPerda: boolean;
   atletaId: string;
+  papel: string;
 }) {
   const { nota } = pilar;
   const painel = `pilar-${pilar.id}`;
@@ -248,7 +288,7 @@ function BlocoPilar({
         ) : (
           <div className="ind-list" id={painel}>
             {pilar.indicadores.map((i) => (
-              <LinhaIndicador key={i.id} ind={i} atletaId={atletaId} />
+              <LinhaIndicador key={i.id} ind={i} atletaId={atletaId} papel={papel} />
             ))}
           </div>
         ))}
@@ -569,6 +609,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 aoAlternar={() => setAbertos((a) => ({ ...a, [p.id]: !a[p.id] }))}
                 maiorPerda={maiorPerda?.id === p.id}
                 atletaId={ficha.atleta.id}
+                papel={papel}
               />
             ))}
           </section>

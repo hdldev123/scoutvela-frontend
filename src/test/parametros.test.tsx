@@ -161,6 +161,74 @@ describe("TelaParametros", () => {
     );
   });
 
+  it("evidência por indicador: edita e envia só os indicadores alterados", async () => {
+    const comIndicadores: Parametros = {
+      ...params,
+      pilares: params.pilares.map((p) =>
+        p.id === "perf"
+          ? {
+              ...p,
+              indicadores: [
+                {
+                  id: "perf_nacional",
+                  nome: "Pódio nacional",
+                  tipo: "T" as const,
+                  calculado: false,
+                  evidencia: "obrigatoria" as const,
+                  exigeAnexo: false,
+                },
+                {
+                  id: "tec_1",
+                  nome: "Leitura de vento",
+                  tipo: "T" as const,
+                  calculado: false,
+                  evidencia: "opcional" as const,
+                  exigeAnexo: false,
+                },
+              ],
+            }
+          : p.id === "cf"
+            ? {
+                ...p,
+                indicadores: [
+                  {
+                    id: "cf_peso_kg",
+                    nome: "Peso",
+                    tipo: "T" as const,
+                    calculado: true,
+                    evidencia: "obrigatoria" as const,
+                    exigeAnexo: true,
+                  },
+                ],
+              }
+            : p,
+      ),
+    };
+    GET.mockImplementation(async (caminho: string) => ({
+      data: caminho === "/termos" ? [] : comIndicadores,
+      response: { status: 200 },
+    }));
+    PUT.mockResolvedValue({ data: comIndicadores, response: { status: 200 } });
+    renderizar();
+    await screen.findByRole("tab", { name: "Evidência" });
+    irPara("Evidência");
+    expect(screen.getByRole("button", { name: "Salvar evidência" })).toBeDisabled();
+    expect(screen.getByLabelText("Evidência de Pódio nacional")).toHaveValue("obrigatoria");
+    expect(screen.getByLabelText("Evidência de Leitura de vento")).toHaveValue("opcional");
+    // O peso só mostra que exige anexo, sem seletor.
+    expect(screen.getByText(/Exige anexo: a nota depende de arquivo/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Evidência de Peso")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Evidência de Leitura de vento"), {
+      target: { value: "obrigatoria" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar evidência" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: { indicadores: [{ id: "tec_1", evidencia: "obrigatoria" }] },
+      }),
+    );
+  });
+
   it("aceita vírgula e envia só a classe alterada", async () => {
     PUT.mockResolvedValue({ data: params, response: { status: 200 } });
     montar();
@@ -460,6 +528,7 @@ describe("TelaParametros", () => {
       "Pesos e faixas",
       "Class Fit",
       "Rubricas",
+      "Evidência",
       "Regras provisórias",
       "Termo de consentimento",
       "Componentes de custo",

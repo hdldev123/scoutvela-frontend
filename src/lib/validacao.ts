@@ -7,6 +7,7 @@ export const LIMITES = {
   alturaCm: { min: 120, max: 230 },
   evidenciaMedida: { min: 3, max: 200 },
   evidenciaNota: { min: 3, max: 500 },
+  linkVideo: { max: 500 },
   resposta: { min: 3, max: 2000 },
   termoTitulo: { min: 3, max: 120 },
   termoTextoMax: 50000,
@@ -52,6 +53,18 @@ export function mensagemEvidenciaNota(texto: string): string | null {
   const { min, max } = LIMITES.evidenciaNota;
   const n = texto.trim().length;
   return n < min || n > max ? `Informe a evidência, de ${min} a ${max} caracteres.` : null;
+}
+
+/** Link do vídeo: opcional; preenchido, só `https://`, sem espaço, até 500 caracteres. */
+export function mensagemLinkVideo(texto: string): string | null {
+  const t = texto.trim();
+  if (t === "") return null;
+  if (t.length > LIMITES.linkVideo.max) {
+    return `O link deve ter até ${LIMITES.linkVideo.max} caracteres.`;
+  }
+  return /^https:\/\/[^\s/]+\S*$/i.test(t)
+    ? null
+    : "Informe um link que comece com https://, sem espaços.";
 }
 
 export function mensagemResposta(texto: string): string | null {

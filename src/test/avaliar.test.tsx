@@ -871,3 +871,115 @@ describe("TelaAvaliar: confirmação ao sair com rascunho", () => {
     await screen.findByText("Fora");
   });
 });
+
+describe("TelaAvaliar: evidência opcional e link do vídeo (D5)", () => {
+  const comOpcional = () => {
+    const base = GET.getMockImplementation()!;
+    const params = {
+      ...PARAMETROS,
+      pilares: PARAMETROS.pilares.map((p) =>
+        p.id === "tec"
+          ? {
+              ...p,
+              indicadores: [
+                {
+                  id: "tec_1",
+                  nome: "Leitura de vento",
+                  tipo: "T",
+                  calculado: false,
+                  evidencia: "opcional",
+                  exigeAnexo: false,
+                },
+              ],
+            }
+          : p,
+      ),
+    };
+    GET.mockImplementation((caminho: string, ...r: unknown[]) =>
+      caminho === "/parametros"
+        ? Promise.resolve({ data: params, response: { status: 200 } })
+        : base(caminho, ...r),
+    );
+  };
+  const corpoGravado = () =>
+    POST.mock.calls.find((c) => c[0] === "/atletas/{id}/avaliacoes")?.[1] as
+      { body: unknown } | undefined;
+
+  it("indicador opcional: rótulo muda e a nota segue sem evidência", async () => {
+    comOpcional();
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    expect(screen.getByLabelText("Evidência (opcional)")).toBeTruthy();
+    expect(screen.queryByLabelText("Evidência (obrigatória)")).toBeNull();
+    const salvar = screen.getByRole("button", { name: "Salvar avaliação" });
+    await waitFor(() => expect(salvar.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(salvar);
+    await waitFor(() =>
+      expect(corpoGravado()?.body).toEqual({ notas: [{ indicadorId: "tec_1", valor: 4 }] }),
+    );
+  });
+
+  it("indicador obrigatório sem evidência bloqueia o envio", async () => {
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    expect(screen.getByLabelText("Evidência (obrigatória)")).toBeTruthy();
+    const salvar = screen.getByRole("button", { name: "Salvar avaliação" });
+    expect(salvar.hasAttribute("disabled")).toBe(true);
+    expect(corpoGravado()).toBeUndefined();
+  });
+
+  it("link com http:// bloqueia e https:// vai no corpo", async () => {
+    comOpcional();
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    const campo = screen.getByLabelText("Link do vídeo (opcional)") as HTMLInputElement;
+    fireEvent.change(campo, { target: { value: "http://exemplo.com/v" } });
+    expect(await screen.findByText(/comece com https:\/\//)).toBeTruthy();
+    expect(campo.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByRole("button", { name: "Salvar avaliação" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+    fireEvent.change(campo, { target: { value: "https://youtu.be/abc" } });
+    const salvar = screen.getByRole("button", { name: "Salvar avaliação" });
+    await waitFor(() => expect(salvar.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(salvar);
+    await waitFor(() =>
+      expect(corpoGravado()?.body).toEqual({
+        notas: [{ indicadorId: "tec_1", valor: 4, link: "https://youtu.be/abc" }],
+      }),
+    );
+  });
+
+  it("mostra sob o campo do link o 400 da API (notas.0.link)", async () => {
+    comOpcional();
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    fireEvent.change(screen.getByLabelText("Link do vídeo (opcional)"), {
+      target: { value: "https://exemplo.com/v" },
+    });
+    const base = POST.getMockImplementation()!;
+    POST.mockImplementation((caminho: string, ...r: unknown[]) =>
+      caminho === "/atletas/{id}/avaliacoes"
+        ? Promise.resolve({
+            error: {
+              erro: "requisicao_invalida",
+              mensagem: "Dados inválidos.",
+              campos: [{ campo: "notas.0.link", mensagem: "Link não aceito." }],
+            },
+            response: { status: 400 },
+          })
+        : base(caminho, ...r),
+    );
+    const salvar = screen.getByRole("button", { name: "Salvar avaliação" });
+    await waitFor(() => expect(salvar.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(salvar);
+    const msg = await screen.findByText("Link não aceito.");
+    const campo = screen.getByLabelText("Link do vídeo (opcional)");
+    expect(campo.getAttribute("aria-invalid")).toBe("true");
+    expect(campo.getAttribute("aria-describedby")).toBe(msg.id);
+  });
+});

@@ -31,6 +31,7 @@ import {
   mensagemAltura,
   mensagemEvidenciaMedida,
   mensagemEvidenciaNota,
+  mensagemLinkVideo,
   mensagemPeso,
 } from "@/lib/validacao";
 import { useFicha, useRanking, type FichaAtleta } from "@/lib/api/consultas";
@@ -39,6 +40,8 @@ type Pilar = FichaAtleta["pilares"][number];
 type Indicador = NonNullable<Pilar["indicadores"]>[number];
 
 const EVID_MAX = 500;
+/** Chave do erro do link do vídeo de um indicador, ao lado da chave do erro da evidência. */
+const SUFIXO_LINK = ":link";
 const MSG_PESO_VAZIO = "Informe o peso em kg, de 30 a 160.";
 const MSG_ALTURA_VAZIA = "Informe a altura em centímetros, de 120 a 230.";
 const ATRASO_PREVIA_MS = 400;
@@ -54,6 +57,7 @@ interface Envio {
 interface Rascunho {
   valor?: number;
   evidencia: string;
+  link?: string | undefined;
   anexoId?: string | undefined;
   anexoNome?: string | undefined;
 }
@@ -224,6 +228,12 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
 
   const pilar = ficha.pilares.find((p) => p.id === pilarId) ?? ficha.pilares[0];
   const meta = params.pilares.find((p) => p.id === pilar?.id);
+  // Indicadores cuja evidência o gestor marcou como opcional (D5); o resto exige o texto.
+  const opcionais = new Set(
+    params.pilares.flatMap((p) =>
+      p.indicadores.filter((i) => i.evidencia === "opcional").map((i) => i.id),
+    ),
+  );
 
   // O que mudou: só isso vai para a API.
   const notas: NonNullable<CorpoAvaliacao["notas"]> = [];
@@ -235,13 +245,29 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
       const r = rasc[ind.id];
       if (!r || r.valor === undefined) continue;
       const evidencia = r.evidencia.trim();
-      if (r.valor === ind.nota && (evidencia === "" || evidencia === (ind.evidencia ?? ""))) {
+      const link = (r.link ?? "").trim();
+      if (
+        r.valor === ind.nota &&
+        link === "" &&
+        (evidencia === "" || evidencia === (ind.evidencia ?? ""))
+      ) {
         continue;
       }
       alterados.add(p.id);
-      const falha = mensagemEvidenciaNota(evidencia);
+      // Evidência opcional: vazia segue sem texto; preenchida, vale a mesma regra de tamanho.
+      const falha =
+        evidencia === "" && opcionais.has(ind.id) ? null : mensagemEvidenciaNota(evidencia);
+      const falhaLink = mensagemLinkVideo(link);
       if (falha) erros[ind.id] = falha;
-      else notas.push({ indicadorId: ind.id, valor: r.valor, evidencia });
+      if (falhaLink) erros[`${ind.id}${SUFIXO_LINK}`] = falhaLink;
+      if (!falha && !falhaLink) {
+        notas.push({
+          indicadorId: ind.id,
+          valor: r.valor,
+          ...(evidencia ? { evidencia } : {}),
+          ...(link ? { link } : {}),
+        });
+      }
     }
   }
   const pesoN = numero(peso);
@@ -312,7 +338,8 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
       const partes = campo.split(".");
       let chaveCampo: string | undefined;
       if (partes[0] === "notas" && partes[1] !== undefined) {
-        chaveCampo = notas[Number(partes[1])]?.indicadorId;
+        const indId = notas[Number(partes[1])]?.indicadorId;
+        chaveCampo = indId && partes[2] === "link" ? `${indId}${SUFIXO_LINK}` : indId;
       } else if (partes[0] === "medida") {
         chaveCampo = { pesoKg: "peso", alturaCm: "altura", evidencia: "evMedida" }[partes[1] ?? ""];
       }
@@ -484,6 +511,8 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
                 evidenciaPadrao={meta?.evidenciaPadrao ?? ""}
                 rascunho={rasc[ind.id]}
                 erro={errosCampo[ind.id]}
+                erroLink={errosCampo[`${ind.id}${SUFIXO_LINK}`]}
+                evidenciaOpcional={opcionais.has(ind.id)}
                 atletaId={id}
                 envio={envioDe(ind.id)}
                 aoMudar={(parte) => mudarRasc(ind.id, parte)}
@@ -612,6 +641,8 @@ interface LinhaProps {
   evidenciaPadrao: string;
   rascunho: Rascunho | undefined;
   erro: string | undefined;
+  erroLink: string | undefined;
+  evidenciaOpcional: boolean;
   atletaId: string;
   envio: Envio;
   aoMudar: (p: Partial<Rascunho>) => void;
@@ -624,6 +655,8 @@ function LinhaIndicador({
   evidenciaPadrao,
   rascunho,
   erro,
+  erroLink,
+  evidenciaOpcional,
   atletaId,
   envio,
   aoMudar,
@@ -714,6 +747,8 @@ function LinhaIndicador({
       evidenciaPadrao={evidenciaPadrao}
       rascunho={rascunho}
       erro={erro}
+      erroLink={erroLink}
+      evidenciaOpcional={evidenciaOpcional}
       atletaId={atletaId}
       envio={envio}
       aoMudar={aoMudar}
@@ -729,6 +764,8 @@ function LinhaNota({
   evidenciaPadrao,
   rascunho,
   erro,
+  erroLink,
+  evidenciaOpcional,
   atletaId,
   envio,
   aoMudar,
@@ -742,10 +779,14 @@ function LinhaNota({
   // Evidência e anexo só aparecem quando a nota muda ou já há algo digitado/anexado.
   const mudouNota = valor !== undefined && valor !== (ind.nota ?? undefined);
   const mostraEvidencia =
-    mudouNota || (rascunho?.evidencia.trim() ?? "") !== "" || !!rascunho?.anexoId;
+    mudouNota ||
+    (rascunho?.evidencia.trim() ?? "") !== "" ||
+    (rascunho?.link ?? "") !== "" ||
+    !!rascunho?.anexoId;
   const campoEvidencia = useRef<HTMLInputElement>(null);
   // O foco fica nas notas (WCAG 3.2.2): o campo novo é anunciado, não recebe foco sozinho.
-  const faltaEvidencia = mostraEvidencia && (rascunho?.evidencia.trim() ?? "") === "";
+  const faltaEvidencia =
+    mostraEvidencia && !evidenciaOpcional && (rascunho?.evidencia.trim() ?? "") === "";
 
   return (
     <div className="ed-row">
@@ -820,7 +861,7 @@ function LinhaNota({
           }
         >
           <label className="field ev" htmlFor={`ev-${ind.id}`}>
-            Evidência (obrigatória)
+            {evidenciaOpcional ? "Evidência (opcional)" : "Evidência (obrigatória)"}
             <input
               ref={campoEvidencia}
               id={`ev-${ind.id}`}
@@ -844,6 +885,21 @@ function LinhaNota({
             </button>
           )}
           <MensagemCampo id={`ev-erro-${ind.id}`} texto={erro} />
+          <label className="field ev" htmlFor={`link-${ind.id}`}>
+            Link do vídeo (opcional)
+            <input
+              id={`link-${ind.id}`}
+              type="url"
+              inputMode="url"
+              maxLength={EVID_MAX}
+              placeholder="https://"
+              autoComplete="off"
+              value={rascunho?.link ?? ""}
+              {...atributosDoCampo(`link-erro-${ind.id}`, erroLink)}
+              onChange={(e) => aoMudar({ link: e.target.value })}
+            />
+          </label>
+          <MensagemCampo id={`link-erro-${ind.id}`} texto={erroLink} />
           <AnexoDaNota
             atletaId={atletaId}
             indicador={ind}

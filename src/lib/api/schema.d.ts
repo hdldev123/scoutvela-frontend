@@ -107,7 +107,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -124,7 +124,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -201,7 +201,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -218,7 +218,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -235,7 +235,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -252,7 +252,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -269,7 +269,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -329,7 +329,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -346,7 +346,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -410,7 +410,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -427,7 +427,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -444,7 +444,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -538,7 +538,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -555,7 +555,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -643,7 +643,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -660,7 +660,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -677,7 +677,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -744,7 +744,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -761,7 +761,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -778,7 +778,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -795,7 +795,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -812,7 +812,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -853,7 +853,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -870,7 +870,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -887,7 +887,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -995,7 +995,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1012,7 +1012,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1029,7 +1029,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1148,7 +1148,10 @@ export interface paths {
                                     tipo: "T" | "A" | "R";
                                     calculado: boolean;
                                     nota: number | null;
+                                    /** @description Texto da evidência; nulo se a nota não tem (indicador com evidência opcional) e sempre nulo para o IBVAR */
                                     evidencia: string | null;
+                                    /** @description Link https de vídeo ou outro conteúdo externo da nota; nulo para o IBVAR */
+                                    link: string | null;
                                     /** @enum {string|null} */
                                     origem: "avaliacao" | "resposta_confirmada" | "calculado" | null;
                                     avaliador: {
@@ -1272,7 +1275,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1289,7 +1292,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1306,7 +1309,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1323,7 +1326,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1384,7 +1387,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1401,7 +1404,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1418,7 +1421,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1435,7 +1438,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1452,7 +1455,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1505,6 +1508,8 @@ export interface paths {
                             /** @description Só em cf_peso_kg: o peso da pesagem */
                             pesoKg: number | null;
                             evidencia: string | null;
+                            /** @description Link https da nota; nulo para o IBVAR */
+                            link: string | null;
                             /** @enum {string} */
                             origem: "avaliacao" | "resposta_confirmada" | "resposta_sugerida" | "calculado";
                             /** @description Sugestão do atleta aguardando o avaliador */
@@ -1531,7 +1536,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1548,7 +1553,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1565,7 +1570,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1582,7 +1587,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1627,7 +1632,10 @@ export interface paths {
                         notas?: {
                             indicadorId: string;
                             valor: number;
-                            evidencia: string;
+                            /** @description Texto da evidência. Obrigatório nos indicadores com evidência `obrigatoria` (GET /parametros); opcional nos demais. Vazio vale como ausente */
+                            evidencia?: string;
+                            /** @description Link de vídeo ou outro conteúdo externo da nota: só https://, até 500 caracteres. A API não acessa o endereço. Vazio vale como ausente */
+                            link?: string;
                             /** Format: uuid */
                             anexoId?: string;
                         }[];
@@ -1691,7 +1699,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1708,7 +1716,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1725,7 +1733,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1742,7 +1750,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1788,7 +1796,10 @@ export interface paths {
                         notas?: {
                             indicadorId: string;
                             valor: number;
-                            evidencia: string;
+                            /** @description Texto da evidência. Obrigatório nos indicadores com evidência `obrigatoria` (GET /parametros); opcional nos demais. Vazio vale como ausente */
+                            evidencia?: string;
+                            /** @description Link de vídeo ou outro conteúdo externo da nota: só https://, até 500 caracteres. A API não acessa o endereço. Vazio vale como ausente */
+                            link?: string;
                             /** Format: uuid */
                             anexoId?: string;
                         }[];
@@ -1837,7 +1848,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1854,7 +1865,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1871,7 +1882,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1888,7 +1899,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1905,7 +1916,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1981,7 +1992,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1998,7 +2009,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2015,7 +2026,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2032,7 +2043,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2049,7 +2060,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2129,7 +2140,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2146,7 +2157,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2163,7 +2174,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2180,7 +2191,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2234,7 +2245,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2251,7 +2262,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2338,7 +2349,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2355,7 +2366,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2372,7 +2383,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2454,7 +2465,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2471,7 +2482,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2488,7 +2499,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2505,7 +2516,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2522,7 +2533,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2590,7 +2601,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2607,7 +2618,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2676,7 +2687,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2693,7 +2704,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2710,7 +2721,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2727,7 +2738,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2744,7 +2755,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2819,7 +2830,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2836,7 +2847,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2853,7 +2864,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2970,7 +2981,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2987,7 +2998,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3004,7 +3015,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3073,7 +3084,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3090,7 +3101,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3107,7 +3118,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3124,7 +3135,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3197,7 +3208,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3214,7 +3225,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3231,7 +3242,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3248,7 +3259,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3328,7 +3339,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3345,7 +3356,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3396,7 +3407,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3413,7 +3424,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3430,7 +3441,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3447,7 +3458,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3517,7 +3528,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3534,7 +3545,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3551,7 +3562,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3568,7 +3579,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3661,7 +3672,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3678,7 +3689,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3695,7 +3706,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3712,7 +3723,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3729,7 +3740,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3867,7 +3878,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3884,7 +3895,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3901,7 +3912,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3918,7 +3929,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3977,6 +3988,13 @@ export interface paths {
                                     /** @enum {string} */
                                     tipo: "T" | "A" | "R";
                                     calculado: boolean;
+                                    /**
+                                     * @description Se a nota do indicador exige texto de evidência (treinador e sugestão do atleta). O gestor muda em PUT /parametros (indicadores)
+                                     * @enum {string}
+                                     */
+                                    evidencia: "obrigatoria" | "opcional";
+                                    /** @description A nota depende de arquivo anexado (ex.: foto da balança no peso) */
+                                    exigeAnexo: boolean;
                                 }[];
                             }[];
                             faixas: {
@@ -4028,7 +4046,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4045,7 +4063,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4057,7 +4075,7 @@ export interface paths {
             };
         };
         /**
-         * Atualiza pesos, faixas de score, rubricas, regras e classes
+         * Atualiza pesos, faixas de score, rubricas, regras, evidência por indicador e classes
          * @description O ranking recalcula sozinho (o cálculo é feito na leitura). Grava auditoria com antes e depois.
          */
         put: {
@@ -4092,6 +4110,12 @@ export interface paths {
                         regras?: {
                             [key: string]: unknown;
                         };
+                        /** @description Regra de evidência por indicador (obrigatoria ou opcional) */
+                        indicadores?: {
+                            id: string;
+                            /** @enum {string} */
+                            evidencia: "obrigatoria" | "opcional";
+                        }[];
                         classes?: {
                             id: string;
                             pesoMinKg?: number;
@@ -4128,6 +4152,13 @@ export interface paths {
                                     /** @enum {string} */
                                     tipo: "T" | "A" | "R";
                                     calculado: boolean;
+                                    /**
+                                     * @description Se a nota do indicador exige texto de evidência (treinador e sugestão do atleta). O gestor muda em PUT /parametros (indicadores)
+                                     * @enum {string}
+                                     */
+                                    evidencia: "obrigatoria" | "opcional";
+                                    /** @description A nota depende de arquivo anexado (ex.: foto da balança no peso) */
+                                    exigeAnexo: boolean;
                                 }[];
                             }[];
                             faixas: {
@@ -4179,7 +4210,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4196,7 +4227,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4213,7 +4244,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4281,7 +4312,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4298,7 +4329,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4315,7 +4346,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4384,7 +4415,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4401,7 +4432,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4418,7 +4449,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4435,7 +4466,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4513,7 +4544,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4530,7 +4561,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4547,7 +4578,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4564,7 +4595,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4581,7 +4612,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4657,7 +4688,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4674,7 +4705,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4691,7 +4722,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4708,7 +4739,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4725,7 +4756,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4801,7 +4832,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4818,7 +4849,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4835,7 +4866,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4852,7 +4883,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4869,7 +4900,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4957,7 +4988,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4974,7 +5005,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4991,7 +5022,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5008,7 +5039,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5025,7 +5056,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5112,7 +5143,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5129,7 +5160,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5146,7 +5177,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5163,7 +5194,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5180,7 +5211,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5264,7 +5295,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5281,7 +5312,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5298,7 +5329,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5410,7 +5441,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5427,7 +5458,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5444,7 +5475,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5522,7 +5553,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5539,7 +5570,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5593,7 +5624,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5610,7 +5641,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5627,7 +5658,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5644,7 +5675,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5734,7 +5765,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5751,7 +5782,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5768,7 +5799,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5785,7 +5816,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5802,7 +5833,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5880,7 +5911,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5897,7 +5928,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5914,7 +5945,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5931,7 +5962,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5948,7 +5979,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6048,7 +6079,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6065,7 +6096,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6082,7 +6113,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6099,7 +6130,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6116,7 +6147,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6142,12 +6173,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Lista as evidências anexadas ao atleta (mais recentes primeiro)
-         * @description Gestor, treinador dos próprios atletas e o próprio atleta. IBVAR não tem acesso.
+         * Lista os anexos do atleta (mais recentes primeiro)
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta. IBVAR não tem acesso. Cada item traz `categoria` e `enviadoPor.papel`. Filtro opcional `categoria`. `usoBytes` e `cotaBytes` mostram a cota de anexos do atleta (soma de todos os anexos não removidos, sem o filtro).
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    categoria?: "evidencia" | "sumula" | "balanca";
+                };
                 header?: never;
                 path: {
                     id: string;
@@ -6170,10 +6203,41 @@ export interface paths {
                                 tipoMime: string;
                                 tamanhoBytes: number;
                                 indicadorId: string | null;
+                                /**
+                                 * @description evidencia, sumula ou balanca
+                                 * @enum {string}
+                                 */
+                                categoria: "evidencia" | "sumula" | "balanca";
+                                /** @description Papel de quem enviou o arquivo (sem nome nem e-mail) */
+                                enviadoPor: {
+                                    /** @enum {string} */
+                                    papel: "gestor" | "treinador" | "atleta";
+                                };
                                 /** @description Instante ISO */
                                 enviadoEm: string;
                                 /** @description Instante ISO em que o arquivo foi removido (DELETE /evidencias/{id} ou limpeza de anexo não vinculado); nulo = disponível. Atleta anonimizado não aparece na API (404) */
                                 removidoEm: string | null;
+                            }[];
+                            /** @description Soma dos anexos não removidos do atleta */
+                            usoBytes: number;
+                            /** @description Cota de anexos por atleta */
+                            cotaBytes: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
                             }[];
                         };
                     };
@@ -6186,7 +6250,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6203,7 +6267,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6220,7 +6284,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6233,8 +6297,8 @@ export interface paths {
         };
         put?: never;
         /**
-         * Anexa uma evidência (PDF, JPEG ou PNG de até 5 MB) ao atleta
-         * @description Gestor, ou treinador dos próprios atletas. O arquivo vai em base64, é conferido pelo tamanho e pela assinatura e fica no Storage privado. Use o `id` retornado como `anexoId` ao lançar a nota. Limite de 20 envios por minuto por usuário (429 `limite_excedido`).
+         * Anexa um arquivo (PDF, JPEG ou PNG de até 5 MB) ao atleta
+         * @description Gestor, treinador dos próprios atletas, ou o atleta no próprio cadastro (outro atleta: 404). IBVAR: 403. O arquivo vai em base64, é conferido pelo tamanho e pela assinatura e fica no Storage privado. `categoria`: evidencia (padrão), sumula ou balanca. Use o `id` retornado como `anexoId` ao lançar a nota. Cota de 200 MB por atleta (soma dos anexos não removidos): acima dela, 413 `cota_excedida`. Limite de 20 envios por minuto por usuário (429 `limite_excedido`).
          */
         post: {
             parameters: {
@@ -6253,6 +6317,11 @@ export interface paths {
                         tipoMime: "application/pdf" | "image/jpeg" | "image/png";
                         conteudoBase64: string;
                         indicadorId?: string;
+                        /**
+                         * @default evidencia
+                         * @enum {string}
+                         */
+                        categoria?: "evidencia" | "sumula" | "balanca";
                     };
                 };
             };
@@ -6270,6 +6339,16 @@ export interface paths {
                             tipoMime: string;
                             tamanhoBytes: number;
                             indicadorId: string | null;
+                            /**
+                             * @description evidencia, sumula ou balanca
+                             * @enum {string}
+                             */
+                            categoria: "evidencia" | "sumula" | "balanca";
+                            /** @description Papel de quem enviou o arquivo (sem nome nem e-mail) */
+                            enviadoPor: {
+                                /** @enum {string} */
+                                papel: "gestor" | "treinador" | "atleta";
+                            };
                             /** @description Instante ISO */
                             enviadoEm: string;
                             /** @description Instante ISO em que o arquivo foi removido (DELETE /evidencias/{id} ou limpeza de anexo não vinculado); nulo = disponível. Atleta anonimizado não aparece na API (404) */
@@ -6285,7 +6364,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6302,7 +6381,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6319,7 +6398,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6336,7 +6415,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6353,7 +6432,24 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6370,7 +6466,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6387,7 +6483,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6447,7 +6543,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6464,7 +6560,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6481,7 +6577,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6498,7 +6594,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6515,7 +6611,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6546,7 +6642,7 @@ export interface paths {
         post?: never;
         /**
          * Remove um anexo que ainda não foi ligado a nenhuma avaliação
-         * @description Gestor, ou quem enviou o anexo (treinador) desde que ainda tenha acesso ao atleta. Só vale para anexo sem avaliação ligada (`anexoId`): anexo já ligado responde 409; inexistente ou de atleta fora do acesso, 404; já removido, 410. O arquivo sai do Storage primeiro (falha = 503 e nada muda). O registro não é apagado: fica marcado como removido (`removidoEm`, nome `removido`), a mesma marcação da anonimização. Auditoria `remover_anexo` só com ids.
+         * @description Gestor, ou quem enviou o anexo (treinador, ou o próprio atleta no próprio cadastro) desde que ainda tenha acesso ao atleta; anexo de outro atleta dá 404 para o atleta. Só vale para anexo sem avaliação ligada (`anexoId`): anexo já ligado responde 409; inexistente ou de atleta fora do acesso, 404; já removido, 410. O arquivo sai do Storage primeiro (falha = 503 e nada muda). O registro não é apagado: fica marcado como removido (`removidoEm`, nome `removido`), a mesma marcação da anonimização. Auditoria `remover_anexo` só com ids.
          */
         delete: {
             parameters: {
@@ -6576,7 +6672,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6593,7 +6689,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6610,7 +6706,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6627,7 +6723,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6644,7 +6740,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6661,7 +6757,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6726,7 +6822,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6743,7 +6839,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6815,7 +6911,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6832,7 +6928,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6849,7 +6945,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6866,7 +6962,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6883,7 +6979,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6962,7 +7058,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6979,7 +7075,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6996,7 +7092,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7013,7 +7109,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7030,7 +7126,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7092,7 +7188,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7109,7 +7205,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7126,7 +7222,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7143,7 +7239,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7160,7 +7256,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7177,7 +7273,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7237,7 +7333,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7254,7 +7350,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7316,7 +7412,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7333,7 +7429,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7350,7 +7446,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7417,7 +7513,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7434,7 +7530,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7451,7 +7547,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7468,7 +7564,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7535,7 +7631,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7552,7 +7648,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7617,7 +7713,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7634,7 +7730,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7651,7 +7747,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;

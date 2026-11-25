@@ -14,6 +14,23 @@ import {
   validarArquivo,
 } from "@/lib/api/evidencias";
 
+/** Link de vídeo informado na nota: abre em nova aba, sem repassar a origem nem o opener. */
+export function VerVideo({ url, className = "ficha-clipe" }: { url: string; className?: string }) {
+  return (
+    <a
+      className={className}
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Ver vídeo (abre em nova aba)"
+    >
+      <i className="ph ph-video" aria-hidden="true" />
+      <span>Ver vídeo</span>
+      <i className="ph ph-arrow-square-out" aria-hidden="true" />
+    </a>
+  );
+}
+
 export interface OpcaoIndicador {
   id: string;
   nome: string;
