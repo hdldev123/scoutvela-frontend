@@ -35,3 +35,21 @@ export const rotuloCiclo = (nome: string): string => nome.trim().slice(0, 3);
 export function nomeOuWsId(a: { nome: string | null; wsId: string }): string {
   return a.nome ?? a.wsId;
 }
+
+/** Instante ISO -> "06/11/2026 23:30", no horário de Brasília. */
+export function fmtDataHora(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${fmtInstante(iso)} ${fmtHora(iso)}`;
+}
+
+/** Instante ISO -> "23:30", no horário de Brasília. */
+export function fmtHora(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}

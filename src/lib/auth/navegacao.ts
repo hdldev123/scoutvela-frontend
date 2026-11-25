@@ -25,6 +25,7 @@ const ITENS: Record<string, { rotulo: string; icone: string; to: string }> = {
   avaliar: { rotulo: "Lançar avaliação", icone: "clipboard-text", to: "/avaliar" },
   cadastro: { rotulo: "Cadastrar atleta", icone: "user-plus", to: "/cadastro" },
   ciclos: { rotulo: "Ciclos", icone: "calendar-check", to: "/ciclos" },
+  mensagens: { rotulo: "Mensagens", icone: "chats-circle", to: "/mensagens" },
   revisoes: { rotulo: "Revisões", icone: "chat-circle-text", to: "/revisoes" },
   investimento: { rotulo: "Investimento", icone: "chart-line-up", to: "/investimento" },
   usuarios: { rotulo: "Contas", icone: "users-three", to: "/usuarios" },
@@ -78,6 +79,7 @@ export function rotaDaTelaInicial(telaInicial: string): string {
 
 /** Telas do menu que têm balão; a chave de `/me/notificacoes` tem o mesmo nome da tela. */
 const TELAS_COM_BALAO = new Set([
+  "mensagens",
   "revisoes",
   "cadastro",
   "avaliar",
@@ -86,13 +88,16 @@ const TELAS_COM_BALAO = new Set([
   "sugestoes",
 ]);
 
+/** Telas cuja chave em `/me/notificacoes` tem outro nome: Mensagens conta `conversas`. */
+const CHAVE_DO_BALAO: Record<string, string> = { mensagens: "conversas" };
+
 /** Contagem do balão de uma tela (0 quando a tela não tem balão ou nada pede atenção). */
 export function contagemDaTela(
   tela: string,
   contagens: Record<string, number> | undefined,
 ): number {
   if (!TELAS_COM_BALAO.has(tela)) return 0;
-  const n = contagens?.[tela] ?? 0;
+  const n = contagens?.[CHAVE_DO_BALAO[tela] ?? tela] ?? 0;
   return n > 0 ? n : 0;
 }
 
