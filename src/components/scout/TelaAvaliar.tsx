@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Avatar } from "./Avatar";
 import { CampoArquivo } from "./CampoArquivo";
+import { AbrirEvidencia, VerVideo } from "./EvidenciasSecao";
 import { Dialogo } from "./Dialogo";
 import { atributosDoCampo } from "./campo-util";
 import { MensagemCampo } from "./MensagemCampo";
@@ -11,6 +12,7 @@ import { FaixaPill } from "./FaixaPill";
 import { textoDoStatus } from "./status-gate";
 import { fmt0, fmt1, fmtData } from "./formato";
 import "@/styles/avaliar.css";
+import "@/styles/autoavaliacao.css";
 import "@/styles/ficha.css";
 import {
   lancarAvaliacao,
@@ -19,6 +21,11 @@ import {
   type CorpoAvaliacao,
   type Parametros,
 } from "@/lib/api/avaliacao";
+import {
+  MAX_JUSTIFICATIVA,
+  useAutoavaliacao,
+  type IndicadorAutoavaliacao,
+} from "@/lib/api/autoavaliacao";
 import { errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
 import { invalidarNotificacoes } from "@/lib/api/notificacoes";
 import {
@@ -42,6 +49,13 @@ type Indicador = NonNullable<Pilar["indicadores"]>[number];
 const EVID_MAX = 500;
 /** Chave do erro do link do vídeo de um indicador, ao lado da chave do erro da evidência. */
 const SUFIXO_LINK = ":link";
+/** Chave do erro da justificativa de um indicador (D9). */
+const SUFIXO_JUST = ":just";
+const MSG_JUSTIFICATIVA = "Explique por que a nota difere da sugestão do atleta.";
+
+/** Sugestão do atleta ainda sem decisão do treinador no ciclo aberto (D9). */
+type SugestaoAtleta = NonNullable<IndicadorAutoavaliacao["sugestao"]>;
+type SugestoesPendentes = Map<string, SugestaoAtleta>;
 const MSG_PESO_VAZIO = "Informe o peso em kg, de 30 a 160.";
 const MSG_ALTURA_VAZIA = "Informe a altura em centímetros, de 120 a 230.";
 const ATRASO_PREVIA_MS = 400;
@@ -60,6 +74,25 @@ interface Rascunho {
   link?: string | undefined;
   anexoId?: string | undefined;
   anexoNome?: string | undefined;
+  /** Por que a nota difere da sugestão do atleta (obrigatória quando difere). */
+  justificativa?: string | undefined;
+  /** "Corrigir" aberto: mostra o campo de justificativa mesmo antes de escolher a nota. */
+  corrigindo?: boolean | undefined;
+}
+
+/** Pendente: há sugestão no ciclo aberto e o treinador ainda não decidiu depois dela. */
+function sugestoesPendentes(
+  auto: IndicadorAutoavaliacao[],
+  cicloAberto: boolean,
+): SugestoesPendentes {
+  const mapa: SugestoesPendentes = new Map();
+  if (!cicloAberto) return mapa;
+  for (const i of auto) {
+    if (!i.sugestao) continue;
+    if (i.treinador && i.treinador.em >= i.sugestao.em) continue;
+    mapa.set(i.indicadorId, i.sugestao);
+  }
+  return mapa;
 }
 
 const indicadoresDe = (p: Pilar): Indicador[] => p.indicadores ?? [];
@@ -194,6 +227,7 @@ export function TelaAvaliar({ atletaId, aoEscolher }: TelaAvaliarProps) {
 function FormAvaliacao({ id }: { id: string }) {
   const ficha = useFicha(id);
   const params = useParametros();
+  const auto = useAutoavaliacao(id);
 
   if (ficha.isError || params.isError) {
     return (
@@ -202,11 +236,26 @@ function FormAvaliacao({ id }: { id: string }) {
       </div>
     );
   }
-  if (!ficha.data || !params.data) return <p className="muted">Carregando avaliação…</p>;
-  return <Editor id={id} ficha={ficha.data} params={params.data} />;
+  if (!ficha.data || !params.data || auto.isPending) {
+    return <p className="muted">Carregando avaliação…</p>;
+  }
+  // Sem a autoavaliação (falha na rota), a tela segue sem o selo "Sugestão do atleta".
+  const lista = Array.isArray(auto.data?.indicadores) ? auto.data.indicadores : [];
+  const sugestoes = sugestoesPendentes(lista, auto.data?.ciclo?.status === "aberto");
+  return <Editor id={id} ficha={ficha.data} params={params.data} sugestoes={sugestoes} />;
 }
 
-function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params: Parametros }) {
+function Editor({
+  id,
+  ficha,
+  params,
+  sugestoes,
+}: {
+  id: string;
+  ficha: FichaAtleta;
+  params: Parametros;
+  sugestoes: SugestoesPendentes;
+}) {
   const qc = useQueryClient();
   const [pilarId, setPilarId] = useState(ficha.pilares[0]?.id ?? "");
   const [rasc, setRasc] = useState<Record<string, Rascunho>>({});
@@ -246,7 +295,11 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
       if (!r || r.valor === undefined) continue;
       const evidencia = r.evidencia.trim();
       const link = (r.link ?? "").trim();
+      const sug = sugestoes.get(ind.id);
+      // Com sugestão do atleta pendente, escolher a nota é uma decisão (aprovar ou corrigir),
+      // mesmo quando ela é igual à nota atual.
       if (
+        !sug &&
         r.valor === ind.nota &&
         link === "" &&
         (evidencia === "" || evidencia === (ind.evidencia ?? ""))
@@ -258,14 +311,25 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
       const falha =
         evidencia === "" && opcionais.has(ind.id) ? null : mensagemEvidenciaNota(evidencia);
       const falhaLink = mensagemLinkVideo(link);
+      const justificativa = (r.justificativa ?? "").trim();
+      const diverge = !!sug && r.valor !== sug.valor;
+      const falhaJust = !diverge
+        ? null
+        : justificativa === ""
+          ? MSG_JUSTIFICATIVA
+          : justificativa.length > MAX_JUSTIFICATIVA
+            ? `A justificativa tem no máximo ${MAX_JUSTIFICATIVA} caracteres.`
+            : null;
       if (falha) erros[ind.id] = falha;
       if (falhaLink) erros[`${ind.id}${SUFIXO_LINK}`] = falhaLink;
-      if (!falha && !falhaLink) {
+      if (falhaJust) erros[`${ind.id}${SUFIXO_JUST}`] = falhaJust;
+      if (!falha && !falhaLink && !falhaJust) {
         notas.push({
           indicadorId: ind.id,
           valor: r.valor,
           ...(evidencia ? { evidencia } : {}),
           ...(link ? { link } : {}),
+          ...(diverge ? { justificativa } : {}),
         });
       }
     }
@@ -339,7 +403,12 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
       let chaveCampo: string | undefined;
       if (partes[0] === "notas" && partes[1] !== undefined) {
         const indId = notas[Number(partes[1])]?.indicadorId;
-        chaveCampo = indId && partes[2] === "link" ? `${indId}${SUFIXO_LINK}` : indId;
+        chaveCampo =
+          indId && partes[2] === "link"
+            ? `${indId}${SUFIXO_LINK}`
+            : indId && partes[2] === "justificativa"
+              ? `${indId}${SUFIXO_JUST}`
+              : indId;
       } else if (partes[0] === "medida") {
         chaveCampo = { pesoKg: "peso", alturaCm: "altura", evidencia: "evMedida" }[partes[1] ?? ""];
       }
@@ -391,7 +460,12 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
     const atual = rascRef.current[indId];
     let proximo = parte;
     // Voltar a nota ao valor original tira a nota do envio: o anexo ficaria sem destino.
-    if (parte.valor !== undefined && parte.valor === notaAtual(indId) && atual?.anexoId) {
+    if (
+      parte.valor !== undefined &&
+      parte.valor === notaAtual(indId) &&
+      atual?.anexoId &&
+      !sugestoes.has(indId)
+    ) {
       proximo = { ...parte, anexoId: undefined, anexoNome: undefined };
     }
     // Remover ou trocar o anexo: o antigo vira órfão.
@@ -418,7 +492,7 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
         versao === versaoRasc.current &&
         !!atual &&
         atual.valor !== undefined &&
-        atual.valor !== notaAtual(indId);
+        (atual.valor !== notaAtual(indId) || sugestoes.has(indId));
       if (!serve) return soltarAnexos([anexo.id]);
       // Trocar o anexo: o anterior vira órfão.
       if (atual.anexoId && atual.anexoId !== anexo.id) soltarAnexos([atual.anexoId]);
@@ -512,6 +586,8 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
                 rascunho={rasc[ind.id]}
                 erro={errosCampo[ind.id]}
                 erroLink={errosCampo[`${ind.id}${SUFIXO_LINK}`]}
+                erroJustificativa={errosCampo[`${ind.id}${SUFIXO_JUST}`]}
+                sugestaoAtleta={sugestoes.get(ind.id)}
                 evidenciaOpcional={opcionais.has(ind.id)}
                 atletaId={id}
                 envio={envioDe(ind.id)}
@@ -547,7 +623,8 @@ function Editor({ id, ficha, params }: { id: string; ficha: FichaAtleta; params:
           <div aria-live="polite" aria-atomic="true">
             {nErros > 0 && (
               <p className="muted">
-                Corrija os campos indicados (evidência, peso e altura) para ver a prévia.
+                Corrija os campos indicados (evidência, justificativa, peso e altura) para ver a
+                prévia.
               </p>
             )}
             {!mudou && <p className="muted">Escolha uma nota para ver o efeito no score.</p>}
@@ -642,6 +719,8 @@ interface LinhaProps {
   rascunho: Rascunho | undefined;
   erro: string | undefined;
   erroLink: string | undefined;
+  erroJustificativa: string | undefined;
+  sugestaoAtleta: SugestaoAtleta | undefined;
   evidenciaOpcional: boolean;
   atletaId: string;
   envio: Envio;
@@ -656,6 +735,8 @@ function LinhaIndicador({
   rascunho,
   erro,
   erroLink,
+  erroJustificativa,
+  sugestaoAtleta,
   evidenciaOpcional,
   atletaId,
   envio,
@@ -748,6 +829,8 @@ function LinhaIndicador({
       rascunho={rascunho}
       erro={erro}
       erroLink={erroLink}
+      erroJustificativa={erroJustificativa}
+      sugestaoAtleta={sugestaoAtleta}
       evidenciaOpcional={evidenciaOpcional}
       atletaId={atletaId}
       envio={envio}
@@ -765,6 +848,8 @@ function LinhaNota({
   rascunho,
   erro,
   erroLink,
+  erroJustificativa,
+  sugestaoAtleta,
   evidenciaOpcional,
   atletaId,
   envio,
@@ -778,12 +863,26 @@ function LinhaNota({
   const descricaoAtual = escala.find((r) => r.nota === ind.nota)?.descricao;
   // Evidência e anexo só aparecem quando a nota muda ou já há algo digitado/anexado.
   const mudouNota = valor !== undefined && valor !== (ind.nota ?? undefined);
+  const decidindo = !!sugestaoAtleta && rascunho?.valor !== undefined;
   const mostraEvidencia =
     mudouNota ||
+    decidindo ||
     (rascunho?.evidencia.trim() ?? "") !== "" ||
     (rascunho?.link ?? "") !== "" ||
     !!rascunho?.anexoId;
   const campoEvidencia = useRef<HTMLInputElement>(null);
+  const campoJustificativa = useRef<HTMLTextAreaElement>(null);
+  const focarJustificativa = useRef(false);
+  const diverge =
+    !!sugestaoAtleta && rascunho?.valor !== undefined && rascunho.valor !== sugestaoAtleta.valor;
+  const mostraJustificativa = !!sugestaoAtleta && (diverge || !!rascunho?.corrigindo);
+  // "Corrigir" leva o foco ao campo (ação do próprio usuário); escolher a nota não move o foco.
+  useEffect(() => {
+    if (focarJustificativa.current && campoJustificativa.current) {
+      campoJustificativa.current.focus();
+      focarJustificativa.current = false;
+    }
+  }, [rascunho?.corrigindo]);
   // O foco fica nas notas (WCAG 3.2.2): o campo novo é anunciado, não recebe foco sozinho.
   const faltaEvidencia =
     mostraEvidencia && !evidenciaOpcional && (rascunho?.evidencia.trim() ?? "") === "";
@@ -801,6 +900,57 @@ function LinhaNota({
                   descricaoAtual ? ` · ${descricaoAtual}` : ""
                 }`}
         </small>
+        {sugestaoAtleta && (
+          <div className="aval-sug-atleta">
+            <span>
+              <b>Sugestão do atleta: {sugestaoAtleta.valor}</b>
+            </span>
+            {sugestaoAtleta.evidencia && (
+              <span>Evidência do atleta: {sugestaoAtleta.evidencia}</span>
+            )}
+            {sugestaoAtleta.link && <VerVideo url={sugestaoAtleta.link} />}
+            {sugestaoAtleta.anexo && (
+              <AbrirEvidencia
+                id={sugestaoAtleta.anexo.id}
+                nomeArquivo={sugestaoAtleta.anexo.nomeArquivo}
+                className="ficha-clipe"
+              >
+                <i className="ph ph-paperclip" aria-hidden="true" />
+                <span>{sugestaoAtleta.anexo.nomeArquivo}</span>
+              </AbrirEvidencia>
+            )}
+            <div className="btn-row">
+              <button
+                type="button"
+                className="btn sm"
+                aria-label={`Aprovar sugestão ${sugestaoAtleta.valor} do atleta em ${ind.nome}`}
+                onClick={() =>
+                  aoMudar({
+                    valor: sugestaoAtleta.valor,
+                    evidencia: sugestaoAtleta.evidencia ?? "",
+                    link: sugestaoAtleta.link ?? "",
+                    justificativa: "",
+                    corrigindo: false,
+                  })
+                }
+              >
+                Aprovar
+              </button>
+              <button
+                type="button"
+                className="btn sm"
+                aria-label={`Corrigir sugestão do atleta em ${ind.nome}`}
+                aria-expanded={mostraJustificativa}
+                onClick={() => {
+                  focarJustificativa.current = true;
+                  aoMudar({ corrigindo: true });
+                }}
+              >
+                Corrigir
+              </button>
+            </div>
+          </div>
+        )}
         {sug && (
           <div className="avaliar-sugestao">
             <span>Sugestão pela resposta: {sug.valor}</span>
@@ -853,7 +1003,27 @@ function LinhaNota({
       )}
       <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {faltaEvidencia ? `Evidência obrigatória para a nova nota de ${ind.nome}` : ""}
+        {decidindo && !diverge && !rascunho?.corrigindo
+          ? `Sugestão do atleta aprovada em ${ind.nome}: nota ${rascunho?.valor}`
+          : ""}
       </span>
+      {mostraJustificativa && (
+        <div className="aval-justificativa">
+          <label className="field" htmlFor={`just-${ind.id}`}>
+            Justificativa da correção (obrigatória quando a nota difere da sugestão)
+            <textarea
+              ref={campoJustificativa}
+              id={`just-${ind.id}`}
+              rows={2}
+              maxLength={MAX_JUSTIFICATIVA}
+              value={rascunho?.justificativa ?? ""}
+              {...atributosDoCampo(`just-erro-${ind.id}`, erroJustificativa)}
+              onChange={(e) => aoMudar({ justificativa: e.target.value })}
+            />
+          </label>
+          <MensagemCampo id={`just-erro-${ind.id}`} texto={erroJustificativa} />
+        </div>
+      )}
       {mostraEvidencia && (
         <div
           className={

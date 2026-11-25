@@ -163,8 +163,18 @@ const PREVIA = {
   },
 };
 
+const SEM_AUTOAVALIACAO = { ciclo: null, indicadores: [], resumoPorPilar: null };
+let autoavaliacao: unknown = SEM_AUTOAVALIACAO;
+let pesagens: unknown = { itens: [] };
+
 function preparar(extra: { ranking?: unknown; ficha?: unknown } = {}) {
   GET.mockImplementation((caminho: string) => {
+    if (caminho === "/atletas/{id}/autoavaliacao") {
+      return Promise.resolve({ data: autoavaliacao, response: { status: 200 } });
+    }
+    if (caminho === "/atletas/{id}/pesagens") {
+      return Promise.resolve({ data: pesagens, response: { status: 200 } });
+    }
     if (caminho === "/ranking") {
       return Promise.resolve({ data: extra.ranking ?? RANKING, response: { status: 200 } });
     }
@@ -209,6 +219,8 @@ const nota = (indicador: string, n: number) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  autoavaliacao = SEM_AUTOAVALIACAO;
+  pesagens = { itens: [] };
   preparar();
   DELETE.mockResolvedValue({ response: { status: 204 } });
 });
@@ -889,6 +901,7 @@ describe("TelaAvaliar: evidência opcional e link do vídeo (D5)", () => {
                   calculado: false,
                   evidencia: "opcional",
                   exigeAnexo: false,
+                  autoavaliacao: true,
                 },
               ],
             }
@@ -979,6 +992,142 @@ describe("TelaAvaliar: evidência opcional e link do vídeo (D5)", () => {
     fireEvent.click(salvar);
     const msg = await screen.findByText("Link não aceito.");
     const campo = screen.getByLabelText("Link do vídeo (opcional)");
+    expect(campo.getAttribute("aria-invalid")).toBe("true");
+    expect(campo.getAttribute("aria-describedby")).toBe(msg.id);
+  });
+});
+
+describe("TelaAvaliar: sugestão do atleta (D9)", () => {
+  const AUTO_ABERTA = {
+    ciclo: { id: "c1", nome: "Novembro de 2026", status: "aberto" },
+    indicadores: [
+      {
+        indicadorId: "tec_1",
+        nome: "Leitura de vento",
+        pilarId: "tec",
+        sugestao: {
+          valor: 4,
+          evidencia: "Treino de vento forte",
+          link: null,
+          anexo: null,
+          em: "2026-11-10T12:00:00.000Z",
+        },
+        treinador: null,
+        diferenca: null,
+      },
+    ],
+    resumoPorPilar: null,
+  };
+  const corpoGravado = () =>
+    POST.mock.calls.find((c) => c[0] === "/atletas/{id}/avaliacoes")?.[1] as
+      { body: unknown } | undefined;
+  const botaoSalvar = () => screen.getByRole("button", { name: "Salvar avaliação" });
+
+  beforeEach(() => {
+    autoavaliacao = AUTO_ABERTA;
+  });
+
+  it("mostra a sugestão do atleta ao lado do indicador", async () => {
+    montar("a07");
+    expect(await screen.findByText("Sugestão do atleta: 4")).toBeTruthy();
+    expect(screen.getByText("Evidência do atleta: Treino de vento forte")).toBeTruthy();
+  });
+
+  it("não oferece Aprovar quando o ciclo da autoavaliação está fechado", async () => {
+    autoavaliacao = { ...AUTO_ABERTA, ciclo: { ...AUTO_ABERTA.ciclo, status: "fechado" } };
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    expect(screen.queryByText("Sugestão do atleta: 4")).toBeNull();
+  });
+
+  it("Aprovar preenche a nota igual e grava sem justificativa", async () => {
+    montar("a07");
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Aprovar sugestão 4 do atleta em Leitura de vento",
+      }),
+    );
+    const grupo = screen.getByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    expect((within(grupo).getByRole("radio", { name: "4" }) as HTMLInputElement).checked).toBe(
+      true,
+    );
+    expect((screen.getByLabelText("Evidência (obrigatória)") as HTMLInputElement).value).toBe(
+      "Treino de vento forte",
+    );
+    expect(screen.queryByLabelText(/Justificativa da correção/)).toBeNull();
+    await waitFor(() => expect(botaoSalvar().hasAttribute("disabled")).toBe(false));
+    fireEvent.click(botaoSalvar());
+    await waitFor(() =>
+      expect(corpoGravado()?.body).toEqual({
+        notas: [{ indicadorId: "tec_1", valor: 4, evidencia: "Treino de vento forte" }],
+      }),
+    );
+  });
+
+  it("Corrigir exige justificativa quando a nota difere da sugestão", async () => {
+    montar("a07");
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Corrigir sugestão do atleta em Leitura de vento",
+      }),
+    );
+    const just = screen.getByLabelText(/Justificativa da correção/) as HTMLTextAreaElement;
+    expect(document.activeElement).toBe(just);
+    nota("Leitura de vento", 3);
+    fireEvent.change(evidencia(), { target: { value: "Regata de seleção" } });
+    expect(
+      await screen.findByText("Explique por que a nota difere da sugestão do atleta."),
+    ).toBeTruthy();
+    expect(just.getAttribute("aria-invalid")).toBe("true");
+    expect(botaoSalvar().hasAttribute("disabled")).toBe(true);
+    expect(corpoGravado()).toBeUndefined();
+
+    fireEvent.change(just, { target: { value: "Largadas ainda irregulares" } });
+    await waitFor(() => expect(botaoSalvar().hasAttribute("disabled")).toBe(false));
+    fireEvent.click(botaoSalvar());
+    await waitFor(() =>
+      expect(corpoGravado()?.body).toEqual({
+        notas: [
+          {
+            indicadorId: "tec_1",
+            valor: 3,
+            evidencia: "Regata de seleção",
+            justificativa: "Largadas ainda irregulares",
+          },
+        ],
+      }),
+    );
+  });
+
+  it("mostra sob o campo o 400 da API em notas.0.justificativa", async () => {
+    montar("a07");
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Corrigir sugestão do atleta em Leitura de vento",
+      }),
+    );
+    nota("Leitura de vento", 3);
+    fireEvent.change(evidencia(), { target: { value: "Regata de seleção" } });
+    fireEvent.change(screen.getByLabelText(/Justificativa da correção/), {
+      target: { value: "Largadas irregulares" },
+    });
+    const base = POST.getMockImplementation()!;
+    POST.mockImplementation((caminho: string, ...r: unknown[]) =>
+      caminho === "/atletas/{id}/avaliacoes"
+        ? Promise.resolve({
+            error: {
+              erro: "requisicao_invalida",
+              mensagem: "Dados inválidos.",
+              campos: [{ campo: "notas.0.justificativa", mensagem: "Justificativa recusada." }],
+            },
+            response: { status: 400 },
+          })
+        : base(caminho, ...r),
+    );
+    await waitFor(() => expect(botaoSalvar().hasAttribute("disabled")).toBe(false));
+    fireEvent.click(botaoSalvar());
+    const msg = await screen.findByText("Justificativa recusada.");
+    const campo = screen.getByLabelText(/Justificativa da correção/);
     expect(campo.getAttribute("aria-invalid")).toBe("true");
     expect(campo.getAttribute("aria-describedby")).toBe(msg.id);
   });
