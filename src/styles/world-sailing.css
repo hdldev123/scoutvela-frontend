@@ -1,0 +1,66 @@
+/* Seção World Sailing da ficha, sugestões do primeiro acesso e do perfil, editor WS_NIVEIS (D19). */
+.ws-status {
+  margin: 0 0 6px;
+  font-size: 0.92rem;
+}
+.ws-perfil {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+}
+.ws-perfil a {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.ws-sub {
+  margin: 14px 0 6px;
+  font-size: 1rem;
+}
+.ws-filtro {
+  max-width: 22rem;
+  margin-bottom: 8px;
+}
+.ws-selo {
+  margin-left: 6px;
+}
+.ws-sugestao {
+  display: grid;
+  gap: 10px;
+}
+.ws-sugestao-corpo {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+}
+.ws-sugestao-foto {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.ws-sugestao-bio {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ws-origem {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+.par-ws-niveis {
+  width: 100%;
+}
+.par-ws-niveis th,
+.par-ws-niveis td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+.par-ws-niveis input,
+.par-ws-niveis select {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+}
