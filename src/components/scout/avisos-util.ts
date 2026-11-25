@@ -79,6 +79,12 @@ export function fraseDoAviso(a: Aviso): string {
       return "Seu peso foi validado";
     case "pesagem_recusada":
       return "Seu peso foi recusado";
+    case "atleta_lancou_resultado":
+      return `${quem(a)} enviou um resultado para validar`;
+    case "resultado_validado":
+      return "Seu resultado foi validado";
+    case "resultado_recusado":
+      return "Seu resultado foi recusado";
   }
 }
 
@@ -100,6 +106,8 @@ export function destinoDoAviso(a: Aviso): DestinoAviso | null {
     case "autoavaliacao_corrigida":
     case "pesagem_validada":
     case "pesagem_recusada":
+    case "resultado_validado":
+    case "resultado_recusado":
       return { to: "/painel" };
     default:
       return a.atleta ? { to: "/atletas/$id", params: { id: a.atleta.id } } : null;

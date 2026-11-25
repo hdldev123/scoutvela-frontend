@@ -350,14 +350,31 @@ describe("frases dos avisos da autoavaliação e da pesagem (D9)", () => {
     );
   });
 
+  it("monta as frases dos avisos de resultado (D10)", () => {
+    expect(
+      fraseDoAviso(
+        aviso({ id: "f", tipo: "atleta_lancou_resultado", referencia: { resultadoId: "r1" } }),
+      ),
+    ).toBe("Helena Vasques enviou um resultado para validar");
+    expect(fraseDoAviso(aviso({ id: "g", tipo: "resultado_validado" }))).toBe(
+      "Seu resultado foi validado",
+    );
+    expect(fraseDoAviso(aviso({ id: "h", tipo: "resultado_recusado" }))).toBe(
+      "Seu resultado foi recusado",
+    );
+  });
+
   it("leva cada aviso à tela certa", () => {
     const ficha = { to: "/atletas/$id", params: { id: "a07" } };
     expect(destinoDoAviso(aviso({ id: "a", tipo: "atleta_autoavaliou" }))).toEqual(ficha);
     expect(destinoDoAviso(aviso({ id: "c", tipo: "atleta_enviou_pesagem" }))).toEqual(ficha);
+    expect(destinoDoAviso(aviso({ id: "r", tipo: "atleta_lancou_resultado" }))).toEqual(ficha);
     for (const tipo of [
       "autoavaliacao_corrigida",
       "pesagem_validada",
       "pesagem_recusada",
+      "resultado_validado",
+      "resultado_recusado",
     ] as const) {
       expect(destinoDoAviso(aviso({ id: tipo, tipo }))).toEqual({ to: "/painel" });
     }
