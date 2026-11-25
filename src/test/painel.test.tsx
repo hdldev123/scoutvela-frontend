@@ -135,6 +135,7 @@ const TERMO = {
 };
 
 let proximaDoTermo: unknown = null;
+let termoIncluiFotoBio = false;
 let avisosDoAtleta: unknown[] = [];
 
 const SEM_AUTOAVALIACAO = {
@@ -179,7 +180,12 @@ function montar(
       return Promise.resolve({ data: revisoes, response: { status: 200 } });
     if (caminho === "/pedidos-titular")
       return Promise.resolve({ data: pedidos, response: { status: 200 } });
-    if (caminho === "/termo") return Promise.resolve({ data: TERMO, response: { status: 200 } });
+    if (caminho === "/termo") {
+      return Promise.resolve({
+        data: { ...TERMO, incluiFotoBio: termoIncluiFotoBio },
+        response: { status: 200 },
+      });
+    }
     if (caminho === "/termo/proxima") {
       return Promise.resolve(
         proximaDoTermo
@@ -438,6 +444,25 @@ describe("TelaPainel", () => {
     );
     // O aviso sai do hook, não do callback do mutate: o bloco some ao recarregar o painel.
     await waitFor(() => expect(toastFn).toHaveBeenCalledWith("Termo aceito"));
+  });
+
+  it("avisa no aceite quando a versão do termo inclui foto e mini bio para o IBVAR", async () => {
+    termoIncluiFotoBio = true;
+    const base = painel();
+    montar(painel({ consentimento: { ...base.consentimento, termoAceitoEm: null } }));
+    expect(
+      await screen.findByText(
+        /Esta versão inclui sua foto e sua mini bio entre o que o IBVAR pode ver/,
+      ),
+    ).toBeInTheDocument();
+    termoIncluiFotoBio = false;
+  });
+
+  it("sem a marca no termo, não mostra o aviso de foto e mini bio", async () => {
+    const base = painel();
+    montar(painel({ consentimento: { ...base.consentimento, termoAceitoEm: null } }));
+    await screen.findByRole("region", { name: "Texto do termo" });
+    expect(screen.queryByText(/inclui sua foto e sua mini bio/)).not.toBeInTheDocument();
   });
 
   it("mostra o termo e a nova versão quando o aceite está pendente", async () => {

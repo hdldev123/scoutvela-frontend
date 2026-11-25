@@ -1,6 +1,5 @@
-import { Avatar } from "./Avatar";
+import { CartaoPerfil } from "./CartaoPerfil";
 import { BlocoContato } from "./BlocoContato";
-import { LinkWsId } from "./LinkWsId";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -14,6 +13,7 @@ import { GaugeClassFit } from "./GaugeClassFit";
 import { PedirAjusteDialog } from "./PedirAjusteDialog";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
 import { PesagensPendentes } from "./PesagensPendentes";
+import { ConquistasParaValidar } from "./ConquistasParaValidar";
 import { ResultadosParaValidar } from "./ResultadosParaValidar";
 import { PlanoIndividual } from "./PlanoIndividual";
 import { ResultadoDialog } from "./ResultadoDialog";
@@ -541,13 +541,6 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
     { rotulo: rotuloCiclo(ficha.ciclo?.nome ?? "Atual"), score: ficha.score, mediaTurma: null },
   ];
 
-  const local = [
-    atleta.clube,
-    atleta.cidade && atleta.uf ? `${atleta.cidade}/${atleta.uf}` : (atleta.cidade ?? atleta.uf),
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
   return (
     <div className="stack ficha">
       {papel !== "atleta" && (
@@ -559,59 +552,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
         </div>
       )}
       <div className="athlete-head">
-        <div className="athlete-id">
-          {atleta.fotoUrl && <Avatar nome={atleta.nome} fotoUrl={atleta.fotoUrl} grande />}
-          <div className="athlete-txt">
-            <div className="eyebrow">
-              Ficha individual{ficha.ciclo ? ` · ciclo de ${ficha.ciclo.nome}` : ""}
-            </div>
-            <h1>{atleta.nome}</h1>
-            <ul className="facts">
-              <li>
-                <i className="ph ph-identification-card" aria-hidden="true" />
-                <span className="fato-rot">ID World Sailing</span>{" "}
-                <LinkWsId wsId={atleta.wsId} nome={atleta.nome} />
-              </li>
-              <li>
-                <i className="ph ph-identification-badge" aria-hidden="true" />
-                <span className="fato-rot">VelaID</span>{" "}
-                {atleta.velaid ? <code>{atleta.velaid}</code> : "—"}
-              </li>
-              <li>
-                <i className="ph ph-sailboat" aria-hidden="true" />
-                {atleta.classe.nome} · {atleta.funcao}
-              </li>
-              <li>
-                <i className="ph ph-cake" aria-hidden="true" />
-                {atleta.idade} anos
-              </li>
-              {local && (
-                <li>
-                  <i className="ph ph-map-pin" aria-hidden="true" />
-                  {local}
-                </li>
-              )}
-              {/* Muda com o barco e a classe: informação secundária, não identifica o atleta. */}
-              {atleta.numeroVela && (
-                <li>
-                  <span className="fato-rot">Nº de vela</span> {atleta.numeroVela}
-                </li>
-              )}
-              {ficha.dadosAtualizadosEm && (
-                <li>
-                  <i className="ph ph-clock-counter-clockwise" aria-hidden="true" />
-                  Dados deste atleta atualizados em {fmtInstante(ficha.dadosAtualizadosEm)}
-                </li>
-              )}
-              {ficha.contato?.treinador && (
-                <li>
-                  <i className="ph ph-user" aria-hidden="true" />
-                  <span className="fato-rot">Treinador(a)</span> {ficha.contato.treinador.nome}
-                </li>
-              )}
-            </ul>
-          </div>
-        </div>
+        <CartaoPerfil ficha={ficha} />
         <BigScore score={ficha.score} faixa={ficha.faixa} parcial={!ficha.completo}>
           <SparkScore pontos={pontos} />
         </BigScore>
@@ -775,6 +716,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
             </p>
           </section>
           {podeLancar && <ResultadosParaValidar atletaId={atleta.id} />}
+          {podeLancar && <ConquistasParaValidar atletaId={atleta.id} />}
           {papel !== "ibvar" && (
             <ComparacaoAutoavaliacao
               atletaId={atleta.id}

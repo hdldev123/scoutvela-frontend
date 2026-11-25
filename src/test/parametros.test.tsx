@@ -49,6 +49,7 @@ const params: Parametros = {
       alturaMediaCm: 187,
       alturaMaxCm: 192,
       ativa: true,
+      fonte: null,
     },
     {
       id: "c2",
@@ -62,6 +63,7 @@ const params: Parametros = {
       alturaMediaCm: null,
       alturaMaxCm: null,
       ativa: true,
+      fonte: null,
     },
   ],
   rubricas: [

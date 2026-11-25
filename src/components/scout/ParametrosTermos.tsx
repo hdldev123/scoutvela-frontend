@@ -65,6 +65,7 @@ export function SecaoTermos() {
                 <th>Título</th>
                 <th>Vigente desde</th>
                 <th>Situação</th>
+                <th>Foto e mini bio</th>
                 <th className="num">Aceites</th>
               </tr>
             </thead>
@@ -77,6 +78,7 @@ export function SecaoTermos() {
                   <td className="nw">
                     <span className={`pill ${situacao(v).tom}`}>{situacao(v).texto}</span>
                   </td>
+                  <td className="nw">{v.incluiFotoBio ? "Inclui" : "Não inclui"}</td>
                   <td className="num">{v.aceites}</td>
                 </tr>
               ))}
@@ -95,6 +97,7 @@ function DialogoNovoTermo({ aoFechar }: { aoFechar: () => void }) {
   const [titulo, setTitulo] = useState("");
   const [texto, setTexto] = useState("");
   const [vigencia, setVigencia] = useState("");
+  const [incluiFotoBio, setIncluiFotoBio] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [erro, setErro] = useState("");
   const doServidor = errosPorCampo(publicar.error);
@@ -146,6 +149,7 @@ function DialogoNovoTermo({ aoFechar }: { aoFechar: () => void }) {
         titulo: titulo.trim(),
         texto: texto.trim(),
         vigenteDesde: localParaIso(vigencia),
+        incluiFotoBio,
       },
       {
         onSuccess: () => {
@@ -169,6 +173,12 @@ function DialogoNovoTermo({ aoFechar }: { aoFechar: () => void }) {
             a ter aceite pendente. Se a regra TERMO_EXIGE_REACEITE estiver ativa, eles saem do
             ranking até aceitar.
           </div>
+          {incluiFotoBio && (
+            <div className="note" role="note">
+              Esta versão inclui foto e mini bio para o IBVAR. O investidor só vê foto e mini bio de
+              quem consentiu com o IBVAR e aceitou esta versão (ou outra que as inclua).
+            </div>
+          )}
           <p>
             Versão <strong>{versao.trim()}</strong>, vigente a partir de{" "}
             {new Date(vigencia).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
@@ -278,6 +288,27 @@ function DialogoNovoTermo({ aoFechar }: { aoFechar: () => void }) {
             >
               A partir de agora (em {ANTECEDENCIA_MIN} minutos)
             </button>
+          </div>
+          <div>
+            <label className="par-check" htmlFor="termo-foto-bio">
+              <input
+                id="termo-foto-bio"
+                type="checkbox"
+                checked={incluiFotoBio}
+                aria-describedby="termo-foto-bio-ajuda"
+                onChange={(e) => {
+                  limparErro();
+                  setIncluiFotoBio(e.target.checked);
+                }}
+              />{" "}
+              Este termo inclui foto e mini bio para o IBVAR
+            </label>
+            <p id="termo-foto-bio-ajuda" className="muted" style={{ margin: "4px 0 0" }}>
+              Marque só se o texto acima cita foto e mini bio entre o que vai ao IBVAR. O IBVAR
+              passa a ver foto e mini bio apenas de quem consentiu com ele e aceitou uma versão
+              marcada assim. Quem não aceitar esta versão continua sem foto e sem mini bio para o
+              IBVAR.
+            </p>
           </div>
           {erro && (
             <div className="note" role="alert">

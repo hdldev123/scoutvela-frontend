@@ -97,7 +97,12 @@ describe("SecaoTermos", () => {
     await waitFor(() => expect(POST).toHaveBeenCalledTimes(1));
     const [caminho, { body }] = POST.mock.calls[0]!;
     expect(caminho).toBe("/termos");
-    expect(body).toMatchObject({ versao: "v4", titulo: "Termo v4", texto: "x".repeat(60) });
+    expect(body).toMatchObject({
+      versao: "v4",
+      titulo: "Termo v4",
+      texto: "x".repeat(60),
+      incluiFotoBio: false,
+    });
     expect(body.vigenteDesde).toMatch(/^2030-03-01T09:00:00[+-]\d{2}:\d{2}$/);
     await waitFor(() => expect(toastFn.success).toHaveBeenCalled());
     const chaves = inv.mock.calls.map((c) => JSON.stringify(c[0]?.queryKey));
@@ -209,5 +214,34 @@ describe("TelaParametros e o termo", () => {
     fireEvent.click(await screen.findByRole("tab", { name: "Termo de consentimento" }));
     expect(await screen.findByRole("heading", { name: "Termo de consentimento" })).toBeTruthy();
     expect(await screen.findByRole("button", { name: "Publicar nova versão" })).toBeTruthy();
+  });
+});
+
+describe("Termo que inclui foto e mini bio (D14)", () => {
+  it("explica o efeito e envia incluiFotoBio verdadeiro quando marcado", async () => {
+    POST.mockResolvedValue({ data: {}, response: { status: 201 } });
+    montar();
+    await preencher();
+    const opcao = screen.getByRole("checkbox", {
+      name: "Este termo inclui foto e mini bio para o IBVAR",
+    });
+    expect(opcao).not.toBeChecked();
+    expect(opcao).toHaveAccessibleDescription(
+      /Quem não aceitar esta versão continua sem foto e sem mini bio para o IBVAR/,
+    );
+    fireEvent.click(opcao);
+    fireEvent.click(screen.getByRole("button", { name: "Revisar e publicar" }));
+    expect(screen.getByText(/Esta versão inclui foto e mini bio para o IBVAR\./)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar e publicar" }));
+    await waitFor(() => expect(POST).toHaveBeenCalledTimes(1));
+    expect(POST.mock.calls[0]![1].body).toMatchObject({ versao: "v4", incluiFotoBio: true });
+  });
+
+  it("a tabela mostra quais versões incluem foto e mini bio", async () => {
+    GET.mockResolvedValue(ok([{ ...termos[0], incluiFotoBio: true }, termos[1], termos[2]]));
+    montar();
+    const linhas = await screen.findAllByRole("row");
+    expect(within(linhas[1]!).getByText("Inclui")).toBeTruthy();
+    expect(within(linhas[2]!).getByText("Não inclui")).toBeTruthy();
   });
 });

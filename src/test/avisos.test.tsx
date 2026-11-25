@@ -364,6 +364,24 @@ describe("frases dos avisos da autoavaliação e da pesagem (D9)", () => {
     );
   });
 
+  it("monta as frases dos avisos de conquista (D14)", () => {
+    expect(
+      fraseDoAviso(
+        aviso({ id: "i", tipo: "atleta_registrou_conquista", referencia: { conquistaId: "q1" } }),
+      ),
+    ).toBe("Helena Vasques registrou uma conquista para validar");
+    expect(fraseDoAviso(aviso({ id: "j", tipo: "conquista_validada" }))).toBe(
+      "Sua conquista foi validada",
+    );
+    expect(fraseDoAviso(aviso({ id: "k", tipo: "conquista_recusada" }))).toBe(
+      "Sua conquista foi recusada",
+    );
+    expect(destinoDoAviso(aviso({ id: "l", tipo: "atleta_registrou_conquista" }))).toEqual({
+      to: "/atletas/$id",
+      params: { id: "a07" },
+    });
+  });
+
   it("leva cada aviso à tela certa", () => {
     const ficha = { to: "/atletas/$id", params: { id: "a07" } };
     expect(destinoDoAviso(aviso({ id: "a", tipo: "atleta_autoavaliou" }))).toEqual(ficha);
@@ -375,6 +393,8 @@ describe("frases dos avisos da autoavaliação e da pesagem (D9)", () => {
       "pesagem_recusada",
       "resultado_validado",
       "resultado_recusado",
+      "conquista_validada",
+      "conquista_recusada",
     ] as const) {
       expect(destinoDoAviso(aviso({ id: tipo, tipo }))).toEqual({ to: "/painel" });
     }

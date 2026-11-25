@@ -85,6 +85,12 @@ export function fraseDoAviso(a: Aviso): string {
       return "Seu resultado foi validado";
     case "resultado_recusado":
       return "Seu resultado foi recusado";
+    case "atleta_registrou_conquista":
+      return `${quem(a)} registrou uma conquista para validar`;
+    case "conquista_validada":
+      return "Sua conquista foi validada";
+    case "conquista_recusada":
+      return "Sua conquista foi recusada";
   }
 }
 
@@ -108,6 +114,8 @@ export function destinoDoAviso(a: Aviso): DestinoAviso | null {
     case "pesagem_recusada":
     case "resultado_validado":
     case "resultado_recusado":
+    case "conquista_validada":
+    case "conquista_recusada":
       return { to: "/painel" };
     default:
       return a.atleta ? { to: "/atletas/$id", params: { id: a.atleta.id } } : null;

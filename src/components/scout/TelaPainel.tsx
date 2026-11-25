@@ -11,6 +11,7 @@ import { MinhaAutoavaliacao } from "./MinhaAutoavaliacao";
 import { NotaRevisao } from "./NotaRevisao";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
 import { MeusResultados } from "./MeusResultados";
+import { MinhasConquistas } from "./MinhasConquistas";
 import { PesagemAtleta } from "./PesagemAtleta";
 import { RecursoRevisaoDialog } from "./RecursoRevisaoDialog";
 import { andamentoRevisao, rotuloPapelAtleta } from "./revisao-util";
@@ -254,6 +255,17 @@ const TIPOS_PEDIDO: Record<TipoPedidoTitular, string> = {
   revogacao: "Revogação de consentimento",
 };
 
+/** Diz ao atleta, antes do aceite, que esta versão libera foto e mini bio para o IBVAR. */
+function AvisoFotoBio() {
+  return (
+    <p className="note" role="note">
+      Esta versão inclui sua foto e sua mini bio entre o que o IBVAR pode ver. Isso só vale se você
+      aceitar e mantiver o consentimento com o IBVAR ativo. Sem o aceite, o IBVAR continua sem ver
+      os dois.
+    </p>
+  );
+}
+
 /** Termo vigente e botão de aceite; some quando o atleta já aceitou a versão vigente. */
 function TermoAceite({ novaVersao }: { novaVersao?: string | undefined }) {
   const termo = useTermo();
@@ -280,6 +292,7 @@ function TermoAceite({ novaVersao }: { novaVersao?: string | undefined }) {
       )}
       {termo.data && (
         <>
+          {termo.data.incluiFotoBio && <AvisoFotoBio />}
           <div className="ped-termo" tabIndex={0} role="region" aria-label="Texto do termo">
             {termo.data.texto}
           </div>
@@ -376,6 +389,7 @@ function TermoProximo({ proxima }: { proxima: NonNullable<PainelAtleta["termoPro
               <p className="muted" style={{ marginTop: 0 }}>
                 Passa a valer em {fmtInstante(texto.data.vigenteDesde)}.
               </p>
+              {texto.data.incluiFotoBio && <AvisoFotoBio />}
               <div className="ped-termo" tabIndex={0} role="region" aria-label="Texto do termo">
                 {texto.data.texto}
               </div>
@@ -763,6 +777,7 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
           aoPedirRevisao={() => setPedindoRevisao(true)}
         />
         <MeusResultados atletaId={painel.atleta.id} />
+        <MinhasConquistas atletaId={painel.atleta.id} />
         <PesagemAtleta atletaId={painel.atleta.id} />
         <Consentimento c={painel.consentimento} />
         <PedidosTitular />

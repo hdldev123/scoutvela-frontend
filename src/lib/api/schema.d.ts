@@ -536,6 +536,8 @@ export interface paths {
                                         nome: string;
                                     };
                                 } | null;
+                                /** @description Mini bio (texto simples, até 500 caracteres); nula se não escreveu */
+                                bio: string | null;
                             } | null;
                             treinador: {
                                 quantidadeAtletas: number;
@@ -581,7 +583,7 @@ export interface paths {
         };
         /**
          * Edita o perfil: nome (treinador e gestor) ou e-mail, telefone e validade do passaporte (atleta)
-         * @description Nome, gênero e data de nascimento do atleta (informados em PUT /me/cadastro) e o ID World Sailing não são editáveis aqui: a correção é pelo pedido do titular (tipo `correcao`); só o gestor troca o WS ID. `telefone` (atleta): E.164; aceita espaços, parênteses, traços e pontos, que são removidos; sem `+` só com DDD brasileiro (10 ou 11 dígitos), e então vira `+55...`; outro formato é 400. `passaporteValidoAte` (atleta): `AAAA-MM`, gravado como o último dia do mês; data passada é aceita (serve para avisar que venceu); não guardamos número nem cópia do passaporte. `telefone` e `passaporteValidoAte` aceitam `null` para apagar. A auditoria guarda só os nomes dos campos.
+         * @description Nome, gênero e data de nascimento do atleta (informados em PUT /me/cadastro) e o ID World Sailing não são editáveis aqui: a correção é pelo pedido do titular (tipo `correcao`); só o gestor troca o WS ID. `telefone` (atleta): E.164; aceita espaços, parênteses, traços e pontos, que são removidos; sem `+` só com DDD brasileiro (10 ou 11 dígitos), e então vira `+55...`; outro formato é 400. `passaporteValidoAte` (atleta): `AAAA-MM`, gravado como o último dia do mês; data passada é aceita (serve para avisar que venceu); não guardamos número nem cópia do passaporte. `telefone` e `passaporteValidoAte` aceitam `null` para apagar. `bio` (atleta): texto simples de até 500 caracteres (espaços nas pontas saem; vazio ou `null` apaga). A auditoria guarda só os nomes dos campos (nunca o texto da bio).
          */
         put: {
             parameters: {
@@ -600,6 +602,8 @@ export interface paths {
                         telefone?: string | null;
                         /** @description AAAA-MM; null apaga */
                         passaporteValidoAte?: string | null;
+                        /** @description Mini bio do atleta (texto simples, até 500 caracteres; vazio ou null apaga). Texto livre visto pelo gestor, pelo treinador e, com o aceite do termo que inclui foto e bio, pelo IBVAR: não cite saúde, família nem contato */
+                        bio?: string | null;
                     };
                 };
             };
@@ -658,6 +662,8 @@ export interface paths {
                                         nome: string;
                                     };
                                 } | null;
+                                /** @description Mini bio (texto simples, até 500 caracteres); nula se não escreveu */
+                                bio: string | null;
                             } | null;
                             treinador: {
                                 quantidadeAtletas: number;
@@ -990,7 +996,7 @@ export interface paths {
                                         nome: string;
                                         evento: string;
                                     };
-                                    /** @description Link assinado curto da foto da conta do atleta; sempre nulo para o IBVAR */
+                                    /** @description Link assinado curto da foto da conta do atleta. Para o IBVAR, só de quem consentiu com ele e aceitou uma versão do termo que inclui foto e bio (D14); nulo nos demais casos */
                                     fotoUrl: string | null;
                                 };
                                 score: number;
@@ -1122,8 +1128,10 @@ export interface paths {
                                 clube: string | null;
                                 cidade: string | null;
                                 uf: string | null;
-                                /** @description Link assinado curto da foto da conta do atleta; sempre nulo para o IBVAR */
+                                /** @description Link assinado curto da foto da conta do atleta. Para o IBVAR, só se o atleta consentiu com ele e aceitou uma versão do termo que inclui foto e bio (D14); nulo nos demais casos */
                                 fotoUrl: string | null;
+                                /** @description Mini bio escrita pelo atleta (texto simples, até 500 caracteres); nula se não escreveu. Mesma regra da foto para o IBVAR */
+                                bio: string | null;
                                 termoAceito: boolean;
                                 classe: {
                                     id: string;
@@ -1154,6 +1162,23 @@ export interface paths {
                                     };
                                 } | null;
                             } | null;
+                            /** @description Só as validadas, do ano mais novo ao mais antigo: pódios (1º a 3º) dos resultados validados e as conquistas manuais validadas pelo treinador ou pelo gestor. O IBVAR recebe os pódios de quem consentiu (são resultados que ele já vê) e as manuais só se o aceite do atleta inclui foto e bio */
+                            conquistas: {
+                                /**
+                                 * @description resultado: pódio de um resultado validado (calculado); manual: informada pelo atleta, com anexo, e validada
+                                 * @enum {string}
+                                 */
+                                tipo: "resultado" | "manual";
+                                titulo: string;
+                                /** @description Ano da edição (resultado) ou da conquista (manual) */
+                                ano: number;
+                                /** @description Só nas conquistas de resultado */
+                                evento?: string;
+                                /** @description Só nas conquistas de resultado */
+                                nivel?: string;
+                                /** @description Só nas conquistas de resultado (1 a 3) */
+                                posicao?: number;
+                            }[];
                             ciclo: {
                                 nome: string;
                                 prazo: string;
@@ -1278,6 +1303,15 @@ export interface paths {
                                 pesoMaxKg: number;
                                 deltaKg: number;
                                 distanciaRelativa: number;
+                                /** @description De onde vem a faixa de peso da classe (documento, versão e data); nula se não informada. Vai junto com a faixa: o IBVAR não recebe (classFit inteiro nulo) */
+                                fonte: {
+                                    /** @description Documento que traz a faixa de peso */
+                                    documento: string | null;
+                                    /** @description Versão do documento, como ele a informa */
+                                    versao: string | null;
+                                    /** @description Data do documento (AAAA-MM-DD) */
+                                    data: string | null;
+                                } | null;
                                 /** @description Altura de referência da classe. O IBVAR não recebe (classFit inteiro nulo) */
                                 altura: {
                                     /** @description Altura do atleta; nula se não medida */
@@ -3021,6 +3055,478 @@ export interface paths {
                                 decididoEm: string | null;
                                 /** @description Foto do visor da balança, enquanto a pesagem está pendente (GET /evidencias/:id/link). Nula depois da decisão: a foto é removida */
                                 anexoId: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/conquistas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O atleta informa uma conquista, com o anexo que a prova
+         * @description Só o atleta, no próprio cadastro completo. `anexoId` é o anexo do próprio atleta com categoria `evidencia` (POST /atletas/:id/evidencias), obrigatório, ainda não ligado a outra conquista: inexistente, removido, de outro atleta, de outra categoria ou já usado dá 400 em `anexoId`. `ano` de 1950 ao ano atual. Nasce `pendente`: só aparece na ficha depois da validação do treinador ou do gestor (PUT /conquistas/:id/validacao). Os pódios dos resultados validados entram sozinhos, sem esta rota. O anexo fica ligado e não pode mais ser removido. Avisa o treinador (`atleta_registrou_conquista`, `referencia: { conquistaId }`). Auditoria `registrar_conquista` só com ids e nomes de campo (sem o título).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        titulo: string;
+                        ano: number;
+                        /** Format: uuid */
+                        anexoId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * Format: uuid
+                             * @description Identificador da conquista (PUT /conquistas/:id/validacao)
+                             */
+                            id: string;
+                            titulo: string;
+                            ano: number;
+                            /** @enum {string} */
+                            status: "pendente" | "validada" | "recusada";
+                            /** @description Motivo da recusa; nulo nas demais */
+                            motivo: string | null;
+                            /**
+                             * Format: uuid
+                             * @description Prova anexada (GET /evidencias/:id/link)
+                             */
+                            anexoId: string;
+                            /** @description Instante ISO */
+                            criadoEm: string;
+                            /** @description Quem validou ou recusou */
+                            decididoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            decididoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conquistas/{id}/validacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Valida ou recusa uma conquista informada pelo atleta
+         * @description Gestor ou treinador do atleta (outro treinador e conquista inexistente: 404; atleta e IBVAR: 403). `recusar` exige `motivo` (até 300 caracteres; 400 em `motivo`). A decisão é definitiva: conquista já decidida dá 409 (o atleta informa outra). Só a validada aparece na ficha. Avisa o atleta (`conquista_validada` ou `conquista_recusada`, `referencia: { conquistaId }`). Auditoria `decidir_conquista` sem o título nem o motivo.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decisao: "validar" | "recusar";
+                        motivo?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * Format: uuid
+                             * @description Identificador da conquista (PUT /conquistas/:id/validacao)
+                             */
+                            id: string;
+                            titulo: string;
+                            ano: number;
+                            /** @enum {string} */
+                            status: "pendente" | "validada" | "recusada";
+                            /** @description Motivo da recusa; nulo nas demais */
+                            motivo: string | null;
+                            /**
+                             * Format: uuid
+                             * @description Prova anexada (GET /evidencias/:id/link)
+                             */
+                            anexoId: string;
+                            /** @description Instante ISO */
+                            criadoEm: string;
+                            /** @description Quem validou ou recusou */
+                            decididoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            decididoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/conquistas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Conquistas do atleta: automáticas (pódios) e manuais, de qualquer situação
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). `automaticas`: pódios (1º a 3º) dos resultados validados, calculados na leitura. `manuais`: as informadas pelo atleta, da mais nova para a mais antiga, com a situação, o motivo da recusa, quem decidiu e o anexo. A ficha (GET /atletas/:id) traz só as validadas.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            automaticas: {
+                                /**
+                                 * @description resultado: pódio de um resultado validado (calculado); manual: informada pelo atleta, com anexo, e validada
+                                 * @enum {string}
+                                 */
+                                tipo: "resultado" | "manual";
+                                titulo: string;
+                                /** @description Ano da edição (resultado) ou da conquista (manual) */
+                                ano: number;
+                                /** @description Só nas conquistas de resultado */
+                                evento?: string;
+                                /** @description Só nas conquistas de resultado */
+                                nivel?: string;
+                                /** @description Só nas conquistas de resultado (1 a 3) */
+                                posicao?: number;
+                            }[];
+                            manuais: {
+                                /**
+                                 * Format: uuid
+                                 * @description Identificador da conquista (PUT /conquistas/:id/validacao)
+                                 */
+                                id: string;
+                                titulo: string;
+                                ano: number;
+                                /** @enum {string} */
+                                status: "pendente" | "validada" | "recusada";
+                                /** @description Motivo da recusa; nulo nas demais */
+                                motivo: string | null;
+                                /**
+                                 * Format: uuid
+                                 * @description Prova anexada (GET /evidencias/:id/link)
+                                 */
+                                anexoId: string;
+                                /** @description Instante ISO */
+                                criadoEm: string;
+                                /** @description Quem validou ou recusou */
+                                decididoPor: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO */
+                                decididoEm: string | null;
                             }[];
                         };
                     };
@@ -6132,6 +6638,15 @@ export interface paths {
                                 alturaMinCm: number | null;
                                 alturaMediaCm: number | null;
                                 alturaMaxCm: number | null;
+                                /** @description De onde vem a faixa de peso da classe; nula se não informada */
+                                fonte: {
+                                    /** @description Documento que traz a faixa de peso */
+                                    documento: string | null;
+                                    /** @description Versão do documento, como ele a informa */
+                                    versao: string | null;
+                                    /** @description Data do documento (AAAA-MM-DD) */
+                                    data: string | null;
+                                } | null;
                             }[];
                             rubricas: {
                                 /** @description Nulo = escala geral de 0 a 5 */
@@ -6246,6 +6761,13 @@ export interface paths {
                             alturaMaxCm?: number | null;
                             /** @description Não dá para desativar classe com atleta ativo */
                             ativa?: boolean;
+                            /** @description Fonte da faixa de peso (documento, versão e data), só informativa. Nulo limpa. A auditoria guarda antes e depois */
+                            fonte?: {
+                                documento: string;
+                                versao?: string | null;
+                                /** Format: date */
+                                data?: string | null;
+                            } | null;
                         }[];
                     };
                 };
@@ -6304,6 +6826,15 @@ export interface paths {
                                 alturaMinCm: number | null;
                                 alturaMediaCm: number | null;
                                 alturaMaxCm: number | null;
+                                /** @description De onde vem a faixa de peso da classe; nula se não informada */
+                                fonte: {
+                                    /** @description Documento que traz a faixa de peso */
+                                    documento: string | null;
+                                    /** @description Versão do documento, como ele a informa */
+                                    versao: string | null;
+                                    /** @description Data do documento (AAAA-MM-DD) */
+                                    data: string | null;
+                                } | null;
                             }[];
                             rubricas: {
                                 /** @description Nulo = escala geral de 0 a 5 */
@@ -7391,6 +7922,10 @@ export interface paths {
                             }[];
                             /** @description Pesagens informadas pelo atleta: peso, situação (pendente, validada ou recusada), motivo da recusa, quem decidiu e quando (a foto da balança não é exportada e é apagada depois da decisão) */
                             pesagens: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Conquistas informadas pelo atleta: título, ano, situação (pendente, validada ou recusada), motivo da recusa, quem decidiu e quando (o anexo está em evidencias). Os pódios dos resultados validados estão em resultados */
+                            conquistas: {
                                 [key: string]: unknown;
                             }[];
                             /** @description Pedidos de ajuste recebidos do treinador ou do gestor: mensagem, indicador, quem pediu e quando */
@@ -9303,6 +9838,8 @@ export interface paths {
                             texto: string;
                             /** @description Instante ISO */
                             vigenteDesde: string;
+                            /** @description A versão cita foto e bio entre o que vai ao IBVAR */
+                            incluiFotoBio: boolean;
                         };
                     };
                 };
@@ -9382,6 +9919,8 @@ export interface paths {
                             texto: string;
                             /** @description Instante ISO em que passa a valer */
                             vigenteDesde: string;
+                            /** @description A versão cita foto e bio entre o que vai ao IBVAR */
+                            incluiFotoBio: boolean;
                         };
                     };
                 };
@@ -9595,6 +10134,8 @@ export interface paths {
                             vigenteDesde: string;
                             /** @description Instante ISO */
                             criadoEm: string;
+                            /** @description A versão cita foto e bio entre o que vai ao IBVAR: só quem aceitou uma versão assim e consentiu com o IBVAR tem foto e bio vistas por ele */
+                            incluiFotoBio: boolean;
                             /** @description É a versão vigente agora */
                             vigente: boolean;
                             /** @description Ainda não começou a valer */
@@ -9643,7 +10184,7 @@ export interface paths {
         put?: never;
         /**
          * Publica uma nova versão do termo (gestor)
-         * @description A versão passa a valer em vigenteDesde, que não pode estar no passado nem ser anterior ou igual à vigência de outra versão (inclusive futura). Quem aceitou só a anterior fica com aceite pendente; se o ranking os exclui depende da regra TERMO_EXIGE_REACEITE. A auditoria não guarda o texto.
+         * @description A versão passa a valer em vigenteDesde, que não pode estar no passado nem ser anterior ou igual à vigência de outra versão (inclusive futura). Quem aceitou só a anterior fica com aceite pendente; se o ranking os exclui depende da regra TERMO_EXIGE_REACEITE. `incluiFotoBio` (padrão falso): marque na versão cujo texto cita foto e bio entre o que vai ao IBVAR (decisão D). O IBVAR só recebe foto e bio de quem consentiu com ele e tem como aceite mais recente uma versão com essa marca; quem não aceitar a versão nova segue sem foto e sem bio para ele. A auditoria não guarda o texto.
          */
         post: {
             parameters: {
@@ -9658,6 +10199,8 @@ export interface paths {
                         versao: string;
                         titulo: string;
                         texto: string;
+                        /** @default false */
+                        incluiFotoBio?: boolean;
                         /** Format: date-time */
                         vigenteDesde: string;
                     };
@@ -9677,6 +10220,8 @@ export interface paths {
                             vigenteDesde: string;
                             /** @description Instante ISO */
                             criadoEm: string;
+                            /** @description A versão cita foto e bio entre o que vai ao IBVAR: só quem aceitou uma versão assim e consentiu com o IBVAR tem foto e bio vistas por ele */
+                            incluiFotoBio: boolean;
                             /** @description É a versão vigente agora */
                             vigente: boolean;
                             /** @description Ainda não começou a valer */
@@ -9779,7 +10324,7 @@ export interface paths {
                             itens: {
                                 id: string;
                                 /** @enum {string} */
-                                tipo: "atleta_respondeu" | "atleta_anexou" | "atleta_atualizou_perfil" | "atleta_completou_cadastro" | "pedido_ajuste" | "sugestao_respondida" | "atleta_autoavaliou" | "autoavaliacao_corrigida" | "atleta_enviou_pesagem" | "pesagem_validada" | "pesagem_recusada" | "atleta_lancou_resultado" | "resultado_validado" | "resultado_recusado";
+                                tipo: "atleta_respondeu" | "atleta_anexou" | "atleta_atualizou_perfil" | "atleta_completou_cadastro" | "pedido_ajuste" | "sugestao_respondida" | "atleta_autoavaliou" | "autoavaliacao_corrigida" | "atleta_enviou_pesagem" | "pesagem_validada" | "pesagem_recusada" | "atleta_lancou_resultado" | "resultado_validado" | "resultado_recusado" | "atleta_registrou_conquista" | "conquista_validada" | "conquista_recusada";
                                 /** @description Instante ISO */
                                 criadoEm: string;
                                 /** @description Instante ISO; nulo = não lido */

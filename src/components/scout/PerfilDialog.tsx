@@ -16,6 +16,7 @@ import { getSupabase } from "@/lib/auth/supabase";
 import { prepararFoto, validarFoto, validarRecorte } from "@/lib/foto";
 import { mensagemErroSenha, type ErroSenha } from "@/lib/auth/erros-senha";
 import { errosPorCampo } from "@/lib/api/cliente";
+import { MAX_BIO } from "@/lib/api/conquistas";
 import { mensagemEmail } from "@/lib/validacao";
 import { Avatar } from "./Avatar";
 import { ContatoPerfil } from "./ContatoPerfil";
@@ -187,7 +188,7 @@ function Cabecalho({ perfil }: { perfil: Perfil }) {
           {previa
             ? "Pré-visualização do recorte quadrado. Salve para aplicar."
             : perfil.atleta
-              ? "Opcional. JPG ou PNG, até 15 MB (a foto é reduzida antes do envio). Visível para você, a gestão técnica e seu treinador. O IBVAR não vê."
+              ? "Opcional. JPG ou PNG, até 15 MB (a foto é reduzida antes do envio). Visível para você, a gestão técnica e seu treinador. O IBVAR só vê se você consentiu com ele e aceitou o termo que inclui foto e mini bio."
               : "Opcional. JPG ou PNG, até 15 MB (a foto é reduzida antes do envio). Aparece no seu menu lateral."}
         </p>
         <Erro texto={erro} />
@@ -263,6 +264,102 @@ function CampoEditavel({ perfil }: { perfil: Perfil }) {
       )}
       <MensagemCampo id="perfil-editavel-erro" texto={msg} />
       <Erro texto={erro} />
+    </form>
+  );
+}
+
+const AVISO_RESTANTES = 50;
+
+/** Mini bio do atleta (D14): texto livre que o investidor pode ler, então sem saúde, família nem contato. */
+function CampoBio({ perfil }: { perfil: Perfil }) {
+  const salvar = useSalvarPerfil();
+  const inicial = perfil.atleta?.bio ?? "";
+  const [valor, setValor] = useState(inicial);
+  const [erro, setErro] = useState("");
+  const texto = valor.trim();
+  const alterado = texto !== inicial.trim();
+  const restantes = MAX_BIO - valor.length;
+  const doServidor = errosPorCampo(salvar.error)["bio"];
+  const msg = doServidor;
+
+  function enviar(novo: string | null, aviso: string) {
+    setErro("");
+    salvar.mutate(
+      { bio: novo },
+      {
+        onSuccess: () => {
+          if (novo === null) setValor("");
+          toast(aviso);
+        },
+        onError: (err) =>
+          setErro(
+            Object.keys(errosPorCampo(err)).length > 0
+              ? ""
+              : mensagemDeErro(err, "Não foi possível salvar a mini bio."),
+          ),
+      },
+    );
+  }
+
+  function submeter(e: FormEvent) {
+    e.preventDefault();
+    if (texto.length > MAX_BIO) return;
+    enviar(texto === "" ? null : texto, texto === "" ? "Mini bio apagada" : "Mini bio atualizada");
+  }
+
+  return (
+    <form className="perfil-item perfil-item-form" onSubmit={submeter} noValidate>
+      <label htmlFor="perfil-bio">Mini bio</label>
+      <textarea
+        id="perfil-bio"
+        rows={4}
+        maxLength={MAX_BIO}
+        value={valor}
+        aria-describedby={
+          msg
+            ? "perfil-bio-erro perfil-bio-dica perfil-bio-contador"
+            : "perfil-bio-dica perfil-bio-contador"
+        }
+        aria-invalid={msg ? true : undefined}
+        onChange={(e) => {
+          if (salvar.isError) salvar.reset();
+          setErro("");
+          setValor(e.target.value);
+        }}
+      />
+      <p id="perfil-bio-contador" className="perfil-desc">
+        {valor.length} de {MAX_BIO} caracteres
+      </p>
+      {/* Só anuncia perto do limite: a cada tecla seria ruído para leitor de tela. */}
+      <span className="sr-only" role="status" aria-live="polite">
+        {restantes <= AVISO_RESTANTES
+          ? restantes === 0
+            ? "Limite de 500 caracteres atingido."
+            : `Restam ${restantes} caracteres.`
+          : ""}
+      </span>
+      <p id="perfil-bio-dica" className="perfil-desc">
+        Aparece no seu perfil para a gestão e o treinador e, se você consentiu e aceitou o termo que
+        inclui foto e mini bio, também para o investidor (IBVAR). Não escreva dados de saúde, da sua
+        família nem contato (telefone, e-mail, redes sociais).
+      </p>
+      <MensagemCampo id="perfil-bio-erro" texto={msg} />
+      <Erro texto={erro} />
+      <div className="perfil-acoes">
+        <button type="submit" className="btn primary" disabled={!alterado || salvar.isPending}>
+          {salvar.isPending ? "Salvando…" : "Salvar mini bio"}
+        </button>
+        {inicial !== "" && (
+          <button
+            type="button"
+            className="btn"
+            disabled={salvar.isPending}
+            onClick={() => enviar(null, "Mini bio apagada")}
+          >
+            Apagar mini bio
+          </button>
+        )}
+      </div>
     </form>
   );
 }
@@ -516,6 +613,10 @@ function Corpo({ perfil, aoFechar }: { perfil: Perfil; aoFechar: () => void }) {
               <Linha rotulo="Treinador" valor={a.treinador?.nome} />
             </dl>
             <PedidoCorrecao />
+          </Secao>
+
+          <Secao id="perfil-bio-secao" titulo="Mini bio">
+            <CampoBio perfil={perfil} />
           </Secao>
 
           <Secao id="perfil-contato" titulo="Contato e viagens">

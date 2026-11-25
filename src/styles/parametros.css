@@ -183,3 +183,14 @@
   width: 100%;
   min-height: 3.5rem;
 }
+
+/* Opção do termo que inclui foto e mini bio (D14). */
+.par-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 600;
+}
+.par-check input {
+  margin-top: 4px;
+}

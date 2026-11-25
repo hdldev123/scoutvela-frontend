@@ -126,6 +126,7 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
       cidade: "Florianópolis",
       uf: "SC",
       fotoUrl: null,
+      bio: null,
       termoAceito: true,
       classe: { id: "c1", nome: "ILCA 6", evento: "ILCA 6", posicao: "ind" },
     },
@@ -204,7 +205,9 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
       pesoMaxKg: 65,
       deltaKg: 2,
       distanciaRelativa: 0.4,
+      fonte: null,
     },
+    conquistas: [],
     resultados: [
       {
         ...RES_BASE,
@@ -304,6 +307,10 @@ const SEM_AUTOAVALIACAO = {
 let autoavaliacao: unknown = SEM_AUTOAVALIACAO;
 let pesagens: unknown = { itens: [] };
 let resultadosApi: ({ status: string } & Record<string, unknown>)[] = [];
+let conquistasApi: { automaticas: unknown[]; manuais: unknown[] } = {
+  automaticas: [],
+  manuais: [],
+};
 
 function montar(papel: string, dados: FichaAtleta | { erro: number }) {
   GET.mockImplementation((caminho: string, opcoes?: unknown) => {
@@ -320,6 +327,9 @@ function montar(papel: string, dados: FichaAtleta | { erro: number }) {
         data: { itens: resultadosApi.filter((x) => !status || x.status === status) },
         response: { status: 200 },
       });
+    }
+    if (caminho === "/atletas/{id}/conquistas") {
+      return Promise.resolve({ data: conquistasApi, response: { status: 200 } });
     }
     if (caminho === "/parametros") {
       return Promise.resolve({ data: PARAMETROS, response: { status: 200 } });
@@ -373,6 +383,7 @@ describe("TelaFicha", () => {
     autoavaliacao = SEM_AUTOAVALIACAO;
     pesagens = { itens: [] };
     resultadosApi = [];
+    conquistasApi = { automaticas: [], manuais: [] };
     GET.mockReset();
     atualizarGate.mockReset();
     criarRevisao.mockReset();
@@ -1734,5 +1745,184 @@ describe("TelaFicha: comparação com a média da turma (D13)", () => {
     expect(screen.queryByTestId("comp-posicao")).not.toBeInTheDocument();
     expect(screen.queryByTestId("comp-tendencia")).not.toBeInTheDocument();
     expect(screen.queryByText("Média da turma")).not.toBeInTheDocument();
+  });
+});
+
+describe("TelaFicha: cartão de perfil e conquistas (D14)", () => {
+  const PODIO = {
+    tipo: "resultado" as const,
+    titulo: "Mundial ILCA 6",
+    ano: 2025,
+    evento: "Mundial ILCA 6",
+    nivel: "mundial",
+    posicao: 2,
+  };
+  const MANUAL = { tipo: "manual" as const, titulo: "Campeã da Semana de Vela", ano: 2024 };
+  const MANUAL_PENDENTE = {
+    id: "q1",
+    titulo: "Campeã da Semana de Vela",
+    ano: 2024,
+    status: "pendente" as const,
+    motivo: null,
+    anexoId: "e9",
+    criadoEm: "2026-11-20T12:00:00.000Z",
+    decididoPor: null,
+    decididoEm: null,
+  };
+
+  beforeEach(() => {
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
+    resultadosApi = [];
+    conquistasApi = { automaticas: [], manuais: [] };
+    GET.mockReset();
+    PUT.mockReset();
+    toastFn.mockReset();
+    toastFn.success.mockReset();
+    toastFn.error.mockReset();
+  });
+
+  it("gestor vê o cartão completo: foto, identificação, bio e conquistas com texto", async () => {
+    const base = ficha();
+    montar(
+      "gestor",
+      ficha({
+        atleta: {
+          ...base.atleta,
+          fotoUrl: "https://x.test/f.jpg",
+          bio: "Velejo desde os 8 anos.\nSonho com 2032.",
+        },
+        conquistas: [PODIO, MANUAL],
+      }),
+    );
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    const cartao = document.querySelector(".cartao-perfil") as HTMLElement;
+    expect(cartao.querySelector("img")).toHaveAttribute("src", "https://x.test/f.jpg");
+    expect(within(cartao).getByRole("link", { name: /BRAHV07/ })).toBeInTheDocument();
+    expect(within(cartao).getByText("ILCA 6 · Timoneira")).toBeInTheDocument();
+    expect(within(cartao).getByText("21 anos")).toBeInTheDocument();
+    expect(within(cartao).getByText(/Florianópolis\/SC/)).toBeInTheDocument();
+    expect(within(cartao).getByText(/Velejo desde os 8 anos\./)).toBeInTheDocument();
+    const lista = within(cartao).getByRole("region", { name: "Conquistas" });
+    const itens = within(lista).getAllByRole("listitem");
+    expect(itens).toHaveLength(2);
+    expect(within(itens[0]!).getByText("2º lugar")).toBeInTheDocument();
+    expect(within(itens[0]!).getByText(/Mundial ILCA 6/)).toBeInTheDocument();
+    expect(within(itens[1]!).getByText("Conquista")).toBeInTheDocument();
+    expect(within(itens[1]!).getByText(/Campeã da Semana de Vela/)).toBeInTheDocument();
+  });
+
+  it("sem foto o cartão mostra as iniciais; sem bio nem conquistas, não mostra os blocos", async () => {
+    montar("gestor", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    const cartao = document.querySelector(".cartao-perfil") as HTMLElement;
+    expect(cartao.querySelector("img")).toBeNull();
+    expect(cartao.querySelector(".avatar")?.textContent).toBe("HV");
+    expect(cartao.querySelector(".cartao-bio")).toBeNull();
+    expect(screen.queryByRole("region", { name: "Conquistas" })).toBeNull();
+  });
+
+  it("IBVAR com foto, bio e conquistas liberadas pela API vê tudo isso no cartão", async () => {
+    const base = ficha();
+    montar(
+      "ibvar",
+      ficha({
+        classFit: null,
+        financeiro: { perfilSuporte: "D" },
+        contato: null,
+        atleta: { ...base.atleta, fotoUrl: "https://x.test/f.jpg", bio: "Bio liberada." },
+        conquistas: [PODIO],
+      }),
+    );
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    const cartao = document.querySelector(".cartao-perfil") as HTMLElement;
+    expect(cartao.querySelector("img")).toHaveAttribute("src", "https://x.test/f.jpg");
+    expect(within(cartao).getByText("Bio liberada.")).toBeInTheDocument();
+    expect(within(cartao).getByText("2º lugar")).toBeInTheDocument();
+    // O IBVAR não consulta a lista de conquistas (403): só lê o que veio na ficha.
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/conquistas", expect.anything());
+  });
+
+  it("IBVAR sem o aceite do termo (foto e bio nulas) vê o cartão sem bio e sem foto", async () => {
+    montar(
+      "ibvar",
+      ficha({
+        classFit: null,
+        financeiro: { perfilSuporte: "D" },
+        contato: null,
+        conquistas: [PODIO],
+      }),
+    );
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    const cartao = document.querySelector(".cartao-perfil") as HTMLElement;
+    expect(cartao.querySelector("img")).toBeNull();
+    expect(cartao.querySelector(".cartao-bio")).toBeNull();
+    expect(within(cartao).getByText("2º lugar")).toBeInTheDocument();
+  });
+
+  it("treinador vê as conquistas pendentes, abre o comprovante e valida", async () => {
+    conquistasApi = {
+      automaticas: [],
+      manuais: [MANUAL_PENDENTE, { ...MANUAL_PENDENTE, id: "q2", status: "validada" }],
+    };
+    PUT.mockResolvedValue({
+      data: { ...MANUAL_PENDENTE, status: "validada" },
+      response: { status: 200 },
+    });
+    montar("treinador", ficha());
+    const bloco = (await screen.findByRole("heading", { name: "Conquistas para validar" })).closest(
+      "section",
+    )!;
+    expect(within(bloco).getAllByRole("listitem")).toHaveLength(1);
+    expect(
+      within(bloco).getByRole("button", {
+        name: "Ver comprovante de Campeã da Semana de Vela (2024)",
+      }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(bloco).getByRole("button", { name: "Validar Campeã da Semana de Vela (2024)" }),
+    );
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/conquistas/{id}/validacao", {
+        params: { path: { id: "q1" } },
+        body: { decisao: "validar" },
+      }),
+    );
+    await waitFor(() => expect(toastFn.success).toHaveBeenCalledWith("Conquista validada."));
+  });
+
+  it("recusar exige motivo e envia a decisão com o motivo", async () => {
+    conquistasApi = { automaticas: [], manuais: [MANUAL_PENDENTE] };
+    PUT.mockResolvedValue({
+      data: { ...MANUAL_PENDENTE, status: "recusada" },
+      response: { status: 200 },
+    });
+    montar("gestor", ficha());
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Recusar Campeã da Semana de Vela (2024)" }),
+    );
+    const dialogo = await screen.findByRole("dialog");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Recusar conquista" }));
+    expect(
+      await within(dialogo).findByText("Explique o motivo da recusa para o atleta."),
+    ).toBeInTheDocument();
+    expect(PUT).not.toHaveBeenCalled();
+    fireEvent.change(within(dialogo).getByLabelText("Motivo (obrigatório)"), {
+      target: { value: "  Comprovante ilegível.  " },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Recusar conquista" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/conquistas/{id}/validacao", {
+        params: { path: { id: "q1" } },
+        body: { decisao: "recusar", motivo: "Comprovante ilegível." },
+      }),
+    );
+  });
+
+  it("o atleta não vê o bloco de validação", async () => {
+    conquistasApi = { automaticas: [], manuais: [MANUAL_PENDENTE] };
+    montar("atleta", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Conquistas para validar" })).toBeNull();
   });
 });

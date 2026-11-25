@@ -524,3 +524,97 @@ describe("Modal Meu perfil: contato e passaporte (D15)", () => {
     expect(await screen.findByText("Passaporte vencido")).toBeInTheDocument();
   });
 });
+
+describe("Mini bio (atleta, D14)", () => {
+  const bio = () => screen.findByRole("textbox", { name: "Mini bio" });
+
+  it("mostra a orientação sobre o que não escrever e o contador", async () => {
+    montar("atleta");
+    await abrir();
+    const campo = await bio();
+    expect(campo).toHaveAttribute("maxlength", "500");
+    expect(
+      screen.getByText(/Não escreva dados de saúde, da sua família nem contato/),
+    ).toBeVisible();
+    expect(screen.getByText("0 de 500 caracteres")).toBeVisible();
+    fireEvent.change(campo, { target: { value: "Velejo desde os 8 anos." } });
+    expect(screen.getByText("23 de 500 caracteres")).toBeVisible();
+    expect(campo).toHaveAccessibleDescription(/23 de 500 caracteres/);
+  });
+
+  it("anuncia o contador só perto do limite", async () => {
+    montar("atleta");
+    await abrir();
+    const campo = await bio();
+    const anuncio = () =>
+      screen.getAllByRole("status").find((e) => e.classList.contains("sr-only"))!;
+    fireEvent.change(campo, { target: { value: "a".repeat(100) } });
+    expect(anuncio()).toHaveTextContent("");
+    fireEvent.change(campo, { target: { value: "a".repeat(470) } });
+    expect(anuncio()).toHaveTextContent("Restam 30 caracteres.");
+    fireEvent.change(campo, { target: { value: "a".repeat(500) } });
+    expect(anuncio()).toHaveTextContent("Limite de 500 caracteres atingido.");
+  });
+
+  it("salva a bio sem os espaços das pontas", async () => {
+    montar("atleta");
+    await abrir();
+    fireEvent.change(await bio(), { target: { value: "  Velejo desde os 8 anos.  " } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar mini bio" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/me/perfil", { body: { bio: "Velejo desde os 8 anos." } }),
+    );
+  });
+
+  it("só habilita Salvar quando a bio muda", async () => {
+    montar("atleta");
+    await abrir();
+    const campo = await bio();
+    const salvar = screen.getByRole("button", { name: "Salvar mini bio" });
+    expect(salvar).toBeDisabled();
+    fireEvent.change(campo, { target: { value: "Nova bio" } });
+    expect(salvar).toBeEnabled();
+  });
+
+  it("apaga a bio com null, pelo botão e ao salvar o campo vazio", async () => {
+    const base = perfil("atleta");
+    montar("atleta", perfil("atleta", { atleta: { ...base.atleta!, bio: "Bio antiga" } }));
+    await abrir();
+    const campo = await bio();
+    expect(campo).toHaveValue("Bio antiga");
+    fireEvent.click(screen.getByRole("button", { name: "Apagar mini bio" }));
+    await waitFor(() => expect(PUT).toHaveBeenCalledWith("/me/perfil", { body: { bio: null } }));
+    await waitFor(() => expect(campo).toHaveValue(""));
+    PUT.mockClear();
+    fireEvent.change(campo, { target: { value: "Outra" } });
+    fireEvent.change(campo, { target: { value: "   " } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar mini bio" }));
+    await waitFor(() => expect(PUT).toHaveBeenCalledWith("/me/perfil", { body: { bio: null } }));
+  });
+
+  it("mostra o erro 400 embaixo do campo, ligado por aria-describedby", async () => {
+    montar("atleta");
+    await abrir();
+    PUT.mockResolvedValue({
+      error: {
+        erro: "requisicao_invalida",
+        mensagem: "Dados inválidos.",
+        campos: [{ campo: "bio", mensagem: "A bio não pode ter caracteres de controle." }],
+      },
+      response: { status: 400 },
+    });
+    const campo = await bio();
+    fireEvent.change(campo, { target: { value: "texto" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar mini bio" }));
+    const msg = await screen.findByText("A bio não pode ter caracteres de controle.");
+    expect(campo).toHaveAttribute("aria-invalid", "true");
+    expect(campo.getAttribute("aria-describedby")).toContain(msg.id);
+  });
+
+  it("gestor e treinador não têm o campo", async () => {
+    montar("treinador");
+    await abrir();
+    await screen.findByLabelText("Nome");
+    expect(screen.queryByRole("textbox", { name: "Mini bio" })).toBeNull();
+  });
+});
