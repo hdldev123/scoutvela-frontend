@@ -85,14 +85,22 @@ export interface paths {
                             cadastroPendente: {
                                 wsId: string;
                                 velaid: string | null;
-                                /** @description Dados do VelaID para o atleta confirmar; nula sem VelaID */
+                                /** @description Dados do VelaID ou, sem eles, do perfil da World Sailing, para o atleta confirmar ou corrigir; nula sem nenhum dos dois */
                                 sugestao: {
                                     nome: string;
-                                    /** @enum {string} */
-                                    genero: "F" | "M";
-                                    /** @description AAAA-MM-DD */
-                                    dataNascimento: string;
+                                    /**
+                                     * @description Nulo se a World Sailing não informa
+                                     * @enum {string|null}
+                                     */
+                                    genero: "F" | "M" | null;
+                                    /** @description AAAA-MM-DD; nula se a World Sailing não informa */
+                                    dataNascimento: string | null;
                                 } | null;
+                                /**
+                                 * @description De onde veio a sugestão (o VelaID vale antes da World Sailing); nula sem sugestão
+                                 * @enum {string|null}
+                                 */
+                                origemSugestao: "velaid" | "world_sailing" | null;
                             } | null;
                             telas: string[];
                             telaInicial: string;
@@ -542,6 +550,13 @@ export interface paths {
                             treinador: {
                                 quantidadeAtletas: number;
                             } | null;
+                            /** @description Sugestão de foto e bio do perfil da World Sailing (D19). Só para o atleta, enquanto ele não decidiu (POST /me/perfil/world-sailing) e houver foto ou bio; nulo nos demais casos */
+                            sugestaoWorldSailing: {
+                                /** @description Foto de https://assets.sailing.org/, para a prévia (o servidor é quem a baixa) */
+                                fotoUrl: string | null;
+                                /** @description Texto da World Sailing; vai cortado em 500 caracteres */
+                                bio: string | null;
+                            } | null;
                         };
                     };
                 };
@@ -667,6 +682,13 @@ export interface paths {
                             } | null;
                             treinador: {
                                 quantidadeAtletas: number;
+                            } | null;
+                            /** @description Sugestão de foto e bio do perfil da World Sailing (D19). Só para o atleta, enquanto ele não decidiu (POST /me/perfil/world-sailing) e houver foto ou bio; nulo nos demais casos */
+                            sugestaoWorldSailing: {
+                                /** @description Foto de https://assets.sailing.org/, para a prévia (o servidor é quem a baixa) */
+                                fotoUrl: string | null;
+                                /** @description Texto da World Sailing; vai cortado em 500 caracteres */
+                                bio: string | null;
                             } | null;
                         };
                     };
@@ -934,6 +956,161 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/perfil/world-sailing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O atleta aceita ou dispensa a foto e a bio sugeridas pela World Sailing
+         * @description Só o atleta, uma vez (a decisão fica marcada, também quando ele dispensa com `usarFoto` e `usarBio` falsos; depois disso, 409). Sem sugestão, 404. `usarFoto`: o SERVIDOR baixa a foto, só de https://assets.sailing.org/ (sem seguir redirecionamento, até 5 MB, só JPEG ou PNG conferidos pela assinatura do arquivo; outro formato dá 400, falha de rede ou tempo esgotado dá 503), tira EXIF e GPS e a guarda como a foto do perfil (a regra de foto e bio para o IBVAR é a mesma de sempre: só com consentimento na versão do termo que inclui foto e bio). `usarBio`: a bio da World Sailing, cortada em 500 caracteres no fim de uma palavra, substitui a bio do perfil. Pedir uma delas sem a sugestão correspondente dá 400. A auditoria guarda só se usou foto e bio (nunca o texto).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        usarFoto: boolean;
+                        usarBio: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            usouFoto: boolean;
+                            usouBio: boolean;
+                            /** @description Link assinado curto da foto do perfil */
+                            fotoUrl: string | null;
+                            /** @description Bio atual do perfil */
+                            bio: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1344,13 +1521,13 @@ export interface paths {
                                 /** @description Só informação: não entra na nota */
                                 pontosCbvela: number | null;
                                 /**
-                                 * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                                 * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta; world_sailing: importado do perfil da World Sailing (fonte oficial: vale direto, e o treinador do atleta ou o gestor pode invalidar com motivo)
                                  * @enum {string}
                                  */
-                                fonte: "ranking_cbvela" | "manual" | "atleta";
+                                fonte: "ranking_cbvela" | "manual" | "atleta" | "world_sailing";
                                 linkOficial: string | null;
                                 /**
-                                 * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                                 * @description `atleta`: pendente até a validação do treinador. `world_sailing`: `validado` (vigente) até o treinador ou o gestor invalidar (`recusado`, com `motivo`); revalidar volta a `validado`. Manual e Ranking CBVela vêm sempre `validado`. Só o validado conta na nota e nos gates
                                  * @enum {string}
                                  */
                                 status: "validado" | "pendente" | "recusado";
@@ -4474,13 +4651,13 @@ export interface paths {
                             /** @description Só informação: não entra na nota */
                             pontosCbvela: number | null;
                             /**
-                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta; world_sailing: importado do perfil da World Sailing (fonte oficial: vale direto, e o treinador do atleta ou o gestor pode invalidar com motivo)
                              * @enum {string}
                              */
-                            fonte: "ranking_cbvela" | "manual" | "atleta";
+                            fonte: "ranking_cbvela" | "manual" | "atleta" | "world_sailing";
                             linkOficial: string | null;
                             /**
-                             * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                             * @description `atleta`: pendente até a validação do treinador. `world_sailing`: `validado` (vigente) até o treinador ou o gestor invalidar (`recusado`, com `motivo`); revalidar volta a `validado`. Manual e Ranking CBVela vêm sempre `validado`. Só o validado conta na nota e nos gates
                              * @enum {string}
                              */
                             status: "validado" | "pendente" | "recusado";
@@ -4603,8 +4780,8 @@ export interface paths {
         };
         get?: never;
         /**
-         * Valida ou recusa um resultado informado pelo atleta
-         * @description Gestor ou treinador do atleta (outro treinador e resultado inexistente: 404; atleta e IBVAR: 403). Só vale para resultado da fonte `atleta`; os lançados por gestor ou treinador e os do Ranking CBVela já valem (400). `recusar` exige `motivo` (até 300 caracteres; 400 em `motivo`). A decisão vira uma linha nova na série (nada é sobrescrito): a situação vigente é a da validação mais recente, então dá para mudar de `validado` para `recusado` e vice-versa; repetir a situação atual dá 409. Só o `validado` entra na nota (PERF_RESULTADOS) e nos gates G2 e G3. A súmula fica guardada. Avisa o atleta (`resultado_validado` ou `resultado_recusado`, `referencia: { resultadoId }`). Auditoria `decidir_resultado` sem o motivo.
+         * Valida ou recusa um resultado do atleta, ou invalida e revalida um resultado da World Sailing
+         * @description Gestor ou treinador do atleta (outro treinador e resultado inexistente: 404; atleta e IBVAR: 403). Vale para resultado da fonte `atleta` (valida ou recusa) e da fonte `world_sailing` (D19: `recusar` invalida o resultado importado, `validar` o revalida); os lançados por gestor ou treinador e os do Ranking CBVela já valem (400). `recusar` exige `motivo` (até 300 caracteres; 400 em `motivo`). A decisão vira uma linha nova na série (nada é sobrescrito): a situação vigente é a da validação mais recente, então dá para mudar de `validado` para `recusado` e vice-versa; repetir a situação atual dá 409 (o resultado da World Sailing já nasce vigente, então só `recusar` vale antes da primeira invalidação). Só o `validado` entra na nota (PERF_RESULTADOS) e nos gates G2 e G3: o resultado da World Sailing invalidado sai da nota e dos gates até ser revalidado. A súmula fica guardada. Avisa o atleta (`resultado_validado` ou `resultado_recusado`, `referencia: { resultadoId }`). Auditoria `decidir_resultado` sem o motivo.
          */
         put: {
             parameters: {
@@ -4647,13 +4824,13 @@ export interface paths {
                             /** @description Só informação: não entra na nota */
                             pontosCbvela: number | null;
                             /**
-                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta; world_sailing: importado do perfil da World Sailing (fonte oficial: vale direto, e o treinador do atleta ou o gestor pode invalidar com motivo)
                              * @enum {string}
                              */
-                            fonte: "ranking_cbvela" | "manual" | "atleta";
+                            fonte: "ranking_cbvela" | "manual" | "atleta" | "world_sailing";
                             linkOficial: string | null;
                             /**
-                             * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                             * @description `atleta`: pendente até a validação do treinador. `world_sailing`: `validado` (vigente) até o treinador ou o gestor invalidar (`recusado`, com `motivo`); revalidar volta a `validado`. Manual e Ranking CBVela vêm sempre `validado`. Só o validado conta na nota e nos gates
                              * @enum {string}
                              */
                             status: "validado" | "pendente" | "recusado";
@@ -4777,7 +4954,7 @@ export interface paths {
         };
         /**
          * Resultados do atleta, com a situação de cada um
-         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). Do mais recente para o mais antigo. `?status=validado|pendente|recusado` filtra pela situação (os resultados lançados por gestor, treinador ou importados do Ranking CBVela são sempre `validado`). Cada item traz fonte, edição, súmula (`anexo`), motivo da recusa e quem validou.
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). Do mais recente para o mais antigo. `?status=validado|pendente|recusado` filtra pela situação (os lançados por gestor, treinador ou importados do Ranking CBVela são sempre `validado`; os da World Sailing (`fonte: world_sailing`) são `validado` até serem invalidados, e então `recusado`, com o motivo). Cada item traz fonte, edição, súmula (`anexo`), motivo da recusa ou da invalidação e quem validou.
          */
         get: {
             parameters: {
@@ -4815,13 +4992,13 @@ export interface paths {
                                 /** @description Só informação: não entra na nota */
                                 pontosCbvela: number | null;
                                 /**
-                                 * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                                 * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta; world_sailing: importado do perfil da World Sailing (fonte oficial: vale direto, e o treinador do atleta ou o gestor pode invalidar com motivo)
                                  * @enum {string}
                                  */
-                                fonte: "ranking_cbvela" | "manual" | "atleta";
+                                fonte: "ranking_cbvela" | "manual" | "atleta" | "world_sailing";
                                 linkOficial: string | null;
                                 /**
-                                 * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                                 * @description `atleta`: pendente até a validação do treinador. `world_sailing`: `validado` (vigente) até o treinador ou o gestor invalidar (`recusado`, com `motivo`); revalidar volta a `validado`. Manual e Ranking CBVela vêm sempre `validado`. Só o validado conta na nota e nos gates
                                  * @enum {string}
                                  */
                                 status: "validado" | "pendente" | "recusado";
@@ -4968,13 +5145,13 @@ export interface paths {
                             /** @description Só informação: não entra na nota */
                             pontosCbvela: number | null;
                             /**
-                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta; world_sailing: importado do perfil da World Sailing (fonte oficial: vale direto, e o treinador do atleta ou o gestor pode invalidar com motivo)
                              * @enum {string}
                              */
-                            fonte: "ranking_cbvela" | "manual" | "atleta";
+                            fonte: "ranking_cbvela" | "manual" | "atleta" | "world_sailing";
                             linkOficial: string | null;
                             /**
-                             * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                             * @description `atleta`: pendente até a validação do treinador. `world_sailing`: `validado` (vigente) até o treinador ou o gestor invalidar (`recusado`, com `motivo`); revalidar volta a `validado`. Manual e Ranking CBVela vêm sempre `validado`. Só o validado conta na nota e nos gates
                              * @enum {string}
                              */
                             status: "validado" | "pendente" | "recusado";
@@ -5407,7 +5584,7 @@ export interface paths {
         put?: never;
         /**
          * Cadastra o atleta pelo ID World Sailing e registra o envio do termo
-         * @description O atleta nasce com cadastro incompleto (sem nome, gênero e data de nascimento): ele os informa no primeiro acesso, em PUT /me/cadastro. Até lá fica fora do ranking, do score, das pendências, do fechamento de ciclo e do investimento. wsId duplicado ou velaid já usado dão 409. confirmaMaioridade deve ser true. Se o velaid vier e existir no VelaID, o vínculo é guardado e os dados de lá ficam como sugestão para o atleta; velaid de menor de 18 anos é recusado. Código fora do VelaID importado é aceito, sem sugestão. Revalida classe ativa e treinador válido.
+         * @description O atleta nasce com cadastro incompleto (sem nome, gênero e data de nascimento): ele os informa no primeiro acesso, em PUT /me/cadastro. Até lá fica fora do ranking, do score, das pendências, do fechamento de ciclo e do investimento. wsId duplicado ou velaid já usado dão 409. confirmaMaioridade deve ser true. Se o velaid vier e existir no VelaID, o vínculo é guardado e os dados de lá ficam como sugestão para o atleta; velaid de menor de 18 anos é recusado. Código fora do VelaID importado é aceito, sem sugestão. Revalida classe ativa e treinador válido. Depois de gravar o cadastro, busca o perfil na World Sailing pelo WS ID (D19; até 15 s) e importa os resultados de regata (valem direto, com `fonte: world_sailing`), o histórico de ranking e a sugestão de nome, gênero, nascimento, foto e bio para o atleta; o resumo vem em `worldSailing`. O cadastro NUNCA falha por causa da World Sailing: ID não encontrado, falha ou tempo esgotado voltam em `worldSailing.status` e o gestor pode tentar de novo em POST /atletas/:id/world-sailing.
          */
         post: {
             parameters: {
@@ -5464,6 +5641,18 @@ export interface paths {
                              * @enum {string}
                              */
                             conta: "convite_enviado" | "sem_email" | "indisponivel";
+                            /** @description Resumo da busca na World Sailing feita logo depois do cadastro */
+                            worldSailing: {
+                                /**
+                                 * @description ok: buscou (veja as contagens). nao_encontrado: o ID não existe na World Sailing. falhou: a World Sailing não respondeu direito (nada foi importado; tente de novo depois). desligado: a integração está desligada neste ambiente
+                                 * @enum {string}
+                                 */
+                                status: "ok" | "nao_encontrado" | "falhou" | "desligado";
+                                /** @description Resultados de regata novos nesta busca */
+                                resultadosNovos: number;
+                                /** @description Posições de ranking novas nesta busca */
+                                rankingNovos: number;
+                            };
                         };
                     };
                 };
@@ -7540,7 +7729,7 @@ export interface paths {
                         }[];
                         /** @description Ids de pilar cujas rubricas próprias saem (volta a valer a escala geral). A escala geral não pode ser removida: nulo ou vazio dão 400 com mensagem explícita */
                         rubricasRemover?: (string | null)[];
-                        /** @description {codigo: valor}; códigos aceitos: P3, G1, G2, G3, G4, RANKING_CBVELA, TERMO_EXIGE_REACEITE, PERF_RESULTADOS, META_EVOLUCAO, MIN_GRUPO_AGREGADO, TENDENCIA. TENDENCIA (D13): { limiar (maior que 0, até 100) }, pontos de score da tendência do atleta e da faixa de na média da turma. META_EVOLUCAO (D12): { percentual (0 a 1000) }, meta de alta da média do score da turma sobre o ciclo fechado anterior. MIN_GRUPO_AGREGADO (D12): { minimo (inteiro, 1 a 1000) }, menor grupo que o IBVAR vê em agregado. O valor segue o formato lido em GET /parametros. PERF_RESULTADOS (regra provisória P12): { edicoes_max (1 a 20), sem_resultado (nota 0 a 5 do nível sem resultado validado, padrão 0), niveis: { mundial, continental, nacional } }, cada nível uma lista de faixas { ate, nota } em ordem: ate crescente (inteiro, 1 a 500), só a última com ate nulo (qualquer colocação), nota inteira de 0 a 5 que não aumenta */
+                        /** @description {codigo: valor}; códigos aceitos: P3, G1, G2, G3, G4, RANKING_CBVELA, TERMO_EXIGE_REACEITE, PERF_RESULTADOS, META_EVOLUCAO, MIN_GRUPO_AGREGADO, TENDENCIA, WS_NIVEIS. WS_NIVEIS (regra provisória P13, D19): { niveis: { "<nome do nível na World Sailing>": "<nível no Scout Vela>" } }, até 100 entradas, nome de 1 a 120 caracteres e destino mundial, sul_americano, continental, internacional_aberto, brasileiro, estadual ou regional; evento sem nível na World Sailing, ou com nível fora da regra, vira internacional_aberto (registrado, sem nota). Vale nas próximas importações (os resultados já importados não mudam). TENDENCIA (D13): { limiar (maior que 0, até 100) }, pontos de score da tendência do atleta e da faixa de na média da turma. META_EVOLUCAO (D12): { percentual (0 a 1000) }, meta de alta da média do score da turma sobre o ciclo fechado anterior. MIN_GRUPO_AGREGADO (D12): { minimo (inteiro, 1 a 1000) }, menor grupo que o IBVAR vê em agregado. O valor segue o formato lido em GET /parametros. PERF_RESULTADOS (regra provisória P12): { edicoes_max (1 a 20), sem_resultado (nota 0 a 5 do nível sem resultado validado, padrão 0), niveis: { mundial, continental, nacional } }, cada nível uma lista de faixas { ate, nota } em ordem: ate crescente (inteiro, 1 a 500), só a última com ate nulo (qualquer colocação), nota inteira de 0 a 5 que não aumenta */
                         regras?: {
                             [key: string]: unknown;
                         };
@@ -8661,7 +8850,7 @@ export interface paths {
         };
         /**
          * Exporta em JSON tudo o que o sistema guarda sobre o atleta (LGPD)
-         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados (com a edição e a situação da validação), decisões de gate, financeiro, pedidos de revisão (com o recurso, se houve) e pedidos do titular, telefone, validade do passaporte e aptidões conferidas, pesagens informadas, pedidos de ajuste recebidos, mensagens das conversas (D16), foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo) e plano individual (todas as versões). Só o atleta logado, só os próprios dados.
+         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados (com a edição e a situação da validação), decisões de gate, financeiro, pedidos de revisão (com o recurso, se houve) e pedidos do titular, telefone, validade do passaporte e aptidões conferidas, pesagens informadas, pedidos de ajuste recebidos, mensagens das conversas (D16), foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo), plano individual (todas as versões) e os dados importados da World Sailing (D19). Só o atleta logado, só os próprios dados.
          */
         get: {
             parameters: {
@@ -8754,6 +8943,21 @@ export interface paths {
                             plano: {
                                 [key: string]: unknown;
                             }[];
+                            /** @description Dados importados da World Sailing (D19). Os resultados de regata importados estão em resultados (fonte world_sailing) */
+                            worldSailing: {
+                                /** @description Perfil importado da World Sailing como sugestão: nome, gênero, nascimento, foto, bio, quando importou e quando decidiu sobre foto e bio */
+                                sugestao: {
+                                    [key: string]: unknown;
+                                } | null;
+                                /** @description Histórico de ranking importado da World Sailing */
+                                ranking: {
+                                    [key: string]: unknown;
+                                }[];
+                                /** @description Buscas feitas na World Sailing: quando, modo, status e contagens */
+                                buscas: {
+                                    [key: string]: unknown;
+                                }[];
+                            };
                         };
                     };
                 };
@@ -11941,6 +12145,237 @@ export interface paths {
             };
         };
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/world-sailing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Seção World Sailing da ficha: link do perfil, última busca e histórico de ranking
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). `perfilUrl` leva ao perfil público do atleta na World Sailing. `ultimaImportacao`: quando e como terminou a última busca (nulo se nunca houve). `importacaoAtiva`: falso com a integração desligada (o front esconde o botão de atualizar). `ranking`: o histórico de ranking importado (só informação, não entra na nota), do mais recente para o mais antigo. Os resultados de regata importados ficam em GET /atletas/:id/resultados (`fonte: world_sailing`).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description https://www.sailing.org/sailor/?ref=<ID> */
+                            perfilUrl: string;
+                            importacaoAtiva: boolean;
+                            ultimaImportacao: {
+                                /** @description Instante ISO */
+                                em: string;
+                                /** @enum {string} */
+                                status: "ok" | "nao_encontrado" | "falhou";
+                            } | null;
+                            ranking: {
+                                /** @description AAAA-MM-DD */
+                                data: string;
+                                classe: string;
+                                /** @description Ex.: Senior, Youth */
+                                tipo: string | null;
+                                posicao: number;
+                                pontos: number | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Busca de novo o perfil do atleta na World Sailing
+         * @description Gestor, ou treinador dos próprios atletas (outro treinador e atleta inexistente: 404; atleta e IBVAR: 403; atleta anonimizado: 409). Importa só o que é novo (resultados com `fonte: world_sailing`, que valem direto na nota P12 e nos gates, e o histórico de ranking) e renova a sugestão de cadastro, foto e bio; repetir a busca não duplica nada. No máximo uma busca por atleta a cada 60 segundos (429 `limite_excedido`). Com a integração desligada responde `status: desligado`. Atleta não encontrado na World Sailing ou falha da World Sailing não são erro da API: respondem 200 com `status` `nao_encontrado` ou `falhou`. Auditoria `importar_world_sailing` só com o modo, o status e as contagens.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description ok: buscou (veja as contagens). nao_encontrado: o ID não existe na World Sailing. falhou: a World Sailing não respondeu direito (nada foi importado; tente de novo depois). desligado: a integração está desligada neste ambiente
+                             * @enum {string}
+                             */
+                            status: "ok" | "nao_encontrado" | "falhou" | "desligado";
+                            /** @description Resultados de regata novos nesta busca */
+                            resultadosNovos: number;
+                            /** @description Posições de ranking novas nesta busca */
+                            rankingNovos: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;

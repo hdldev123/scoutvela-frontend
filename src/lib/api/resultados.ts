@@ -140,4 +140,5 @@ export const ROTULO_FONTE_RESULTADO: Record<ResultadoAtleta["fonte"], string> = 
   ranking_cbvela: "Ranking CBVela",
   manual: "Lançado pela equipe",
   atleta: "Informado pelo atleta",
+  world_sailing: "World Sailing",
 };
