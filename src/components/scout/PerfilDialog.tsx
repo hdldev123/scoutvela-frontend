@@ -18,6 +18,7 @@ import { mensagemErroSenha, type ErroSenha } from "@/lib/auth/erros-senha";
 import { errosPorCampo } from "@/lib/api/cliente";
 import { mensagemEmail } from "@/lib/validacao";
 import { Avatar } from "./Avatar";
+import { ContatoPerfil } from "./ContatoPerfil";
 import { Dialogo } from "./Dialogo";
 import { fmtInstante } from "./formato";
 import { SENHA_MINIMA } from "./TelaRedefinirSenha";
@@ -515,6 +516,14 @@ function Corpo({ perfil, aoFechar }: { perfil: Perfil; aoFechar: () => void }) {
               <Linha rotulo="Treinador" valor={a.treinador?.nome} />
             </dl>
             <PedidoCorrecao />
+          </Secao>
+
+          <Secao id="perfil-contato" titulo="Contato e viagens">
+            <ContatoPerfil
+              telefone={a.telefone}
+              passaporteValidoAte={a.passaporteValidoAte}
+              aptidao={a.aptidao}
+            />
           </Secao>
 
           <Secao id="perfil-consentimento" titulo="Termo e consentimento">

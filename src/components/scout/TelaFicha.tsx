@@ -1,4 +1,5 @@
 import { Avatar } from "./Avatar";
+import { BlocoContato } from "./BlocoContato";
 import { LinkWsId } from "./LinkWsId";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -744,6 +745,9 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               </div>
             )}
           </section>
+          {ficha.contato && (
+            <BlocoContato atletaId={atleta.id} contato={ficha.contato} papel={papel} />
+          )}
           <section className="panel ordem-financeiro">
             <div className="panel-head">
               <h2>Sustentabilidade da campanha</h2>

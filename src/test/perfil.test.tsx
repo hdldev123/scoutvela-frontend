@@ -71,6 +71,13 @@ function perfil(papel: Papel, extra: Record<string, unknown> = {}) {
             emailContato: "ana@contato.com",
             termoAceitoEm: "2026-10-01T10:00:00Z",
             compartilharIbvar: false,
+            telefone: "+5521988887777",
+            passaporteValidoAte: "2030-05",
+            aptidao: {
+              apto: true,
+              conferidoEm: "2026-11-10T15:00:00.000Z",
+              conferidoPor: { nome: "Carla Gestora" },
+            },
           }
         : null,
     treinador: papel === "treinador" ? { quantidadeAtletas: 7 } : null,
@@ -438,5 +445,82 @@ describe("lib/foto", () => {
   it("recorte quadrado centralizado", () => {
     expect(recorteQuadrado(400, 200)).toEqual({ x: 100, y: 0, lado: 200 });
     expect(recorteQuadrado(200, 300)).toEqual({ x: 0, y: 50, lado: 200 });
+  });
+});
+
+describe("Modal Meu perfil: contato e passaporte (D15)", () => {
+  it("atleta vê telefone, passaporte, a explicação de LGPD e a aptidão só leitura", async () => {
+    montar("atleta");
+    await abrir();
+    expect(await screen.findByLabelText("Telefone")).toHaveValue("+5521988887777");
+    expect(screen.getByLabelText("Passaporte válido até")).toHaveValue("2030-05");
+    expect(screen.getByLabelText("Passaporte válido até")).toHaveAttribute("type", "month");
+    expect(screen.getByText(/Não pedimos o número nem a cópia do passaporte/)).toBeInTheDocument();
+    expect(screen.getByText(/\+55 21 99999-0000/)).toBeInTheDocument();
+    expect(screen.getByText("Apto, conferido em 10/11/2026 por Carla Gestora")).toBeInTheDocument();
+  });
+
+  it("treinador não vê os campos de contato do atleta", async () => {
+    montar("treinador");
+    await abrir();
+    await screen.findByLabelText("Nome");
+    expect(screen.queryByLabelText("Telefone")).toBeNull();
+  });
+
+  it("edita o telefone e envia só ele", async () => {
+    montar("atleta");
+    await abrir();
+    fireEvent.change(await screen.findByLabelText("Telefone"), {
+      target: { value: "21 99999-0000" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar telefone" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/me/perfil", { body: { telefone: "21 99999-0000" } }),
+    );
+  });
+
+  it("mostra o 400 do telefone embaixo do campo", async () => {
+    montar("atleta");
+    await abrir();
+    PUT.mockResolvedValue({
+      error: {
+        erro: "requisicao_invalida",
+        mensagem: "Dados inválidos.",
+        campos: [{ campo: "telefone", mensagem: "Informe o telefone com DDD." }],
+      },
+      response: { status: 400 },
+    });
+    const campo = await screen.findByLabelText("Telefone");
+    fireEvent.change(campo, { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar telefone" }));
+    const msg = await screen.findByText("Informe o telefone com DDD.");
+    expect(campo).toHaveAttribute("aria-describedby", msg.id);
+    expect(campo).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("edita o passaporte (AAAA-MM) e apaga com null", async () => {
+    montar("atleta");
+    await abrir();
+    fireEvent.change(await screen.findByLabelText("Passaporte válido até"), {
+      target: { value: "2031-08" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar passaporte" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/me/perfil", { body: { passaporteValidoAte: "2031-08" } }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apagar passaporte" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenLastCalledWith("/me/perfil", { body: { passaporteValidoAte: null } }),
+    );
+  });
+
+  it("avisa quando o passaporte já venceu", async () => {
+    const base = perfil("atleta");
+    montar(
+      "atleta",
+      perfil("atleta", { atleta: { ...base.atleta!, passaporteValidoAte: "2020-01" } }),
+    );
+    await abrir();
+    expect(await screen.findByText("Passaporte vencido")).toBeInTheDocument();
   });
 });

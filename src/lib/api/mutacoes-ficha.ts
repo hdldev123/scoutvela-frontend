@@ -65,3 +65,13 @@ export async function lancarResultado(atletaId: string, corpo: CorpoResultado) {
   if (error || !data) throw paraErroApi(response.status, error);
   return data;
 }
+
+/** Gestor registra a aptidão conferida fora do sistema (`POST /atletas/{id}/aptidao`). */
+export async function registrarAptidao(atletaId: string, apto: boolean) {
+  const { data, error, response } = await api.POST("/atletas/{id}/aptidao", {
+    params: { path: { id: atletaId } },
+    body: { apto },
+  });
+  if (error || !data) throw paraErroApi(response.status, error);
+  return data;
+}

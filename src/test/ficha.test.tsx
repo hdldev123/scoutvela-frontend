@@ -9,10 +9,11 @@ const criarRevisao = vi.fn();
 const registrarPlano = vi.fn();
 const atualizarFinanceiro = vi.fn();
 const lancarResultado = vi.fn();
+const registrarAptidao = vi.fn();
 const POST = vi.fn();
 const DELETE = vi.fn();
 const linkEvidencia = vi.hoisted(() => ({ url: "https://storage.exemplo.com/a.pdf?assinatura=1" }));
-const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
+const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }));
 
 vi.mock("@/lib/api/cliente", async (importar) => ({
   ...(await importar<typeof import("@/lib/api/cliente")>()),
@@ -28,6 +29,7 @@ vi.mock("@/lib/api/mutacoes-ficha", () => ({
   registrarPlano: (...a: unknown[]) => registrarPlano(...a),
   atualizarFinanceiro: (...a: unknown[]) => atualizarFinanceiro(...a),
   lancarResultado: (...a: unknown[]) => lancarResultado(...a),
+  registrarAptidao: (...a: unknown[]) => registrarAptidao(...a),
 }));
 vi.mock("sonner", () => ({ toast: toastFn }));
 vi.mock("@tanstack/react-router", () => ({
@@ -1021,7 +1023,13 @@ describe("TelaFicha: ordem dos blocos e selos do financeiro", () => {
     // Duas colunas reais: a esquerda inteira, depois a direita. A sequência do DOM é a ordem de
     // leitura e de foco no celular.
     const esquerda = ["ordem-pilares", "ordem-gates", "ordem-historico"];
-    const direita = ["ordem-classfit", "ordem-financeiro", "ordem-plano", "ordem-evidencias"];
+    const direita = [
+      "ordem-classfit",
+      "ordem-contato",
+      "ordem-financeiro",
+      "ordem-plano",
+      "ordem-evidencias",
+    ];
     const classesDe = (col: Element, ordem: string[]) =>
       Array.from(col.children).map((el) => ordem.find((c) => el.classList.contains(c)) ?? "");
     const grade = document.querySelector(".ficha-grid")!;
@@ -1145,5 +1153,76 @@ describe("TelaFicha: documentos do atleta (D11)", () => {
     await screen.findByRole("heading", { name: "Helena Vasques" });
     expect(screen.queryByRole("heading", { name: "Documentos" })).not.toBeInTheDocument();
     expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/evidencias", expect.anything());
+  });
+});
+
+describe("TelaFicha: contato, passaporte e aptidão (D15)", () => {
+  const APTIDAO = {
+    apto: true,
+    conferidoEm: "2026-11-10T15:00:00.000Z",
+    conferidoPor: { nome: "Carla Gestora" },
+  };
+  const contato = (extra: Record<string, unknown> = {}) => ({
+    email: null,
+    treinador: { id: "t1", nome: "Ana Ribeiro" },
+    telefone: "+5521999990000",
+    passaporteValidoAte: "2030-05",
+    aptidao: APTIDAO,
+    ...extra,
+  });
+
+  it("mostra telefone, validade do passaporte e o selo de aptidão", async () => {
+    montar("treinador", ficha({ contato: contato() }));
+    expect(await screen.findByRole("heading", { name: "Contato e viagens" })).toBeInTheDocument();
+    expect(screen.getByText("+5521999990000")).toBeInTheDocument();
+    expect(screen.getByText("válido até 05/2030")).toBeInTheDocument();
+    expect(screen.getByText("Apto, conferido em 10/11/2026 por Carla Gestora")).toBeInTheDocument();
+    expect(screen.queryByText(/Passaporte vence/)).not.toBeInTheDocument();
+  });
+
+  it("avisa quando o passaporte vence em menos de 6 meses", async () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 2);
+    const em2Meses = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    montar("gestor", ficha({ contato: contato({ passaporteValidoAte: em2Meses }) }));
+    expect(await screen.findByText("Passaporte vence em menos de 6 meses")).toBeInTheDocument();
+  });
+
+  it("avisa passaporte vencido e mostra sem registro de aptidão", async () => {
+    montar(
+      "atleta",
+      ficha({ contato: contato({ passaporteValidoAte: "2020-01", aptidao: null }) }),
+    );
+    expect(await screen.findByText("Passaporte vencido")).toBeInTheDocument();
+    expect(screen.getByText("Sem registro")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Registrar aptidão" })).not.toBeInTheDocument();
+  });
+
+  it("gestor registra a aptidão com o aviso de que o atestado não é guardado", async () => {
+    registrarAptidao.mockResolvedValue(APTIDAO);
+    montar("gestor", ficha({ contato: contato({ aptidao: null }) }));
+    fireEvent.click(await screen.findByRole("button", { name: "Registrar aptidão" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Registrar aptidão" });
+    expect(within(dialogo).getByText(/fora do sistema/)).toBeInTheDocument();
+    expect(within(dialogo).getByText(/não guarda o atestado/)).toBeInTheDocument();
+    const registrar = within(dialogo).getByRole("button", { name: "Registrar" });
+    expect(registrar).toBeDisabled();
+    fireEvent.click(within(dialogo).getByLabelText("Não apto"));
+    fireEvent.click(registrar);
+    await waitFor(() => expect(registrarAptidao).toHaveBeenCalledWith("a07", false));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("treinador não tem o botão Registrar aptidão", async () => {
+    montar("treinador", ficha({ contato: contato() }));
+    await screen.findByRole("heading", { name: "Contato e viagens" });
+    expect(screen.queryByRole("button", { name: "Registrar aptidão" })).not.toBeInTheDocument();
+  });
+
+  it("IBVAR não recebe contato e não vê o bloco", async () => {
+    montar("ibvar", ficha({ contato: null, classFit: null, financeiro: { perfilSuporte: "D" } }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Contato e viagens" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Passaporte/)).not.toBeInTheDocument();
   });
 });
