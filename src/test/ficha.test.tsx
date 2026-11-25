@@ -1926,3 +1926,52 @@ describe("TelaFicha: cartão de perfil e conquistas (D14)", () => {
     expect(screen.queryByRole("heading", { name: "Conquistas para validar" })).toBeNull();
   });
 });
+
+describe("TelaFicha: fonte da faixa de Class Fit (D18)", () => {
+  const comFonte = (fonte: NonNullable<FichaAtleta["classFit"]>["fonte"]) => {
+    const base = ficha();
+    return ficha({ classFit: { ...base.classFit!, fonte } });
+  };
+
+  beforeEach(() => {
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
+    resultadosApi = [];
+    conquistasApi = { automaticas: [], manuais: [] };
+    GET.mockReset();
+  });
+
+  it("mostra documento, versão e data abaixo do gráfico", async () => {
+    montar(
+      "gestor",
+      comFonte({ documento: "Class Rules ILCA 6", versao: "2026", data: "2026-03-01" }),
+    );
+    expect(
+      await screen.findByText("Fonte da faixa: Class Rules ILCA 6, versão 2026 (01/03/2026)"),
+    ).toBeInTheDocument();
+  });
+
+  it("omite versão e data quando não foram informadas", async () => {
+    montar("treinador", comFonte({ documento: "Regulamento 470", versao: null, data: null }));
+    expect(await screen.findByText("Fonte da faixa: Regulamento 470")).toBeInTheDocument();
+  });
+
+  it("o atleta também vê a fonte", async () => {
+    montar("atleta", comFonte({ documento: "Regulamento 470", versao: "3", data: null }));
+    expect(
+      await screen.findByText("Fonte da faixa: Regulamento 470, versão 3"),
+    ).toBeInTheDocument();
+  });
+
+  it("sem fonte não mostra a linha", async () => {
+    montar("gestor", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByText(/Fonte da faixa/)).not.toBeInTheDocument();
+  });
+
+  it("IBVAR (classFit nulo) não vê fonte", async () => {
+    montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByText(/Fonte da faixa/)).not.toBeInTheDocument();
+  });
+});

@@ -439,6 +439,14 @@ function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
   );
 }
 
+/** "Fonte da faixa: <documento>, versão <versão> (<data>)"; só o que a API trouxe. Nulo sem documento. */
+function textoFonteFaixa(fonte: NonNullable<FichaAtleta["classFit"]>["fonte"]): string | null {
+  if (!fonte?.documento) return null;
+  const versao = fonte.versao ? `, versão ${fonte.versao}` : "";
+  const data = fonte.data ? ` (${fmtData(fonte.data)})` : "";
+  return `Fonte da faixa: ${fonte.documento}${versao}${data}`;
+}
+
 const SITUACAO_ALTURA = {
   dentro: { texto: "dentro da faixa", status: "apto" },
   abaixo: { texto: "abaixo da faixa", status: "condicional" },
@@ -750,6 +758,9 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 <p className="panel-dica">
                   Faixa de peso de referência da classe (parâmetro da metodologia).
                 </p>
+                {textoFonteFaixa(classFit.fonte) && (
+                  <p className="panel-dica">{textoFonteFaixa(classFit.fonte)}</p>
+                )}
                 <p className="panel-dica">
                   A altura é informativa: não entra no score nem nos gates.
                 </p>

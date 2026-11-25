@@ -194,3 +194,20 @@
 .par-check input {
   margin-top: 4px;
 }
+
+/* Fonte da faixa de peso (D18). */
+.par-classes .par-fonte {
+  width: 100%;
+  min-width: 6rem;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  font: inherit;
+}
+.par-classes .par-fonte-fDoc {
+  min-width: 14rem;
+}
+.par-classes .par-fonte-fData {
+  min-width: 9rem;
+}

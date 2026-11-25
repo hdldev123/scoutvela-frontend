@@ -1105,3 +1105,133 @@ describe("TelaParametros: nota dos resultados e orientação (D10)", () => {
     );
   });
 });
+
+describe("TelaParametros: fonte da faixa de peso (D18)", () => {
+  beforeEach(() => {
+    GET.mockReset();
+    PUT.mockReset();
+    window.location.hash = "";
+    toastFn.success.mockReset();
+  });
+
+  const doc = (nome: string) =>
+    screen.getByLabelText(`Fonte da faixa, documento: ${nome}`) as HTMLInputElement;
+
+  it("explica que as faixas seguem o documento oficial e mostra os campos vazios", async () => {
+    montar();
+    await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+    irPara("Class Fit");
+    expect(screen.getByText(/devem seguir o documento oficial de cada classe/)).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Fonte da faixa" })).toBeInTheDocument();
+    expect(doc("ILCA 7, Individual")).toHaveValue("");
+    expect(screen.getByLabelText("Fonte da faixa, versão: ILCA 7, Individual")).toHaveValue("");
+    expect(screen.getByLabelText("Fonte da faixa, data: ILCA 7, Individual")).toHaveValue("");
+  });
+
+  it("envia a fonte (documento, versão e data) só da classe alterada", async () => {
+    PUT.mockResolvedValue({ data: params, response: { status: 200 } });
+    montar();
+    await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+    irPara("Class Fit");
+    fireEvent.change(doc("ILCA 7, Individual"), {
+      target: { value: "  Class Rules ILCA 7  " },
+    });
+    fireEvent.change(screen.getByLabelText("Fonte da faixa, versão: ILCA 7, Individual"), {
+      target: { value: "2026" },
+    });
+    fireEvent.change(screen.getByLabelText("Fonte da faixa, data: ILCA 7, Individual"), {
+      target: { value: "2026-03-01" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          classes: [
+            {
+              id: "c1",
+              fonte: { documento: "Class Rules ILCA 7", versao: "2026", data: "2026-03-01" },
+            },
+          ],
+        },
+      }),
+    );
+  });
+
+  it("só o documento envia versão e data nulas", async () => {
+    PUT.mockResolvedValue({ data: params, response: { status: 200 } });
+    montar();
+    await screen.findByLabelText("Máximo de 470, Timoneiro (kg)");
+    irPara("Class Fit");
+    fireEvent.change(doc("470, Timoneiro"), { target: { value: "Regulamento 470" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          classes: [
+            { id: "c2", fonte: { documento: "Regulamento 470", versao: null, data: null } },
+          ],
+        },
+      }),
+    );
+  });
+
+  it("versão ou data sem documento bloqueia o envio com a mensagem no cliente", async () => {
+    montar();
+    await screen.findByLabelText("Máximo de 470, Timoneiro (kg)");
+    irPara("Class Fit");
+    fireEvent.change(screen.getByLabelText("Fonte da faixa, versão: 470, Timoneiro"), {
+      target: { value: "v2" },
+    });
+    expect(screen.getByText("Informe o documento que traz a faixa.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Salvar faixas da classe" })).toBeDisabled();
+  });
+
+  it("limpar os três campos de uma fonte existente envia fonte nula", async () => {
+    const original = params.classes[1]!;
+    params.classes[1] = {
+      ...original,
+      fonte: { documento: "Regulamento 470", versao: "2025", data: "2025-01-10" },
+    };
+    try {
+      PUT.mockResolvedValue({ data: params, response: { status: 200 } });
+      montar();
+      await screen.findByLabelText("Máximo de 470, Timoneiro (kg)");
+      irPara("Class Fit");
+      expect(doc("470, Timoneiro")).toHaveValue("Regulamento 470");
+      expect(screen.getByLabelText("Fonte da faixa, data: 470, Timoneiro")).toHaveValue(
+        "2025-01-10",
+      );
+      expect(screen.getByRole("button", { name: "Salvar faixas da classe" })).toBeDisabled();
+      for (const campo of ["documento", "versão", "data"]) {
+        fireEvent.change(screen.getByLabelText(`Fonte da faixa, ${campo}: 470, Timoneiro`), {
+          target: { value: "" },
+        });
+      }
+      fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
+      await waitFor(() =>
+        expect(PUT).toHaveBeenCalledWith("/parametros", {
+          body: { classes: [{ id: "c2", fonte: null }] },
+        }),
+      );
+    } finally {
+      params.classes[1] = original;
+    }
+  });
+
+  it("mostra o erro 400 da fonte sob a classe", async () => {
+    PUT.mockResolvedValue({
+      error: {
+        erro: "requisicao_invalida",
+        mensagem: "Dados inválidos.",
+        campos: [{ campo: "classes.0.fonte.data", mensagem: "Data inválida." }],
+      },
+      response: { status: 400 },
+    });
+    montar();
+    await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+    irPara("Class Fit");
+    fireEvent.change(doc("ILCA 7, Individual"), { target: { value: "Class Rules" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
+    expect(await screen.findByText("Data inválida.")).toBeInTheDocument();
+  });
+});

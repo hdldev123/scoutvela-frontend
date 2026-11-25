@@ -134,7 +134,7 @@ function ConteudoParametros({
           key={`${proposta ? JSON.stringify(proposta) : ""}|${dados.classes
             .map(
               (c) =>
-                `${c.pesoMinKg}/${c.pesoMedioKg}/${c.pesoMaxKg}/${c.alturaMinCm}/${c.alturaMediaCm}/${c.alturaMaxCm}/${c.ativa}`,
+                `${c.pesoMinKg}/${c.pesoMedioKg}/${c.pesoMaxKg}/${c.alturaMinCm}/${c.alturaMediaCm}/${c.alturaMaxCm}/${c.ativa}/${JSON.stringify(c.fonte)}`,
             )
             .join(",")}`}
           dados={dados}
@@ -242,7 +242,38 @@ function SecaoPesos({ dados }: { dados: Parametros }) {
 }
 
 type Campo = "min" | "med" | "max" | "aMin" | "aMed" | "aMax";
-type Linha = Record<Campo, string> & { ativa: boolean };
+type CampoFonte = "fDoc" | "fVer" | "fData";
+type Linha = Record<Campo | CampoFonte, string> & { ativa: boolean };
+
+const DOC_MAX = 200;
+const VERSAO_MAX = 40;
+
+/** Fonte da faixa como a API espera: tudo vazio limpa (`null`); com algo, o documento é obrigatório. */
+function analisarFonte(l: Pick<Linha, CampoFonte>) {
+  const documento = l.fDoc.trim();
+  const versao = l.fVer.trim();
+  const data = l.fData.trim();
+  if (!documento && !versao && !data) return { fonte: null, erro: null };
+  if (!documento) return { fonte: null, erro: "Informe o documento que traz a faixa." };
+  if (documento.length > DOC_MAX) {
+    return { fonte: null, erro: `O documento pode ter até ${DOC_MAX} caracteres.` };
+  }
+  if (versao.length > VERSAO_MAX) {
+    return { fonte: null, erro: `A versão pode ter até ${VERSAO_MAX} caracteres.` };
+  }
+  if (data && !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    return { fonte: null, erro: "Informe a data do documento no formato AAAA-MM-DD." };
+  }
+  return { fonte: { documento, versao: versao || null, data: data || null }, erro: null };
+}
+
+const mesmaFonte = (
+  a: { documento: string | null; versao: string | null; data: string | null } | null,
+  b: { documento: string | null; versao: string | null; data: string | null } | null,
+) =>
+  (a?.documento ?? null) === (b?.documento ?? null) &&
+  (a?.versao ?? null) === (b?.versao ?? null) &&
+  (a?.data ?? null) === (b?.data ?? null);
 
 const txtAltura = (v: number | null) => (v == null ? "" : String(v).replace(".", ","));
 
@@ -271,6 +302,9 @@ function SecaoClasses({
           aMin: txtAltura(c.alturaMinCm),
           aMed: txtAltura(c.alturaMediaCm),
           aMax: txtAltura(c.alturaMaxCm),
+          fDoc: c.fonte?.documento ?? "",
+          fVer: c.fonte?.versao ?? "",
+          fData: c.fonte?.data ?? "",
           ativa: c.ativa,
         },
       ]),
@@ -286,7 +320,7 @@ function SecaoClasses({
     if (min === null || med === null || max === null) erro = "Informe os três valores em kg.";
     else if (min > med) erro = "O mínimo não pode passar da média.";
     else if (med > max) erro = "A média não pode passar do máximo.";
-    return { min, med, max, erro, h: analisarAltura(l.aMin, l.aMed, l.aMax) };
+    return { min, med, max, erro, h: analisarAltura(l.aMin, l.aMed, l.aMax), f: analisarFonte(l) };
   };
 
   const resultado = dados.classes.map((c) => {
@@ -299,18 +333,23 @@ function SecaoClasses({
       h.med !== c.alturaMediaCm ||
       h.max !== c.alturaMaxCm;
     const ativaAlterada = linhas[c.id]!.ativa !== c.ativa;
+    const fonteAlterada = a.f.erro !== null || !mesmaFonte(a.f.fonte, c.fonte);
     return {
       c,
       a,
       pesoAlterado,
       alturaAlterada,
       ativaAlterada,
-      alterada: pesoAlterado || alturaAlterada || ativaAlterada,
+      fonteAlterada,
+      alterada: pesoAlterado || alturaAlterada || ativaAlterada || fonteAlterada,
     };
   });
   const alteradas = resultado.filter((r) => r.alterada);
   const comErro = alteradas.some(
-    (r) => (r.pesoAlterado && r.a.erro) || (r.alturaAlterada && r.a.h.erro),
+    (r) =>
+      (r.pesoAlterado && r.a.erro) ||
+      (r.alturaAlterada && r.a.h.erro) ||
+      (r.fonteAlterada && r.a.f.erro),
   );
 
   // Erros do 400: "classes.N.<campo>" aponta para a N-ésima classe enviada (as alteradas).
@@ -332,8 +371,9 @@ function SecaoClasses({
     aMed: "alturaMediaCm",
     aMax: "alturaMaxCm",
   };
+  const CAMPOS_FONTE_API = ["fonte", "fonte.documento", "fonte.versao", "fonte.data"];
 
-  const mudar = (id: string, campo: Campo, valor: string) => {
+  const mudar = (id: string, campo: Campo | CampoFonte, valor: string) => {
     if (salvar.isError) salvar.reset();
     setLinhas((ls) => ({ ...ls, [id]: { ...ls[id]!, [campo]: valor } }));
   };
@@ -341,14 +381,17 @@ function SecaoClasses({
   const enviar = (e: FormEvent) => {
     e.preventDefault();
     if (alteradas.length === 0 || comErro) return;
-    const classes = alteradas.map(({ c, a, pesoAlterado, alturaAlterada, ativaAlterada }) => ({
-      id: c.id,
-      ...(pesoAlterado ? { pesoMinKg: a.min!, pesoMedioKg: a.med!, pesoMaxKg: a.max! } : {}),
-      ...(alturaAlterada
-        ? { alturaMinCm: a.h.min, alturaMediaCm: a.h.med, alturaMaxCm: a.h.max }
-        : {}),
-      ...(ativaAlterada ? { ativa: linhas[c.id]!.ativa } : {}),
-    }));
+    const classes = alteradas.map(
+      ({ c, a, pesoAlterado, alturaAlterada, ativaAlterada, fonteAlterada }) => ({
+        id: c.id,
+        ...(pesoAlterado ? { pesoMinKg: a.min!, pesoMedioKg: a.med!, pesoMaxKg: a.max! } : {}),
+        ...(alturaAlterada
+          ? { alturaMinCm: a.h.min, alturaMediaCm: a.h.med, alturaMaxCm: a.h.max }
+          : {}),
+        ...(ativaAlterada ? { ativa: linhas[c.id]!.ativa } : {}),
+        ...(fonteAlterada ? { fonte: a.f.fonte } : {}),
+      }),
+    );
     salvar.mutate({ classes }, { onSuccess: () => toast.success(MSG_SALVO) });
   };
 
@@ -371,6 +414,27 @@ function SecaoClasses({
     />
   );
 
+  const campoFonte = (
+    c: Parametros["classes"][number],
+    k: CampoFonte,
+    rotulo: string,
+    max?: number,
+    tipo: "text" | "date" = "text",
+  ) => (
+    <input
+      className={`par-fonte par-fonte-${k}`}
+      type={tipo}
+      aria-label={`Fonte da faixa, ${rotulo.toLowerCase()}: ${c.nome}, ${POSICAO[c.posicao]}`}
+      {...(max ? { maxLength: max } : {})}
+      {...(erroServidorDaClasse(c.id, CAMPOS_FONTE_API)
+        ? atributosDoCampo(`classe-erro-${c.id}`, erroServidorDaClasse(c.id, CAMPOS_FONTE_API))
+        : {})}
+      value={linhas[c.id]![k]}
+      readOnly={!gestor}
+      onChange={(e) => mudar(c.id, k, e.target.value)}
+    />
+  );
+
   return (
     <section className="panel">
       <form onSubmit={enviar} noValidate>
@@ -381,6 +445,11 @@ function SecaoClasses({
           </span>
         </div>
         <p className="panel-dica">A altura é informativa (não entra no score nem nos gates).</p>
+        <p className="panel-dica">
+          As faixas de peso devem seguir o documento oficial de cada classe. Registre em "Fonte da
+          faixa" o documento, a versão e a data de onde a faixa foi tirada; a ficha do atleta mostra
+          essa fonte abaixo do gráfico de Class Fit. A fonte é só informativa e não muda o cálculo.
+        </p>
         {classeDaProposta && proposta && (
           <p className="par-proposta" role="note">
             <i className="ph ph-lightbulb" aria-hidden="true" />
@@ -413,6 +482,9 @@ function SecaoClasses({
                 <th className="num par-grupo-col" colSpan={3} scope="colgroup">
                   Altura (cm)
                 </th>
+                <th className="par-grupo-col" colSpan={3} scope="colgroup">
+                  Fonte da faixa
+                </th>
                 <th className="par-col-ativa" rowSpan={2}>
                   Ativa
                 </th>
@@ -424,10 +496,13 @@ function SecaoClasses({
                 <th className="num">Mín.</th>
                 <th className="num">Média</th>
                 <th className="num">Máx.</th>
+                <th>Documento</th>
+                <th>Versão</th>
+                <th>Data</th>
               </tr>
             </thead>
             <tbody>
-              {resultado.map(({ c, a, alterada, pesoAlterado, alturaAlterada }) => (
+              {resultado.map(({ c, a, alterada, pesoAlterado, alturaAlterada, fonteAlterada }) => (
                 <tr key={c.id} data-alterada={alterada || undefined}>
                   <td className="nw par-classe">
                     <span className="par-classe-nome">{c.nome}</span>
@@ -444,9 +519,17 @@ function SecaoClasses({
                         {a.h.erro}
                       </div>
                     )}
+                    {a.f.erro && fonteAlterada && (
+                      <div className="par-erro" role="alert">
+                        {a.f.erro}
+                      </div>
+                    )}
                     <MensagemCampo
                       id={`classe-erro-${c.id}`}
-                      texto={erroServidorDaClasse(c.id, Object.values(CAMPOS_API))}
+                      texto={erroServidorDaClasse(c.id, [
+                        ...Object.values(CAMPOS_API),
+                        ...CAMPOS_FONTE_API,
+                      ])}
                     />
                     {!gestor && (
                       <button type="button" className="btn sm" onClick={() => setSugerindo(c.id)}>
@@ -463,6 +546,9 @@ function SecaoClasses({
                   <td className="num">{campo(c, "aMin", "mínima", !!a.h.erro)}</td>
                   <td className="num">{campo(c, "aMed", "média", !!a.h.erro)}</td>
                   <td className="num">{campo(c, "aMax", "máxima", !!a.h.erro)}</td>
+                  <td>{campoFonte(c, "fDoc", "Documento", DOC_MAX)}</td>
+                  <td>{campoFonte(c, "fVer", "Versão", VERSAO_MAX)}</td>
+                  <td>{campoFonte(c, "fData", "Data", undefined, "date")}</td>
                   <td className="par-col-ativa">
                     <input
                       type="checkbox"
