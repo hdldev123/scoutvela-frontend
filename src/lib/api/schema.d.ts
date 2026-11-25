@@ -296,7 +296,7 @@ export interface paths {
         };
         /**
          * Contagens dos balões do menu lateral (itens que pedem atenção)
-         * @description Só as chaves do papel, sempre presentes (0 quando nada pede atenção). Gestor: `revisoes` (pedidos de revisão e do titular abertos) e `cadastro` (atletas ativos sem aceite da versão vigente do termo). Treinador: `revisoes` (pedidos de revisão abertos dos próprios atletas) e `avaliar` (próprios atletas com indicadores pendentes no ciclo aberto; 0 sem ciclo aberto). Atleta: `painel` (perguntas ainda sem resposta, hoje contadas só com ciclo aberto, + 1 se o termo vigente está pendente + respostas a pedidos de revisão e do titular dadas depois da última marcação de visto). IBVAR: objeto vazio. `total` é a soma. Feito para consulta a cada 60 s.
+         * @description Só as chaves do papel, sempre presentes (0 quando nada pede atenção). Gestor: `revisoes` (pedidos de revisão e do titular abertos), `cadastro` (atletas ativos sem aceite da versão vigente do termo) e `investimento`. Treinador: `revisoes` (pedidos de revisão abertos dos próprios atletas) e `avaliar` (próprios atletas com indicadores pendentes no ciclo aberto; 0 sem ciclo aberto). Atleta: `painel` (perguntas ainda sem resposta, hoje contadas só com ciclo aberto, + 1 se o termo vigente está pendente + respostas a pedidos de revisão e do titular dadas depois da última marcação de visto). IBVAR: só `investimento`. `investimento` (gestor e IBVAR) vale 1 quando há ciclo fechado depois da última vez que a pessoa marcou a tela como vista (PUT /me/notificacoes/vistas com chave `investimento`), senão 0. `total` é a soma. Feito para consulta a cada 60 s.
          */
         get: {
             parameters: {
@@ -375,7 +375,7 @@ export interface paths {
         get?: never;
         /**
          * Marca uma tela como vista (zera as respostas novas do balão)
-         * @description Grava o instante atual como última visita à tela. Por enquanto só o atleta marca `painel`; qualquer outra combinação de papel e chave responde 400. Não gera auditoria: é dado de interface, não de decisão.
+         * @description Grava o instante atual como última visita à tela. O atleta marca `painel`; gestor e IBVAR marcam `investimento` (zera o aviso de ciclo fechado); qualquer outra combinação de papel e chave responde 400. Não gera auditoria: é dado de interface, não de decisão.
          */
         put: {
             parameters: {
@@ -388,7 +388,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        chave: "painel" | "revisoes" | "cadastro" | "avaliar";
+                        chave: "painel" | "revisoes" | "cadastro" | "avaliar" | "investimento";
                     };
                 };
             };
@@ -1057,7 +1057,7 @@ export interface paths {
         };
         /**
          * Ficha do atleta, conforme a matriz de acesso do papel
-         * @description Atleta fora do acesso do usuário e atleta inexistente dão o mesmo 404; atleta com cadastro incompleto também dá 404 (o próprio atleta lê a sugestão em GET /me). IBVAR: só vê quem consentiu E está dentro do piloto (mesma regra do ranking: aceite do termo, que segue TERMO_EXIGE_REACEITE); fora do piloto dá 404, também no histórico do indicador. Gestor, treinador e o próprio atleta mantêm o acesso. IBVAR: sem indicadores sensíveis, Class Fit, contato, financeiro detalhado nem texto de evidência; o motivo do gate G1 vem genérico, sem a diferença em kg.
+         * @description `dadosAtualizadosEm` é o último lançamento do próprio atleta; o IBVAR só chega à ficha de quem consentiu. Atleta fora do acesso do usuário e atleta inexistente dão o mesmo 404; atleta com cadastro incompleto também dá 404 (o próprio atleta lê a sugestão em GET /me). IBVAR: só vê quem consentiu E está dentro do piloto (mesma regra do ranking: aceite do termo, que segue TERMO_EXIGE_REACEITE); fora do piloto dá 404, também no histórico do indicador. Gestor, treinador e o próprio atleta mantêm o acesso. IBVAR: sem indicadores sensíveis, Class Fit, contato, financeiro detalhado nem texto de evidência; o motivo do gate G1 vem genérico, sem a diferença em kg.
          */
         get: {
             parameters: {
@@ -1114,6 +1114,8 @@ export interface paths {
                                 nome: string;
                                 prazo: string;
                             } | null;
+                            /** @description Instante ISO do último lançamento deste atleta que muda score ou gates (avaliações, medidas, resultados, decisões de gate e financeiro); nulo se não houver */
+                            dadosAtualizadosEm: string | null;
                             score: number;
                             faixa: {
                                 id: string;
@@ -3754,11 +3756,13 @@ export interface paths {
         };
         /**
          * Painel de investimento: agregados do piloto e lista 'Onde investir'
-         * @description Os números agregados incluem todos os atletas do piloto. A lista 'Onde investir' do IBVAR traz só quem consentiu, sem meses assegurados.
+         * @description Sem `ciclo`, abre no último ciclo fechado, com os números congelados no fechamento (score, faixa, pilares, gates, status final e perfil de suporte); sem ciclo fechado, no ciclo aberto, calculado na hora (`parcial: true`); sem nenhum ciclo, calculado na hora com `cicloExibido: null`. `?ciclo=<id>` escolhe outro ciclo (inexistente: 404). Ciclo fechado antes do congelamento completo só tem score e faixa: o resto vem nulo, `congelamentoCompleto` é false e `ondeInvestir` vem vazia. Os números agregados incluem todos os atletas do piloto. A lista 'Onde investir' do IBVAR traz só quem consentiu (vale o consentimento atual), sem meses assegurados. `dadosAtualizadosEm` é sempre agregado, nunca de um atleta. O campo `ciclo` fica por compatibilidade e repete nome e prazo de `cicloExibido`.
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    ciclo?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -3772,18 +3776,48 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /** @description Compatibilidade: nome e prazo do ciclo exibido (o mesmo de cicloExibido) */
                             ciclo: {
                                 nome: string;
                                 /** @description AAAA-MM-DD */
                                 prazo: string;
                             } | null;
+                            /** @description Ciclo de onde saem os números; nulo se ainda não existe nenhum ciclo */
+                            cicloExibido: {
+                                /** Format: uuid */
+                                id: string;
+                                nome: string;
+                                /** @description AAAA-MM-DD */
+                                inicio: string;
+                                /** @description AAAA-MM-DD */
+                                prazo: string;
+                                /** @enum {string} */
+                                status: "aberto" | "fechado";
+                                /** @description Instante ISO do fechamento; nulo se aberto */
+                                fechadoEm: string | null;
+                            } | null;
+                            /** @description true: números calculados na hora (ciclo aberto ou sem ciclo), ainda podem mudar */
+                            parcial: boolean;
+                            /** @description false: ciclo fechado antes do congelamento completo; só score e faixa existem e o resto vem nulo */
+                            congelamentoCompleto: boolean;
+                            /** @description Para o seletor, do mais recente ao mais antigo */
+                            ciclosDisponiveis: {
+                                /** Format: uuid */
+                                id: string;
+                                nome: string;
+                                /** @enum {string} */
+                                status: "aberto" | "fechado";
+                                fechadoEm: string | null;
+                            }[];
+                            /** @description Instante ISO. Ciclo fechado: o fechamento. Ciclo aberto: o último lançamento que muda score ou gates no piloto. Sempre agregado, nunca de um atleta */
+                            dadosAtualizadosEm: string | null;
                             kpis: {
                                 atletas: number;
                                 scoreMedio: number;
-                                /** @description Aptos nos 4 gates */
-                                aptos: number;
-                                /** @description Perfil de suporte C ou D */
-                                dependentesApoio: number;
+                                /** @description Aptos nos 4 gates; nulo sem congelamento completo */
+                                aptos: number | null;
+                                /** @description Perfil de suporte C ou D; nulo sem congelamento completo */
+                                dependentesApoio: number | null;
                             };
                             funil: {
                                 faixa: {
@@ -3795,9 +3829,9 @@ export interface paths {
                             gates: {
                                 gate: number;
                                 nome: string;
-                                apto: number;
-                                condicional: number;
-                                alerta: number;
+                                apto: number | null;
+                                condicional: number | null;
+                                alerta: number | null;
                             }[];
                             mediaPilares: {
                                 pilarId: string;
@@ -3820,8 +3854,25 @@ export interface paths {
                                 /** @description Nulo para o IBVAR (vê só o perfil A–D) */
                                 mesesAssegurados: number | null;
                             }[];
-                            /** @description Só para o IBVAR: atletas do recorte 'Onde investir' que ficaram fora da lista; nulo para o gestor */
+                            /** @description Só para o IBVAR: atletas do recorte 'Onde investir' que ficaram fora da lista; nulo para o gestor (e sem congelamento completo) */
                             ocultosSemConsentimento: number | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
                         };
                     };
                 };
@@ -3844,6 +3895,23 @@ export interface paths {
                 };
                 /** @description Default Response */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -4541,8 +4609,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Fecha o ciclo e congela o score e a faixa dos atletas do piloto
-         * @description Calcula score e faixa de todos os atletas ativos com o termo do piloto aceito, grava em scores_ciclo e marca o ciclo como fechado, numa transação. Alimenta o histórico de score da ficha. Se nenhum atleta tiver o termo aceito mas houver atletas ativos, recusa com 409 (nada a congelar).
+         * Fecha o ciclo e congela score, faixa, pilares, gates, status final e perfil de suporte
+         * @description Calcula score e faixa de todos os atletas ativos com o termo do piloto aceito, grava em scores_ciclo e congela também a nota de cada pilar, o status de cada gate, o status final e o perfil de suporte; marca o ciclo como fechado (fechadoEm) numa só transação. Alimenta o histórico de score da ficha e o painel de investimento (GET /investimento?ciclo=). Depois do commit, avisa por e-mail as contas ativas de gestor e IBVAR (sem score nem nome de atleta); falha no envio não desfaz o fechamento nem muda a resposta. Se nenhum atleta tiver o termo aceito mas houver atletas ativos, recusa com 409 (nada a congelar).
          */
         post: {
             parameters: {

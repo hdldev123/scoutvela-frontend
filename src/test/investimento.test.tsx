@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -27,6 +27,32 @@ import type { RespostaInvestimento } from "@/lib/api/investimento";
 function resposta(extra: Partial<RespostaInvestimento> = {}): RespostaInvestimento {
   return {
     ciclo: { nome: "Novembro de 2026", prazo: "2026-11-30" },
+    cicloExibido: {
+      id: "c-nov",
+      nome: "Novembro de 2026",
+      inicio: "2026-11-01",
+      prazo: "2026-11-30",
+      status: "fechado",
+      fechadoEm: "2026-12-01T12:00:00.000Z",
+    },
+    parcial: false,
+    congelamentoCompleto: true,
+    ciclosDisponiveis: [
+      { id: "c-dez", nome: "Dezembro de 2026", status: "aberto", fechadoEm: null },
+      {
+        id: "c-nov",
+        nome: "Novembro de 2026",
+        status: "fechado",
+        fechadoEm: "2026-12-01T12:00:00.000Z",
+      },
+      {
+        id: "c-out",
+        nome: "Outubro de 2026",
+        status: "fechado",
+        fechadoEm: "2026-11-01T12:00:00.000Z",
+      },
+    ],
+    dadosAtualizadosEm: "2026-12-01T12:00:00.000Z",
     kpis: { atletas: 12, scoreMedio: 71.46, aptos: 4, dependentesApoio: 5 },
     funil: [
       { faixa: { id: "f1", nome: "Prioridade de programa" }, n: 1 },
@@ -57,13 +83,10 @@ function resposta(extra: Partial<RespostaInvestimento> = {}): RespostaInvestimen
 }
 
 function montar(ui: ReactNode) {
-  render(
-    <QueryClientProvider
-      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-    >
-      {ui}
-    </QueryClientProvider>,
-  );
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const envolver = (x: ReactNode) => <QueryClientProvider client={client}>{x}</QueryClientProvider>;
+  const r = render(envolver(ui));
+  return { rerender: (x: ReactNode) => r.rerender(envolver(x)) };
 }
 
 describe("TelaInvestimento", () => {
@@ -74,7 +97,12 @@ describe("TelaInvestimento", () => {
     montar(<TelaInvestimento papel="gestor" />);
 
     expect(await screen.findByRole("heading", { name: "Painel de investimento" })).toBeVisible();
-    expect(await screen.findByText(/ciclo de Novembro de 2026 · prazo 30\/11\/2026/)).toBeVisible();
+    expect(
+      await screen.findByText(
+        "Ciclo Novembro de 2026 (fechado em 01/12/2026) · dados até 01/12/2026",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText("Parcial")).not.toBeInTheDocument();
     expect(GET).toHaveBeenCalledWith("/investimento");
 
     const kpi = (rotulo: string) => screen.getByText(rotulo).previousElementSibling;
@@ -136,6 +164,102 @@ describe("TelaInvestimento", () => {
     });
     montar(<TelaInvestimento papel="gestor" />);
     expect(await screen.findByText("Nenhum atleta nesse recorte.")).toBeVisible();
+  });
+
+  it("ciclo aberto: cabeçalho em andamento e selo Parcial com explicação", async () => {
+    GET.mockResolvedValue({
+      data: resposta({
+        parcial: true,
+        cicloExibido: {
+          id: "c-dez",
+          nome: "Dezembro de 2026",
+          inicio: "2026-12-01",
+          prazo: "2026-12-31",
+          status: "aberto",
+          fechadoEm: null,
+        },
+        dadosAtualizadosEm: "2026-12-10T15:00:00.000Z",
+      }),
+      response: { status: 200 },
+    });
+    montar(<TelaInvestimento papel="gestor" />);
+    expect(
+      await screen.findByText(
+        "Ciclo Dezembro de 2026 (em andamento, prazo 31/12/2026) · dados até 10/12/2026",
+      ),
+    ).toBeVisible();
+    expect(screen.getByText("Parcial")).toBeVisible();
+    expect(screen.getByText(/os números mudam a cada lançamento até o fechamento/)).toBeVisible();
+  });
+
+  it("seletor de ciclo: rótulo visível, aberto marcado e troca chama a API com ciclo", async () => {
+    GET.mockResolvedValue({ data: resposta(), response: { status: 200 } });
+    const aoMudar = vi.fn();
+    const { rerender } = montar(<TelaInvestimento papel="gestor" aoMudarCiclo={aoMudar} />);
+    const seletor = await screen.findByRole("combobox", { name: "Ciclo" });
+    expect(seletor).toHaveValue("c-nov");
+    expect(
+      within(seletor)
+        .getAllByRole("option")
+        .map((o) => o.textContent),
+    ).toEqual(["Dezembro de 2026 (em andamento)", "Novembro de 2026", "Outubro de 2026"]);
+    fireEvent.change(seletor, { target: { value: "c-out" } });
+    expect(aoMudar).toHaveBeenCalledWith("c-out");
+
+    // A rota devolve o ciclo escolhido pela URL: a consulta usa `ciclo` e entra no queryKey.
+    rerender(<TelaInvestimento papel="gestor" ciclo="c-out" aoMudarCiclo={aoMudar} />);
+    await waitFor(() =>
+      expect(GET).toHaveBeenCalledWith("/investimento", { params: { query: { ciclo: "c-out" } } }),
+    );
+  });
+
+  it("ciclo antigo sem congelamento completo: avisa e mostra estado vazio, sem zeros", async () => {
+    GET.mockResolvedValue({
+      data: resposta({
+        congelamentoCompleto: false,
+        kpis: { atletas: 12, scoreMedio: 71.46, aptos: null, dependentesApoio: null },
+        gates: [{ gate: 1, nome: "Class Fit", apto: null, condicional: null, alerta: null }],
+        mediaPilares: [{ pilarId: "perf", nomeCurto: "Performance", media: null }],
+        ondeInvestir: [],
+        ocultosSemConsentimento: null,
+      }),
+      response: { status: 200 },
+    });
+    montar(<TelaInvestimento papel="ibvar" />);
+    expect(
+      await screen.findByText(
+        "Este ciclo foi fechado antes do congelamento completo: só score e faixa foram guardados.",
+      ),
+    ).toBeVisible();
+    const kpi = (rotulo: string) => screen.getByText(rotulo).previousElementSibling;
+    expect(kpi("atletas no piloto")).toHaveTextContent("12");
+    expect(kpi("score médio")).toHaveTextContent("71,5");
+    expect(kpi("aptos nos 4 gates")).toHaveTextContent("—");
+    expect(kpi("dependem de apoio (perfil C ou D)")).toHaveTextContent("—");
+    expect(screen.getByText("Sem dado neste ciclo")).toBeVisible();
+    expect(screen.getAllByText("Sem dado neste ciclo.")).toHaveLength(2);
+    expect(screen.queryByText(/0 aptos/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/sem consentimento/)).not.toBeInTheDocument();
+    // O funil continua preenchido.
+    expect(screen.getByText("Alto potencial")).toBeVisible();
+  });
+
+  it("sem ciclo nenhum: sem cabeçalho de ciclo, sem seletor e sem aviso", async () => {
+    GET.mockResolvedValue({
+      data: resposta({
+        ciclo: null,
+        cicloExibido: null,
+        parcial: true,
+        ciclosDisponiveis: [],
+        dadosAtualizadosEm: null,
+      }),
+      response: { status: 200 },
+    });
+    montar(<TelaInvestimento papel="gestor" />);
+    expect(await screen.findByText("G1 Class Fit")).toBeVisible();
+    expect(screen.queryByText(/^Ciclo /)).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Ciclo" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Parcial")).not.toBeInTheDocument();
   });
 
   it("mostra carregando e depois a mensagem de erro da API", async () => {

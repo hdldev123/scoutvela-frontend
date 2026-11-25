@@ -514,6 +514,12 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                   <span className="fato-rot">Nº de vela</span> {atleta.numeroVela}
                 </li>
               )}
+              {ficha.dadosAtualizadosEm && (
+                <li>
+                  <i className="ph ph-clock-counter-clockwise" aria-hidden="true" />
+                  Dados deste atleta atualizados em {fmtInstante(ficha.dadosAtualizadosEm)}
+                </li>
+              )}
               {ficha.contato?.treinador && (
                 <li>
                   <i className="ph ph-user" aria-hidden="true" />

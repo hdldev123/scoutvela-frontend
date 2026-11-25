@@ -114,6 +114,7 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
     },
     contato: { email: null, treinador: { id: "t1", nome: "Ana Ribeiro" } },
     ciclo: { nome: "Novembro de 2026", prazo: "2026-11-30" },
+    dadosAtualizadosEm: null,
     score: 71.5,
     faixa: { id: "f3", nome: "Em desenvolvimento", nomeCurto: "Em desenvolvimento" },
     completo: false,
@@ -317,6 +318,19 @@ describe("TelaFicha", () => {
     expect(
       screen.getByRole("img", { name: /Score nos últimos ciclos: 60,0, 66,0, 71,5/ }),
     ).toBeInTheDocument();
+  });
+
+  it("mostra a data da última atualização dos dados só quando a API a devolve", async () => {
+    montar("ibvar", ficha({ dadosAtualizadosEm: "2026-11-07T02:30:00.000Z" }));
+    expect(
+      await screen.findByText("Dados deste atleta atualizados em 06/11/2026"),
+    ).toBeInTheDocument();
+  });
+
+  it("sem dadosAtualizadosEm não mostra a linha de atualização", async () => {
+    montar("gestor", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByText(/Dados deste atleta atualizados/)).not.toBeInTheDocument();
   });
 
   it("mostra a foto do atleta só quando fotoUrl vem preenchida", async () => {
