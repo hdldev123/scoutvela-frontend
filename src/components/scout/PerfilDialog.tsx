@@ -26,6 +26,7 @@ import { SENHA_MINIMA } from "./TelaRedefinirSenha";
 import { atributosDoCampo } from "./campo-util";
 import { LinkWsId } from "./LinkWsId";
 import { MensagemCampo } from "./MensagemCampo";
+import { SugestaoWorldSailing } from "./SugestaoWorldSailing";
 
 function idade(nascimento: string, hoje = new Date()): number {
   const [a, m, d] = nascimento.split("-").map(Number) as [number, number, number];
@@ -615,8 +616,14 @@ function Corpo({ perfil, aoFechar }: { perfil: Perfil; aoFechar: () => void }) {
             <PedidoCorrecao />
           </Secao>
 
+          {perfil.sugestaoWorldSailing && (
+            <Secao id="perfil-ws-sugestao" titulo="Sugestão da World Sailing">
+              <SugestaoWorldSailing sugestao={perfil.sugestaoWorldSailing} />
+            </Secao>
+          )}
+
           <Secao id="perfil-bio-secao" titulo="Mini bio">
-            <CampoBio perfil={perfil} />
+            <CampoBio key={a.bio ?? ""} perfil={perfil} />
           </Secao>
 
           <Secao id="perfil-contato" titulo="Contato e viagens">

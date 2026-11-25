@@ -68,3 +68,30 @@ export function useRemoverFoto() {
     onSuccess: invalidar,
   });
 }
+
+export type CorpoSugestaoWorldSailing =
+  paths["/me/perfil/world-sailing"]["post"]["requestBody"]["content"]["application/json"];
+
+/**
+ * `POST /me/perfil/world-sailing`: o atleta usa ou dispensa a foto e a bio sugeridas pela World
+ * Sailing (uma vez; dispensar = os dois falsos). Depois de decidir, ou se a API disser que já foi
+ * decidido (409) ou que não há sugestão (404), o perfil é refeito e o cartão some.
+ */
+export function useDecidirSugestaoWorldSailing() {
+  const qc = useQueryClient();
+  const invalidar = useInvalidarPerfil();
+  return useMutation({
+    mutationFn: async (corpo: CorpoSugestaoWorldSailing) => {
+      const { data, error, response } = await api.POST("/me/perfil/world-sailing", {
+        body: corpo,
+      });
+      if (error || !data) throw paraErroApi(response.status, error);
+      return data;
+    },
+    onSuccess: invalidar,
+    onError: (e) => {
+      const status = (e as { status?: number }).status;
+      if (status === 404 || status === 409) void qc.invalidateQueries({ queryKey: ["perfil"] });
+    },
+  });
+}
