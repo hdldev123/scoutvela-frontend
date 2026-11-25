@@ -10,7 +10,7 @@ import { atributosDoCampo } from "./campo-util";
 import { MensagemCampo } from "./MensagemCampo";
 import { FaixaPill } from "./FaixaPill";
 import { textoDoStatus } from "./status-gate";
-import { fmt0, fmt1, fmtData } from "./formato";
+import { fmt1, fmtData } from "./formato";
 import "@/styles/avaliar.css";
 import "@/styles/autoavaliacao.css";
 import "@/styles/ficha.css";
@@ -28,6 +28,7 @@ import {
 } from "@/lib/api/autoavaliacao";
 import { errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
 import { invalidarNotificacoes } from "@/lib/api/notificacoes";
+import { INDICADORES_DE_RESULTADO } from "@/lib/api/resultados";
 import {
   ACEITA_ARQUIVO,
   enviarEvidencia,
@@ -756,6 +757,20 @@ function LinhaIndicador({
       </div>
     );
   }
+  if (ind.calculado && INDICADORES_DE_RESULTADO.includes(ind.id)) {
+    return (
+      <div className="ed-row">
+        <div className="lbl">
+          {ind.nome}
+          <small>
+            {ind.explicacao ?? "Sem resultado validado."} Nota calculada pelos resultados validados
+            (regra provisória, P12){ind.nota != null ? `: ${ind.nota} de 5` : ""}. Não recebe nota
+            digitada: o atleta informa os resultados e o treinador valida na ficha.
+          </small>
+        </div>
+      </div>
+    );
+  }
   if (ind.calculado) {
     const pesoTxt = medida.peso ?? (medida.atual ? String(medida.atual.pesoKg) : "");
     const altTxt =
@@ -857,8 +872,6 @@ function LinhaNota({
 }: PropsNota) {
   const valor = rascunho?.valor ?? ind.nota ?? undefined;
   const sug = ind.sugestaoPendente;
-  // Nota sugerida pelos pontos do Ranking CBVela (regra PERF_PONTOS). Só vale se o avaliador lançar.
-  const pontos = ind.sugestaoPontos;
   const descricao = escala.find((r) => r.nota === valor)?.descricao;
   const descricaoAtual = escala.find((r) => r.nota === ind.nota)?.descricao;
   // Evidência e anexo só aparecem quando a nota muda ou já há algo digitado/anexado.
@@ -959,21 +972,6 @@ function LinhaNota({
               className="btn sm"
               onClick={() => aoMudar({ valor: sug.valor })}
               aria-label={`Usar sugestão ${sug.valor} em ${ind.nome}`}
-            >
-              Usar sugestão
-            </button>
-          </div>
-        )}
-        {pontos && (
-          <div className="avaliar-sugestao">
-            <span>
-              Sugerido pelo Ranking CBVela: nota {pontos.nota} ({fmt0(pontos.pontos)} pts)
-            </span>
-            <button
-              type="button"
-              className="btn sm"
-              onClick={() => aoMudar({ valor: pontos.nota })}
-              aria-label={`Usar sugestão do Ranking CBVela (nota ${pontos.nota}) em ${ind.nome}`}
             >
               Usar sugestão
             </button>
