@@ -135,3 +135,43 @@
     align-items: center;
   }
 }
+
+/* Comparação com a média da turma na ficha (D13) */
+.comp-turma {
+  margin-bottom: 16px;
+}
+.comp-selo {
+  margin: 0 0 10px;
+}
+.comp-barras {
+  display: grid;
+  gap: 6px;
+  max-width: 32rem;
+}
+.comp-linha {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr) 3rem;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+.comp-linha .n {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.comp-tendencia {
+  margin: 10px 0 0;
+}
+.spark {
+  margin: 0;
+}
+.spark-legenda {
+  margin-top: 2px;
+  font-size: 0.72rem;
+}
+@media (max-width: 480px) {
+  .comp-linha {
+    grid-template-columns: 6.5rem minmax(0, 1fr) 2.6rem;
+  }
+}

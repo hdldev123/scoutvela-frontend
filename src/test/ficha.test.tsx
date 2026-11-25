@@ -1635,3 +1635,104 @@ describe("TelaFicha: resultados por evento (D10)", () => {
     expect(await within(dialogo).findByText("O resultado já está recusado.")).toBeInTheDocument();
   });
 });
+
+describe("TelaFicha: comparação com a média da turma (D13)", () => {
+  const medias = [
+    { cicloId: "c-set", ciclo: "Setembro de 2026", media: 58.4, atletas: 10 },
+    { cicloId: "c-out", ciclo: "Outubro de 2026", media: 62.2, atletas: 10 },
+  ];
+  const comparacao = (
+    posicao: "acima" | "na_media" | "abaixo",
+    diferenca: number,
+    mediaTurma = 62.2,
+  ) => ({ scoreAtual: mediaTurma + diferenca, mediaTurma, diferenca, posicao });
+
+  it("desenha a linha da média da turma com os valores certos e a legenda", async () => {
+    montar(
+      "treinador",
+      ficha({
+        mediaTurmaPorCiclo: medias,
+        comparacaoTurma: comparacao("acima", 3.8),
+        tendencia: "subindo",
+      }),
+    );
+    const grafico = await screen.findByRole("img", { name: /Score nos últimos ciclos/ });
+    expect(grafico).toHaveAccessibleName(
+      "Score nos últimos ciclos: 60,0, 66,0, 71,5. Média da turma: Set 58,4, Out 62,2, Nov sem dado",
+    );
+    // Só os dois ciclos fechados têm ponto da média; o ciclo atual não.
+    expect(within(grafico).getAllByTestId("spark-media-ponto")).toHaveLength(2);
+    expect(screen.getByText("Média da turma", { selector: "figcaption span" })).toBeVisible();
+    expect(screen.getByText("Atleta", { selector: "figcaption span" })).toBeVisible();
+  });
+
+  it("mostra o selo acima da média com a diferença em pontos e a tendência por texto", async () => {
+    montar(
+      "atleta",
+      ficha({
+        mediaTurmaPorCiclo: medias,
+        comparacaoTurma: comparacao("acima", 3.8),
+        tendencia: "subindo",
+      }),
+    );
+    expect(await screen.findByTestId("comp-posicao")).toHaveTextContent("Acima da média");
+    expect(screen.getByTestId("comp-diferenca")).toHaveTextContent(
+      "+3,8 pontos em relação à média da turma",
+    );
+    expect(screen.getByTestId("comp-tendencia")).toHaveTextContent("Tendência: subindo");
+  });
+
+  it("abaixo da média e tendência caindo", async () => {
+    montar(
+      "gestor",
+      ficha({
+        mediaTurmaPorCiclo: medias,
+        comparacaoTurma: comparacao("abaixo", -2.5),
+        tendencia: "caindo",
+      }),
+    );
+    expect(await screen.findByTestId("comp-posicao")).toHaveTextContent("Abaixo da média");
+    expect(screen.getByTestId("comp-diferenca")).toHaveTextContent("−2,5 pontos");
+    expect(screen.getByTestId("comp-tendencia")).toHaveTextContent("Tendência: caindo");
+  });
+
+  it("na média e tendência estável", async () => {
+    montar(
+      "treinador",
+      ficha({
+        mediaTurmaPorCiclo: medias,
+        comparacaoTurma: comparacao("na_media", 0.4),
+        tendencia: "estavel",
+      }),
+    );
+    expect(await screen.findByTestId("comp-posicao")).toHaveTextContent("Na média");
+    expect(screen.getByTestId("comp-diferenca")).toHaveTextContent("+0,4 pontos");
+    expect(screen.getByTestId("comp-tendencia")).toHaveTextContent("Tendência: estável");
+  });
+
+  it("IBVAR com grupo pequeno: média nula não desenha ponto e não há selo", async () => {
+    montar(
+      "ibvar",
+      ficha({
+        mediaTurmaPorCiclo: medias.map((m) => ({ ...m, media: null })),
+        comparacaoTurma: null,
+        tendencia: "subindo",
+      }),
+    );
+    const grafico = await screen.findByRole("img", { name: /Score nos últimos ciclos/ });
+    expect(within(grafico).queryAllByTestId("spark-media-ponto")).toHaveLength(0);
+    expect(grafico).toHaveAccessibleName("Score nos últimos ciclos: 60,0, 66,0, 71,5");
+    expect(screen.queryByTestId("comp-posicao")).not.toBeInTheDocument();
+    // A tendência é do próprio atleta e continua visível.
+    expect(screen.getByTestId("comp-tendencia")).toHaveTextContent("Tendência: subindo");
+  });
+
+  it("sem ciclos fechados: o bloco não aparece", async () => {
+    montar("treinador", ficha({ historicoScore: [] }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByText("Comparação com a média da turma")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("comp-posicao")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("comp-tendencia")).not.toBeInTheDocument();
+    expect(screen.queryByText("Média da turma")).not.toBeInTheDocument();
+  });
+});

@@ -18,6 +18,7 @@ import { ResultadosParaValidar } from "./ResultadosParaValidar";
 import { PlanoIndividual } from "./PlanoIndividual";
 import { ResultadoDialog } from "./ResultadoDialog";
 import { SemAcesso } from "./SemAcesso";
+import { ComparacaoTurma } from "./ComparacaoTurma";
 import { SparkScore } from "./SparkScore";
 import { StatusPill } from "./StatusPill";
 import { fmt0, fmt1, fmtData, fmtInstante, rotuloCiclo } from "./formato";
@@ -528,9 +529,16 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
     (p.indicadores ?? []).filter((i) => i.tipo !== "R").map((i) => ({ id: i.id, nome: i.nome })),
   );
 
+  // Média da turma por ciclo fechado (D13): o ponto do ciclo atual não tem média, e `null` (grupo
+  // pequeno para o IBVAR) não desenha ponto.
+  const mediaDoCiclo = new Map(ficha.mediaTurmaPorCiclo.map((m) => [m.ciclo, m.media]));
   const pontos = [
-    ...ficha.historicoScore.map((h) => ({ rotulo: rotuloCiclo(h.ciclo), score: h.score })),
-    { rotulo: rotuloCiclo(ficha.ciclo?.nome ?? "Atual"), score: ficha.score },
+    ...ficha.historicoScore.map((h) => ({
+      rotulo: rotuloCiclo(h.ciclo),
+      score: h.score,
+      mediaTurma: mediaDoCiclo.get(h.ciclo) ?? null,
+    })),
+    { rotulo: rotuloCiclo(ficha.ciclo?.nome ?? "Atual"), score: ficha.score, mediaTurma: null },
   ];
 
   const local = [
@@ -613,6 +621,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
           Aguardando aceite do termo: o atleta ainda não entra no ranking.
         </p>
       )}
+      <ComparacaoTurma ficha={ficha} />
       <div className="ficha-grid">
         {/* Duas colunas reais no DOM: a esquerda inteira, depois a direita. No celular, essa
             sequência é a ordem de leitura e de foco (pilares, gates, histórico, Class Fit,
