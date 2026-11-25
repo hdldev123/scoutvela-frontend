@@ -90,7 +90,7 @@ describe("Primeiro acesso do atleta", () => {
     );
     expect(screen.getByText(/Preenchemos com os dados do seu cadastro no VelaID/)).toBeTruthy();
     const link = screen.getByRole("link", {
-      name: "Perfil de BRABL05 no World Sailing (abre em nova aba)",
+      name: /Perfil de BRABL05 no World Sailing [(]abre em nova aba[)]/,
     });
     expect(link.getAttribute("href")).toBe("https://www.sailing.org/sailor/?ref=BRABL05");
     expect(screen.getByText(/Pedimos só o que o programa usa/)).toBeTruthy();

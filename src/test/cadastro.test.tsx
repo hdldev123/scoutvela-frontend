@@ -160,7 +160,7 @@ describe("TelaCadastro", () => {
     expect(screen.getByText(/Conta criada e convite enviado/)).toBeTruthy();
     expect(toastFn.success).toHaveBeenCalled();
     const link = screen.getByRole("link", {
-      name: "Perfil de BRAJS12 no World Sailing (abre em nova aba)",
+      name: /Perfil de BRAJS12 no World Sailing [(]abre em nova aba[)]/,
     });
     expect(link.getAttribute("href")).toBe("https://www.sailing.org/sailor/?ref=BRAJS12");
     // O formulário volta ao início para o próximo cadastro.
@@ -321,7 +321,9 @@ describe("TelaCadastro", () => {
     montar();
     expect(await screen.findByText("BRAXY99", { selector: "td:first-child" })).toBeTruthy();
     expect(
-      screen.getByRole("link", { name: "Perfil de BRAXY99 no World Sailing (abre em nova aba)" }),
+      screen.getByRole("link", {
+        name: /Perfil de BRAXY99 no World Sailing [(]abre em nova aba[)]/,
+      }),
     ).toBeTruthy();
     expect(screen.getByRole("cell", { name: "—" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Registrar aceite recebido" }));

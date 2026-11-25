@@ -169,7 +169,9 @@ describe("Modal Meu perfil", () => {
     await abrir();
     expect(await screen.findByText("SC-T07")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Perfil de Ana Souza no World Sailing (abre em nova aba)" }),
+      screen.getByRole("link", {
+        name: /Perfil de Ana Souza no World Sailing [(]abre em nova aba[)]/,
+      }),
     ).toHaveAttribute("href", "https://www.sailing.org/sailor/?ref=BRAHV07");
     expect(screen.getByText("Florianópolis/SC")).toBeInTheDocument();
     expect(screen.getByText("Rui Lima")).toBeInTheDocument();

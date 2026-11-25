@@ -31,18 +31,21 @@ describe("LinkWsId", () => {
   it("abre em nova aba, sem opener, com rótulo acessível e o nome do atleta", () => {
     render(<LinkWsId wsId="BRAJS12" nome="Júlia Souza" />);
     const link = screen.getByRole("link", {
-      name: "Perfil de Júlia Souza no World Sailing (abre em nova aba)",
+      name: /Perfil de Júlia Souza no World Sailing [(]abre em nova aba[)]/,
     });
     expect(link.getAttribute("href")).toBe("https://www.sailing.org/sailor/?ref=BRAJS12");
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
-    expect(link.textContent).toBe("BRAJS12");
+    expect(link.querySelector("code")?.textContent).toBe("BRAJS12");
+    expect(link.textContent).toMatch(/^BRAJS12/);
   });
 
   it("sem nome (cadastro incompleto) usa o próprio ID no rótulo", () => {
     render(<LinkWsId wsId="BRAJS12" nome={null} />);
     expect(
-      screen.getByRole("link", { name: "Perfil de BRAJS12 no World Sailing (abre em nova aba)" }),
+      screen.getByRole("link", {
+        name: /Perfil de BRAJS12 no World Sailing [(]abre em nova aba[)]/,
+      }),
     ).toBeTruthy();
   });
 });

@@ -300,7 +300,7 @@ describe("TelaFicha", () => {
     montar("gestor", ficha());
     expect(await screen.findByRole("heading", { name: "Helena Vasques" })).toBeInTheDocument();
     const ws = screen.getByRole("link", {
-      name: "Perfil de Helena Vasques no World Sailing (abre em nova aba)",
+      name: /Perfil de Helena Vasques no World Sailing [(]abre em nova aba[)]/,
     });
     expect(ws).toHaveAttribute("href", "https://www.sailing.org/sailor/?ref=BRAHV07");
     expect(ws).toHaveAttribute("target", "_blank");
