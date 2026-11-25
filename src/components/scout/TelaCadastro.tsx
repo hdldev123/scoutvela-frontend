@@ -25,6 +25,8 @@ import {
 import { ErroApi, errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
 import { useTermo, useTermoProxima } from "@/lib/api/titular";
 import { mensagemEmail } from "@/lib/validacao";
+import { resumoDaBusca } from "@/lib/api/world-sailing";
+import "@/styles/world-sailing.css";
 import { mensagemWsId, normalizarWsId } from "@/lib/world-sailing";
 import "@/styles/cadastro.css";
 
@@ -257,6 +259,10 @@ function NovoAtleta() {
           Atleta <LinkWsId wsId={criado.wsId} /> cadastrado. Termo enviado ({criado.termo.versao}).
           Ele entra no ranking depois de completar o cadastro e aceitar o termo.{" "}
           {MENSAGEM_CONTA[criado.conta]}
+          <span className="ws-origem" data-testid="cad-ws-resumo">
+            {criado.worldSailing.status === "falhou" ? "O cadastro foi salvo. " : ""}
+            {resumoDaBusca(criado.worldSailing)}
+          </span>
         </div>
       )}
       <form className="stack" style={{ gap: 12 }} onSubmit={cadastrar} noValidate>

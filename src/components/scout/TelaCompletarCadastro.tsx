@@ -16,7 +16,7 @@ const hoje = () => new Date().toLocaleDateString("sv-SE");
 
 /**
  * Primeiro acesso do atleta: nome, gênero e data de nascimento, antes de qualquer outra tela.
- * Os dados vêm preenchidos com a sugestão do VelaID, quando houver. A API decide a idade: menor
+ * Os dados vêm preenchidos com a sugestão do VelaID ou, sem ele, da World Sailing, quando houver. A API decide a idade: menor
  * de 18 anos encerra o cadastro, e a sessão deixa de valer.
  */
 export function TelaCompletarCadastro({
@@ -129,8 +129,10 @@ export function TelaCompletarCadastro({
         )}
       </dl>
       {sugestao && (
-        <div className="note">
-          Preenchemos com os dados do seu cadastro no VelaID. Confira antes de enviar.
+        <div className="note" data-testid="cad-origem">
+          {pendente.origemSugestao === "world_sailing"
+            ? "Sugerido pela World Sailing: preenchemos com o que consta no seu perfil público. Confira, corrija o que estiver errado e complete o que faltar."
+            : "Sugerido pelo VelaID: preenchemos com os dados do seu cadastro. Confira antes de enviar."}
         </div>
       )}
       <form className="stack" style={{ gap: 12 }} onSubmit={enviar} noValidate>
