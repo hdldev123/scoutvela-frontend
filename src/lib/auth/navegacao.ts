@@ -35,21 +35,12 @@ const ITENS: Record<string, { rotulo: string; icone: string; to: string }> = {
   ficha: { rotulo: "Minha ficha", icone: "identification-card", to: "/atletas/$id" },
 };
 
-/**
- * Telas que o back ainda não lista em `telas` de `/me`, mas que o papel acessa: Sugestões (D7)
- * é de gestor e treinador. É só o menu; a API segue decidindo (403 para atleta e IBVAR).
- */
-const TELAS_POR_PAPEL: Record<string, string[]> = {
-  gestor: ["sugestoes"],
-  treinador: ["sugestoes"],
-};
-
+/** O menu só espelha as telas liberadas pela API em `/me` (a API decide o acesso). */
 function telasDoMenu(me: Me): string[] {
-  const extras = (TELAS_POR_PAPEL[me.usuario.papel] ?? []).filter((t) => !me.telas.includes(t));
-  return [...me.telas, ...extras];
+  return me.telas;
 }
 
-/** O papel tem esta tela (liberada pela API em `/me` ou por `TELAS_POR_PAPEL`)? */
+/** O papel tem esta tela (liberada pela API em `/me`)? */
 export function temTela(me: Me, tela: string): boolean {
   return telasDoMenu(me).includes(tela);
 }

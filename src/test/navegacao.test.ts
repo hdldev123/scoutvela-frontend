@@ -4,7 +4,7 @@ import { iniciais, itensDeNavegacao, rotaDaTelaInicial } from "@/lib/auth/navega
 const gestor = {
   usuario: { papel: "gestor" },
   atleta: null,
-  telas: ["ranking", "avaliar", "cadastro", "investimento", "parametros"],
+  telas: ["ranking", "avaliar", "cadastro", "investimento", "parametros", "sugestoes"],
 };
 
 describe("navegação por papel", () => {
@@ -28,26 +28,24 @@ describe("navegação por papel", () => {
     ]);
   });
 
-  it("Sugestões é de gestor e treinador; atleta e IBVAR não ganham o item", () => {
+  it("o menu só espelha as telas da API: Sugestões aparece quando o back libera", () => {
     const tem = (papel: string, telas: string[]) =>
       itensDeNavegacao({ usuario: { papel }, atleta: null, telas }).some(
         (i) => i.tela === "sugestoes",
       );
-    expect(tem("gestor", ["ranking"])).toBe(true);
-    expect(tem("treinador", ["ranking"])).toBe(true);
+    expect(tem("gestor", ["ranking", "sugestoes"])).toBe(true);
+    expect(tem("treinador", ["ranking", "sugestoes"])).toBe(true);
+    // Sem a tela em `telas`, o front não inventa o item, qualquer que seja o papel.
+    expect(tem("gestor", ["ranking"])).toBe(false);
     expect(tem("atleta", ["painel"])).toBe(false);
     expect(tem("ibvar", ["investimento"])).toBe(false);
-    // Se o back passar a listar a tela em `telas`, o item não duplica.
-    expect(
-      itensDeNavegacao({ usuario: { papel: "gestor" }, atleta: null, telas: ["sugestoes"] }),
-    ).toHaveLength(1);
   });
 
   it("treinador vê o ranking como Meus atletas", () => {
     const itens = itensDeNavegacao({
       usuario: { papel: "treinador" },
       atleta: null,
-      telas: ["ranking", "avaliar"],
+      telas: ["ranking", "avaliar", "sugestoes"],
     });
     expect(itens.map((i) => i.rotulo)).toEqual(["Meus atletas", "Lançar avaliação", "Sugestões"]);
     expect(itens[0]?.to).toBe("/ranking");
