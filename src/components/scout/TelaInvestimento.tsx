@@ -1,8 +1,11 @@
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { StatusPill } from "./StatusPill";
 import { fmt0, fmt1, fmtData, fmtInstante } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useInvestimento } from "@/lib/api/investimento";
+import { marcarInvestimentoVisto } from "@/lib/api/notificacoes";
 import "@/styles/investimento.css";
 
 const OPACIDADE_FUNIL = [1, 0.75, 0.5, 0.3];
@@ -19,6 +22,11 @@ const SEM_DADO = "Sem dado neste ciclo";
 /** Painel de investimento: todos os números e recortes vêm da API. */
 export function TelaInvestimento({ papel, ciclo, aoMudarCiclo }: TelaInvestimentoProps) {
   const consulta = useInvestimento(ciclo);
+  const queryClient = useQueryClient();
+  // Abrir a tela zera o aviso de ciclo fechado (uma vez por montagem; falha em silêncio).
+  useEffect(() => {
+    void marcarInvestimentoVisto(queryClient);
+  }, [queryClient]);
   const d = consulta.data;
   const exibido = d?.cicloExibido ?? null;
   const congelado = d?.congelamentoCompleto ?? true;

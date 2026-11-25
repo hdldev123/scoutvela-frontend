@@ -66,7 +66,7 @@ export function rotaDaTelaInicial(telaInicial: string): string {
 }
 
 /** Telas do menu que têm balão; a chave de `/me/notificacoes` tem o mesmo nome da tela. */
-const TELAS_COM_BALAO = new Set(["revisoes", "cadastro", "avaliar", "painel"]);
+const TELAS_COM_BALAO = new Set(["revisoes", "cadastro", "avaliar", "painel", "investimento"]);
 
 /** Contagem do balão de uma tela (0 quando a tela não tem balão ou nada pede atenção). */
 export function contagemDaTela(

@@ -155,7 +155,7 @@ describe("Modal Meu perfil", () => {
   it("não abre para o IBVAR", () => {
     montar("ibvar");
     expect(screen.queryByRole("button", { name: /Ana Souza/ })).toBeNull();
-    expect(GET).not.toHaveBeenCalled();
+    expect(GET).not.toHaveBeenCalledWith("/me/perfil");
   });
 
   it("treinador vê a quantidade de atletas", async () => {

@@ -22,6 +22,7 @@ import { Shell } from "@/components/scout/Shell";
 import {
   CHAVE_NOTIFICACOES,
   invalidarNotificacoes,
+  marcarInvestimentoVisto,
   marcarPainelVisto,
 } from "@/lib/api/notificacoes";
 import { useResponderRevisao } from "@/lib/api/revisoes";
@@ -66,9 +67,15 @@ async function montar(me: Me, qc = new QueryClient()) {
       </Shell>
     ),
   });
-  const rotas = ["/", "/ranking", "/avaliar", "/cadastro", "/revisoes", "/painel"].map((path) =>
-    createRoute({ getParentRoute: () => raiz, path }),
-  );
+  const rotas = [
+    "/",
+    "/ranking",
+    "/avaliar",
+    "/cadastro",
+    "/revisoes",
+    "/painel",
+    "/investimento",
+  ].map((path) => createRoute({ getParentRoute: () => raiz, path }));
   const router = createRouter({
     routeTree: raiz.addChildren(rotas),
     history: createMemoryHistory({ initialEntries: ["/"] }),
@@ -136,11 +143,41 @@ describe("Balões do menu lateral", () => {
     expect(within(botao).getByText("7")).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("IBVAR não consulta nem mostra balões", async () => {
-    resposta({});
+  it("IBVAR: balão de Investimento com 1, singular", async () => {
+    resposta({ investimento: 1 });
     await montar(IBVAR);
-    expect(GET).not.toHaveBeenCalled();
+    const link = await screen.findByRole("link", { name: "Investimento 1 pendente" });
+    expect(within(link).getByText("1")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("IBVAR sem ciclo novo fechado não mostra balão", async () => {
+    resposta({ investimento: 0 });
+    const qc = await montar(IBVAR);
+    await waitFor(() => expect(qc.getQueryState(CHAVE_NOTIFICACOES)?.status).toBe("success"));
     expect(document.querySelector(".balao")).toBeNull();
+    expect(screen.getByRole("link", { name: "Investimento" })).toBeInTheDocument();
+  });
+
+  it("atleta não tem item nem balão de Investimento", async () => {
+    resposta({ painel: 1, investimento: 1 });
+    await montar(ATLETA);
+    expect(await screen.findByRole("link", { name: "Meu painel 1 pendente" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Investimento/ })).toBeNull();
+  });
+
+  it("gestor: balão de Investimento junto dos demais", async () => {
+    resposta({ revisoes: 0, cadastro: 0, investimento: 1 });
+    await montar({ ...GESTOR, telas: [...GESTOR.telas, "investimento"] });
+    expect(
+      await screen.findByRole("link", { name: "Investimento 1 pendente" }),
+    ).toBeInTheDocument();
+  });
+
+  it("treinador não tem item nem balão de Investimento", async () => {
+    resposta({ revisoes: 1, avaliar: 0 });
+    await montar(TREINADOR);
+    expect(await screen.findByRole("link", { name: "Revisões 1 pendente" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Investimento/ })).toBeNull();
   });
 
   it("erro de rede some com os balões, sem mensagem", async () => {
@@ -164,6 +201,22 @@ describe("Atualização das notificações", () => {
     await marcarPainelVisto(qc);
     expect(PUT).toHaveBeenCalledWith("/me/notificacoes/vistas", { body: { chave: "painel" } });
     expect(espiao).toHaveBeenCalledWith({ queryKey: ["notificacoes"] });
+  });
+
+  it("marcarInvestimentoVisto chama PUT com a chave investimento e invalida", async () => {
+    PUT.mockResolvedValue({ response: { status: 204 } });
+    const qc = new QueryClient();
+    const espiao = vi.spyOn(qc, "invalidateQueries");
+    await marcarInvestimentoVisto(qc);
+    expect(PUT).toHaveBeenCalledWith("/me/notificacoes/vistas", {
+      body: { chave: "investimento" },
+    });
+    expect(espiao).toHaveBeenCalledWith({ queryKey: ["notificacoes"] });
+  });
+
+  it("marcarInvestimentoVisto falha em silêncio", async () => {
+    PUT.mockRejectedValue(new Error("rede"));
+    await expect(marcarInvestimentoVisto(new QueryClient())).resolves.toBeUndefined();
   });
 
   it("marcarPainelVisto falha em silêncio", async () => {

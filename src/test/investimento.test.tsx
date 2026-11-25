@@ -4,9 +4,10 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const GET = vi.fn();
+const PUT = vi.fn();
 vi.mock("@/lib/api/cliente", async (importar) => ({
   ...(await importar<typeof import("@/lib/api/cliente")>()),
-  api: { GET: (...args: unknown[]) => GET(...args) },
+  api: { GET: (...args: unknown[]) => GET(...args), PUT: (...args: unknown[]) => PUT(...args) },
 }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
@@ -90,7 +91,11 @@ function montar(ui: ReactNode) {
 }
 
 describe("TelaInvestimento", () => {
-  beforeEach(() => GET.mockReset());
+  beforeEach(() => {
+    GET.mockReset();
+    PUT.mockReset();
+    PUT.mockResolvedValue({ response: { status: 204 } });
+  });
 
   it("mostra título, ciclo, KPIs, funil, gates e média por pilar", async () => {
     GET.mockResolvedValue({ data: resposta(), response: { status: 200 } });
@@ -115,6 +120,24 @@ describe("TelaInvestimento", () => {
     expect(screen.getByText("G1 Class Fit")).toBeVisible();
     expect(screen.getByText("6 aptos · 4 condicionais · 2 em alerta")).toBeVisible();
     expect(screen.getByText("3,2")).toBeVisible();
+  });
+
+  it("ao abrir a tela marca o investimento como visto e invalida as notificações", async () => {
+    GET.mockResolvedValue({ data: resposta(), response: { status: 200 } });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const espiao = vi.spyOn(client, "invalidateQueries");
+    render(
+      <QueryClientProvider client={client}>
+        <TelaInvestimento papel="ibvar" />
+      </QueryClientProvider>,
+    );
+    await screen.findByRole("heading", { name: "Painel de investimento" });
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/me/notificacoes/vistas", {
+        body: { chave: "investimento" },
+      }),
+    );
+    await waitFor(() => expect(espiao).toHaveBeenCalledWith({ queryKey: ["notificacoes"] }));
   });
 
   it("lista Onde investir com link para a ficha e meses assegurados (gestor)", async () => {
