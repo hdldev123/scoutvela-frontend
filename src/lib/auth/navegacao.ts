@@ -1,6 +1,6 @@
 type Me = {
   usuario: { papel: string };
-  atleta: { id: string; nome: string } | null;
+  atleta: { id: string; nome: string | null } | null;
   telas: string[];
 };
 

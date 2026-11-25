@@ -99,6 +99,7 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
     atleta: {
       id: "a07",
       nome: "Helena Vasques",
+      wsId: "BRAHV07",
       velaid: "SC-T07",
       numeroVela: "BRA 123",
       genero: "F",
@@ -298,6 +299,11 @@ describe("TelaFicha", () => {
   it("mostra cabeçalho, score e pill Parcial", async () => {
     montar("gestor", ficha());
     expect(await screen.findByRole("heading", { name: "Helena Vasques" })).toBeInTheDocument();
+    const ws = screen.getByRole("link", {
+      name: "Perfil de Helena Vasques no World Sailing (abre em nova aba)",
+    });
+    expect(ws).toHaveAttribute("href", "https://www.sailing.org/sailor/?ref=BRAHV07");
+    expect(ws).toHaveAttribute("target", "_blank");
     expect(screen.getByText("71,5")).toBeInTheDocument();
     expect(screen.getByText("Parcial")).toBeInTheDocument();
     expect(screen.getByText("Ana Ribeiro", { exact: false, selector: "li" })).toBeInTheDocument();

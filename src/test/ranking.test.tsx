@@ -40,6 +40,7 @@ function item(
     atleta: {
       id: `a${posicao}`,
       nome,
+      wsId: `BRAS0${posicao}`,
       velaid: `SC-T0${posicao}`,
       numeroVela: null,
       uf: "SC",

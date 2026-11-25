@@ -58,6 +58,8 @@ function perfil(papel: Papel, extra: Record<string, unknown> = {}) {
     atleta:
       papel === "atleta"
         ? {
+            wsId: "BRAHV07",
+            cadastroCompleto: true,
             velaid: "SC-T07",
             classe: { id: "c1", nome: "ILCA 6" },
             numeroVela: "BRA 123",
@@ -166,6 +168,9 @@ describe("Modal Meu perfil", () => {
     montar("atleta");
     await abrir();
     expect(await screen.findByText("SC-T07")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Perfil de Ana Souza no World Sailing (abre em nova aba)" }),
+    ).toHaveAttribute("href", "https://www.sailing.org/sailor/?ref=BRAHV07");
     expect(screen.getByText("Florianópolis/SC")).toBeInTheDocument();
     expect(screen.getByText("Rui Lima")).toBeInTheDocument();
     expect(screen.getByText("Desativado")).toBeInTheDocument();

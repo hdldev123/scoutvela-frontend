@@ -22,6 +22,7 @@ import { Dialogo } from "./Dialogo";
 import { fmtInstante } from "./formato";
 import { SENHA_MINIMA } from "./TelaRedefinirSenha";
 import { atributosDoCampo } from "./campo-util";
+import { LinkWsId } from "./LinkWsId";
 import { MensagemCampo } from "./MensagemCampo";
 
 function idade(nascimento: string, hoje = new Date()): number {
@@ -278,7 +279,7 @@ function PedidoCorrecao() {
     return (
       <div className="perfil-item">
         <p className="perfil-desc">
-          Esses dados vêm do VelaID e não são editados aqui. Algo errado?
+          Esses dados vêm do seu cadastro e não são editados aqui. Algo errado?
         </p>
         <button type="button" className="btn" onClick={() => setAberto(true)}>
           Pedir correção
@@ -493,12 +494,19 @@ function Corpo({ perfil, aoFechar }: { perfil: Perfil; aoFechar: () => void }) {
 
       {a && (
         <>
-          <Secao id="perfil-velaid" titulo="Cadastro no VelaID">
+          <Secao id="perfil-velaid" titulo="Cadastro">
             <dl className="perfil-grade">
-              <Linha rotulo="VelaID" valor={<code>{a.velaid}</code>} />
+              <Linha
+                rotulo="ID World Sailing"
+                valor={<LinkWsId wsId={a.wsId} nome={perfil.nome} />}
+              />
+              <Linha rotulo="VelaID" valor={a.velaid ? <code>{a.velaid}</code> : null} />
               <Linha rotulo="Classe" valor={a.classe.nome} />
               <Linha rotulo="Número de vela" valor={a.numeroVela} />
-              <Linha rotulo="Idade" valor={`${idade(a.dataNascimento)} anos`} />
+              <Linha
+                rotulo="Idade"
+                valor={a.dataNascimento ? `${idade(a.dataNascimento)} anos` : null}
+              />
               <Linha rotulo="Clube" valor={a.clube} />
               <Linha
                 rotulo="Cidade/UF"

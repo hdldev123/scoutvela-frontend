@@ -18,7 +18,7 @@ import {
 interface ShellProps {
   me: {
     usuario: { nome: string; papel: string; fotoUrl?: string | null };
-    atleta: { id: string; nome: string } | null;
+    atleta: { id: string; nome: string | null } | null;
     telas: string[];
   } | null;
   onSair: () => void;

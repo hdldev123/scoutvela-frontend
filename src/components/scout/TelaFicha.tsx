@@ -1,4 +1,5 @@
 import { Avatar } from "./Avatar";
+import { LinkWsId } from "./LinkWsId";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -492,7 +493,13 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               )}
               <li>
                 <i className="ph ph-identification-card" aria-hidden="true" />
-                <span className="fato-rot">VelaID</span> <code>{atleta.velaid}</code>
+                <span className="fato-rot">ID World Sailing</span>{" "}
+                <LinkWsId wsId={atleta.wsId} nome={atleta.nome} />
+              </li>
+              <li>
+                <i className="ph ph-identification-badge" aria-hidden="true" />
+                <span className="fato-rot">VelaID</span>{" "}
+                {atleta.velaid ? <code>{atleta.velaid}</code> : "—"}
               </li>
               <li>
                 <i className="ph ph-sailboat" aria-hidden="true" />

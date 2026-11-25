@@ -5,7 +5,7 @@ import { textoDoStatus } from "./status-gate";
 
 interface MeMinimo {
   usuario: { papel: string; fotoUrl?: string | null };
-  atleta: { id: string; nome: string } | null;
+  atleta: { id: string; nome: string | null } | null;
   telas: string[];
 }
 
@@ -24,6 +24,7 @@ export function PaletaDeAtletas({ me }: { me: MeMinimo | null }) {
       id: i.atleta.id,
       nome: i.atleta.nome,
       classe: i.atleta.classe.nome,
+      wsId: i.atleta.wsId,
       score: i.score,
       faixa: i.faixa.nome,
       status: textoDoStatus(i.statusGates),
@@ -34,11 +35,11 @@ export function PaletaDeAtletas({ me }: { me: MeMinimo | null }) {
       {
         id: me.atleta.id,
         nome: "Minha ficha",
-        classe: me.atleta.nome,
+        classe: me.atleta.nome ?? "",
         score: null,
         faixa: "",
         status: "",
-        avatar: { nome: me.atleta.nome, fotoUrl: me.usuario.fotoUrl ?? null },
+        avatar: { nome: me.atleta.nome ?? "", fotoUrl: me.usuario.fotoUrl ?? null },
       },
     ];
   }

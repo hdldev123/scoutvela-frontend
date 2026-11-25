@@ -9,6 +9,8 @@ export type Visivel = {
   id: string;
   nome: string;
   classe: string;
+  /** ID World Sailing, só para a busca. */
+  wsId?: string;
   /** Nulo quando não há score para mostrar (ex.: atleta abrindo a própria ficha). */
   score: number | null;
   faixa: string;
@@ -108,7 +110,7 @@ export function CommandPalette({ itens, aoSelecionar }: CommandPaletteProps) {
                 {itens.map((a) => (
                   <Command.Item
                     key={a.id}
-                    value={`${a.nome} ${a.classe} ${a.status} ${a.faixa}`}
+                    value={`${a.nome} ${a.classe} ${a.status} ${a.faixa} ${a.wsId ?? ""}`}
                     onSelect={() => {
                       aoSelecionar(a.id);
                       setOpen(false);

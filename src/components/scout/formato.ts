@@ -30,3 +30,8 @@ export const primeiroNome = (nome: string): string => nome.trim().split(/\s+/)[0
 
 /** Abrevia o nome do ciclo para o eixo do gráfico: "Setembro de 2026" -> "Set". */
 export const rotuloCiclo = (nome: string): string => nome.trim().slice(0, 3);
+
+/** Nome do atleta; com o cadastro incompleto (nome nulo), o ID World Sailing no lugar. */
+export function nomeOuWsId(a: { nome: string | null; wsId: string }): string {
+  return a.nome ?? a.wsId;
+}
