@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useSalvarParametros, type Parametros } from "@/lib/api/parametros";
 import { FormPerfResultados } from "./ParametrosResultados";
+import { FormWsNiveis } from "./ParametrosWsNiveis";
 import { formatarValor, lerNumero, MSG_SALVO } from "./parametros-util";
 
 type Campo = {
@@ -340,8 +341,9 @@ export function SecaoRegras({ dados }: { dados: Parametros }) {
     .filter((r) => r.codigo in DEFINICOES)
     .sort((a, b) => ORDEM.indexOf(a.codigo) - ORDEM.indexOf(b.codigo));
   const resultados = dados.regras.find((r) => r.codigo === "PERF_RESULTADOS");
+  const wsNiveis = dados.regras.find((r) => r.codigo === "WS_NIVEIS");
   const outras = dados.regras.filter(
-    (r) => !(r.codigo in DEFINICOES) && r.codigo !== "PERF_RESULTADOS",
+    (r) => !(r.codigo in DEFINICOES) && r.codigo !== "PERF_RESULTADOS" && r.codigo !== "WS_NIVEIS",
   );
   return (
     <section className="panel">
@@ -366,6 +368,13 @@ export function SecaoRegras({ dados }: { dados: Parametros }) {
             key={`${resultados.codigo}|${resultados.atualizadoEm}`}
             valor={resultados.valor}
             atualizadoEm={resultados.atualizadoEm}
+          />
+        )}
+        {wsNiveis && (
+          <FormWsNiveis
+            key={`${wsNiveis.codigo}|${wsNiveis.atualizadoEm}`}
+            valor={wsNiveis.valor}
+            atualizadoEm={wsNiveis.atualizadoEm}
           />
         )}
       </div>
