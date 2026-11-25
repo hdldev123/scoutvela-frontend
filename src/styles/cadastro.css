@@ -26,3 +26,34 @@
   gap: 16px;
   flex-wrap: wrap;
 }
+.cad-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.cad-velaid {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+.cad-velaid legend {
+  padding: 0 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.cad-genero {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.cad-genero legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}

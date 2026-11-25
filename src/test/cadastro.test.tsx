@@ -50,6 +50,7 @@ beforeEach(() => {
     {
       id: "a9",
       nome: "Carla Souza",
+      wsId: "BRACS16",
       velaid: "BA-T16",
       classe: { id: "c1", nome: "ILCA 6" },
       criadoEm: "2026-11-05T12:00:00.000Z",
@@ -95,154 +96,237 @@ function buscar(codigo: string) {
   fireEvent.click(screen.getByRole("button", { name: "Buscar no VelaID" }));
 }
 
+function preencherBasico(wsId = "braj s12") {
+  fireEvent.change(screen.getByLabelText("ID World Sailing"), { target: { value: wsId } });
+  fireEvent.change(screen.getByLabelText("E-mail do atleta"), {
+    target: { value: "bruno@exemplo.com" },
+  });
+  fireEvent.change(screen.getByLabelText("Classe e função projetadas"), {
+    target: { value: "ilca7" },
+  });
+  fireEvent.change(screen.getByLabelText("Treinador(a) responsável"), {
+    target: { value: TREINADOR_ID },
+  });
+}
+
+async function aguardarOpcoes() {
+  await screen.findByRole("option", { name: "ILCA 7" });
+  await screen.findByRole("option", { name: "Ana Ribeiro" });
+}
+
+const confirmar18 = () =>
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Confirmo que o atleta tem 18 anos ou mais" }),
+  );
+const enviar = () =>
+  fireEvent.click(screen.getByRole("button", { name: "Enviar termo de consentimento" }));
+
+const criado = (extra: Record<string, unknown> = {}) =>
+  ok(
+    {
+      id: "a1",
+      wsId: "BRAJS12",
+      velaid: null,
+      cadastroCompleto: false,
+      termo: { status: "aguardando_aceite", versao: "v1" },
+      conta: "convite_enviado",
+      ...extra,
+    },
+    201,
+  );
+
 describe("TelaCadastro", () => {
-  it("busca elegível mostra os dados e cadastra com classe e treinador", async () => {
-    POST.mockImplementation(async (caminho: string) => {
-      if (caminho === "/velaid/busca") return ok(velaid());
-      if (caminho === "/atletas") {
-        return ok(
-          {
-            id: "a1",
-            nome: "Bruno Lima",
-            termo: { status: "aguardando_aceite", versao: "v1" },
-            conta: "convite_enviado",
-          },
-          201,
-        );
-      }
-      return falha(500, "erro_interno", "?");
-    });
+  it("cadastra pelo WS ID normalizado, sem VelaID, e mostra o link do atleta criado", async () => {
+    POST.mockImplementation(async () => criado());
     montar();
     expect(screen.getByRole("heading", { level: 1, name: "Cadastrar atleta" })).toBeTruthy();
-    buscar(" MG-T15 ");
-    expect(await screen.findByText("Bruno Lima")).toBeTruthy();
-    expect(screen.getByText("BRA123")).toBeTruthy();
-    expect(screen.getByText("Belo Horizonte/MG")).toBeTruthy();
-    expect(POST).toHaveBeenCalledWith("/velaid/busca", { body: { codigo: "MG-T15" } });
-
-    const enviar = screen.getByRole("button", { name: "Enviar termo de consentimento" });
-    expect((enviar as HTMLButtonElement).disabled).toBe(true);
-    await screen.findByRole("option", { name: "ILCA 7" });
+    await aguardarOpcoes();
     expect(screen.queryByRole("option", { name: "Classe desativada" })).toBeNull();
-    await screen.findByRole("option", { name: "Ana Ribeiro" });
-    fireEvent.change(screen.getByLabelText("Classe e função projetadas"), {
-      target: { value: "ilca7" },
-    });
-    fireEvent.change(screen.getByLabelText("Treinador(a) responsável"), {
-      target: { value: TREINADOR_ID },
-    });
-    fireEvent.click(enviar);
+    preencherBasico();
+    confirmar18();
+    enviar();
 
-    expect(await screen.findByText(/O atleta entra no ranking depois do aceite/)).toBeTruthy();
+    expect(await screen.findByText(/Termo enviado \(v1\)/)).toBeTruthy();
     expect(POST).toHaveBeenCalledWith("/atletas", {
       body: {
-        velaidCodigo: "MG-T15",
+        wsId: "BRAJS12",
+        email: "bruno@exemplo.com",
         classeId: "ilca7",
         treinadorId: TREINADOR_ID,
+        confirmaMaioridade: true,
         criarConta: true,
       },
     });
     expect(screen.getByText(/Conta criada e convite enviado/)).toBeTruthy();
     expect(toastFn.success).toHaveBeenCalled();
+    const link = screen.getByRole("link", {
+      name: "Perfil de BRAJS12 no World Sailing (abre em nova aba)",
+    });
+    expect(link.getAttribute("href")).toBe("https://www.sailing.org/sailor/?ref=BRAJS12");
+    // O formulário volta ao início para o próximo cadastro.
+    expect((screen.getByLabelText("ID World Sailing") as HTMLInputElement).value).toBe("");
+  });
+
+  it("valida WS ID, e-mail e a confirmação de 18+ antes de enviar", async () => {
+    montar();
+    await aguardarOpcoes();
+    enviar();
+    expect(await screen.findByText("Informe o ID World Sailing do atleta.")).toBeTruthy();
+    expect(screen.getByText("Informe o e-mail do atleta.")).toBeTruthy();
+    expect(screen.getByText("Escolha a classe e a função.")).toBeTruthy();
+    expect(screen.getByText("Escolha o treinador responsável.")).toBeTruthy();
+    expect(screen.getByText("Confirme que o atleta tem 18 anos ou mais.")).toBeTruthy();
+    expect(POST).not.toHaveBeenCalled();
+
+    preencherBasico("12-ab");
+    expect(await screen.findByText(/ID World Sailing inválido/)).toBeTruthy();
+    expect(screen.getByLabelText("ID World Sailing").getAttribute("aria-invalid")).toBe("true");
+    enviar();
+    expect(POST).not.toHaveBeenCalled();
+
+    preencherBasico("BRAJS12");
+    enviar();
+    expect(screen.queryByText(/ID World Sailing inválido/)).toBeNull();
+    expect(screen.getByText("Confirme que o atleta tem 18 anos ou mais.")).toBeTruthy();
+    expect(POST).not.toHaveBeenCalled();
+  });
+
+  it("busca opcional no VelaID mostra os dados de referência e envia o código", async () => {
+    POST.mockImplementation(async (caminho: string) =>
+      caminho === "/velaid/busca" ? ok(velaid()) : criado({ velaid: "MG-T15" }),
+    );
+    montar();
+    await aguardarOpcoes();
+    buscar(" MG-T15 ");
+    expect(await screen.findByText("Bruno Lima")).toBeTruthy();
+    expect(screen.getByText("BRA123")).toBeTruthy();
+    expect(screen.getByText("Belo Horizonte/MG")).toBeTruthy();
+    expect(POST).toHaveBeenCalledWith("/velaid/busca", { body: { codigo: "MG-T15" } });
+    preencherBasico("BRAJS12");
+    confirmar18();
+    enviar();
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith("/atletas", {
+        body: expect.objectContaining({ wsId: "BRAJS12", velaid: "MG-T15" }),
+      }),
+    );
   });
 
   it("desmarcar a criação de conta envia criarConta false e explica a resposta", async () => {
-    POST.mockImplementation(async (caminho: string) => {
-      if (caminho === "/velaid/busca") return ok(velaid());
-      return ok(
-        {
-          id: "a1",
-          nome: "Bruno Lima",
-          termo: { status: "aguardando_aceite", versao: "v2" },
-          conta: "sem_email",
-        },
-        201,
-      );
-    });
+    POST.mockImplementation(async () => criado({ conta: "sem_email" }));
     montar();
-    buscar("MG-T15");
-    await screen.findByRole("option", { name: "ILCA 7" });
-    await screen.findByRole("option", { name: "Ana Ribeiro" });
+    await aguardarOpcoes();
     const caixa = screen.getByRole("checkbox", { name: "Criar conta e enviar convite ao atleta" });
     expect((caixa as HTMLInputElement).checked).toBe(true);
     fireEvent.click(caixa);
-    fireEvent.change(screen.getByLabelText("Classe e função projetadas"), {
-      target: { value: "ilca7" },
-    });
-    fireEvent.change(screen.getByLabelText("Treinador(a) responsável"), {
-      target: { value: TREINADOR_ID },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Enviar termo de consentimento" }));
+    preencherBasico("BRAJS12");
+    confirmar18();
+    enviar();
     expect(await screen.findByText(/Nenhuma conta foi criada/)).toBeTruthy();
     expect(POST).toHaveBeenCalledWith("/atletas", {
-      body: {
-        velaidCodigo: "MG-T15",
-        classeId: "ilca7",
-        treinadorId: TREINADOR_ID,
-        criarConta: false,
-      },
+      body: expect.objectContaining({ criarConta: false }),
     });
   });
 
   it("conta indisponível orienta a reenviar o convite", async () => {
-    POST.mockImplementation(async (caminho: string) => {
-      if (caminho === "/velaid/busca") return ok(velaid());
-      return ok(
-        {
-          id: "a1",
-          nome: "Bruno Lima",
-          termo: { status: "aguardando_aceite", versao: "v2" },
-          conta: "indisponivel",
-        },
-        201,
-      );
-    });
+    POST.mockImplementation(async () => criado({ conta: "indisponivel" }));
     montar();
-    buscar("MG-T15");
-    await screen.findByRole("option", { name: "ILCA 7" });
-    await screen.findByRole("option", { name: "Ana Ribeiro" });
-    fireEvent.change(screen.getByLabelText("Classe e função projetadas"), {
-      target: { value: "ilca7" },
-    });
-    fireEvent.change(screen.getByLabelText("Treinador(a) responsável"), {
-      target: { value: TREINADOR_ID },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Enviar termo de consentimento" }));
+    await aguardarOpcoes();
+    preencherBasico("BRAJS12");
+    confirmar18();
+    enviar();
     expect(await screen.findByText(/convite não pôde ser enviado neste ambiente/)).toBeTruthy();
   });
 
-  it("não elegível mostra o motivo e bloqueia o cadastro", async () => {
+  it("VelaID não elegível mostra o motivo e bloqueia o envio", async () => {
     POST.mockResolvedValue(
       ok(velaid({ codigo: "PE-T17", idade: 17, elegivel: false, motivo: "Menor de 18 anos." })),
     );
     montar();
+    await aguardarOpcoes();
     buscar("PE-T17");
-    expect(await screen.findByText(/Cadastro bloqueado: Menor de 18 anos\./)).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Enviar termo de consentimento" })).toBeNull();
+    expect(
+      await screen.findByText(/Cadastro bloqueado com este código: Menor de 18 anos\./),
+    ).toBeTruthy();
+    POST.mockClear();
+    preencherBasico("BRAJS12");
+    confirmar18();
+    enviar();
+    expect(POST).not.toHaveBeenCalled();
   });
 
-  it("404 no VelaID e erro 409 do cadastro mostram a mensagem", async () => {
+  it("VelaID inexistente avisa, mas não impede o cadastro", async () => {
     POST.mockResolvedValueOnce(falha(404, "nao_encontrado", "Atleta não encontrado."));
     montar();
     buscar("XX-000");
     expect(await screen.findByText(/Nenhum atleta com esse código no VelaID/)).toBeTruthy();
+  });
 
-    POST.mockImplementation(async (caminho: string) =>
-      caminho === "/velaid/busca"
-        ? ok(velaid())
-        : falha(409, "requisicao_invalida", "Atleta já cadastrado."),
+  it("409 de WS ID repetido aparece embaixo do campo, e o de VelaID embaixo do VelaID", async () => {
+    POST.mockResolvedValue(
+      falha(409, "requisicao_invalida", "Já existe um atleta com este ID World Sailing."),
     );
-    buscar("MG-T15");
-    await screen.findByRole("option", { name: "ILCA 7" });
-    await screen.findByRole("option", { name: "Ana Ribeiro" });
-    fireEvent.change(screen.getByLabelText("Classe e função projetadas"), {
-      target: { value: "ilca7" },
+    montar();
+    await aguardarOpcoes();
+    preencherBasico("BRAJS12");
+    confirmar18();
+    enviar();
+    const msg = await screen.findByText("Já existe um atleta com este ID World Sailing.");
+    const campo = screen.getByLabelText("ID World Sailing");
+    expect(campo.getAttribute("aria-invalid")).toBe("true");
+    expect(campo.getAttribute("aria-describedby")).toBe(msg.id);
+
+    POST.mockResolvedValue(falha(409, "requisicao_invalida", "O código MG-T15 já está no piloto."));
+    fireEvent.change(screen.getByLabelText("Código VelaID"), { target: { value: "MG-T15" } });
+    enviar();
+    const msgVela = await screen.findByText("O código MG-T15 já está no piloto.");
+    expect(screen.getByLabelText("Código VelaID").getAttribute("aria-describedby")).toBe(
+      msgVela.id,
+    );
+    // Editar o campo limpa o erro da API.
+    fireEvent.change(screen.getByLabelText("ID World Sailing"), { target: { value: "BRAJS13" } });
+    expect(screen.queryByText("Já existe um atleta com este ID World Sailing.")).toBeNull();
+  });
+
+  it("400 de WS ID inválido vindo da API aparece embaixo do campo", async () => {
+    POST.mockResolvedValue({
+      data: undefined,
+      error: {
+        erro: "requisicao_invalida",
+        mensagem: "Requisição inválida.",
+        campos: [{ campo: "wsId", mensagem: "WS ID fora do padrão do servidor." }],
+      },
+      response: { status: 400 },
     });
-    fireEvent.change(screen.getByLabelText("Treinador(a) responsável"), {
-      target: { value: TREINADOR_ID },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Enviar termo de consentimento" }));
-    expect(await screen.findByText("Atleta já cadastrado.")).toBeTruthy();
+    montar();
+    await aguardarOpcoes();
+    preencherBasico("BRAJS12");
+    confirmar18();
+    enviar();
+    expect(await screen.findByText("WS ID fora do padrão do servidor.")).toBeTruthy();
+  });
+
+  it("termo pendente de atleta com cadastro incompleto mostra o WS ID e VelaID como traço", async () => {
+    pendentes = [
+      {
+        id: "a11",
+        nome: null,
+        wsId: "BRAXY99",
+        velaid: null,
+        classe: { id: "c1", nome: "ILCA 6" },
+        criadoEm: "2026-11-06T12:00:00.000Z",
+        termoAceitoVersao: null,
+      },
+    ];
+    montar();
+    expect(await screen.findByText("BRAXY99", { selector: "td:first-child" })).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Perfil de BRAXY99 no World Sailing (abre em nova aba)" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("cell", { name: "—" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Registrar aceite recebido" }));
+    const dialogo = await screen.findByRole("dialog");
+    expect(within(dialogo).getByText(/Confirme que BRAXY99 devolveu/)).toBeTruthy();
   });
 
   it("diferencia quem nunca aceitou de quem aceitou só a versão anterior", async () => {
@@ -251,6 +335,7 @@ describe("TelaCadastro", () => {
       {
         id: "a10",
         nome: "Davi Rocha",
+        wsId: "BRADR17",
         velaid: "BA-T17",
         classe: { id: "c1", nome: "ILCA 6" },
         criadoEm: "2026-11-06T12:00:00.000Z",

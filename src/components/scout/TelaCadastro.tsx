@@ -3,7 +3,10 @@ import { toast } from "sonner";
 import { CampoArquivo } from "./CampoArquivo";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
-import { fmtData, fmtInstante } from "./formato";
+import { fmtData, fmtInstante, nomeOuWsId } from "./formato";
+import { LinkWsId } from "./LinkWsId";
+import { MensagemCampo } from "./MensagemCampo";
+import { atributosDoCampo } from "./campo-util";
 import {
   LIMITE_CSV_BYTES,
   useBuscarVelaId,
@@ -19,8 +22,10 @@ import {
   type ResultadoImportacao,
   type TipoImportacao,
 } from "@/lib/api/cadastro";
-import { ErroApi, mensagemDeErro } from "@/lib/api/cliente";
+import { ErroApi, errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
 import { useTermo, useTermoProxima } from "@/lib/api/titular";
+import { mensagemEmail } from "@/lib/validacao";
+import { mensagemWsId, normalizarWsId } from "@/lib/world-sailing";
 import "@/styles/cadastro.css";
 
 const FORMATOS: Record<TipoImportacao, { nome: string; colunas: string; nota: string }> = {
@@ -37,9 +42,9 @@ const FORMATOS: Record<TipoImportacao, { nome: string; colunas: string; nota: st
 };
 
 const MENSAGEM_CONTA: Record<AtletaCadastrado["conta"], string> = {
-  convite_enviado: "Conta criada e convite enviado ao e-mail do VelaID.",
+  convite_enviado: "Conta criada e convite enviado ao e-mail informado.",
   sem_email:
-    "Nenhuma conta foi criada: o atleta não tem e-mail no VelaID, o e-mail já está em uso ou a opção estava desmarcada. Crie a conta em Contas de acesso.",
+    "Nenhuma conta foi criada: o e-mail já está em uso ou a opção estava desmarcada. Crie a conta em Contas de acesso.",
   indisponivel:
     "Conta criada, mas o convite não pôde ser enviado neste ambiente. Reenvie em Contas de acesso.",
 };
@@ -79,8 +84,8 @@ export function TelaCadastro() {
           <div className="eyebrow">Atletas</div>
           <h1>Cadastrar atleta</h1>
           <p>
-            O cadastro parte do VelaID: o sistema não pede CPF nem documento. No piloto, só entram
-            atletas de 18 anos ou mais.
+            O cadastro parte do ID World Sailing: o sistema não pede CPF nem documento. O VelaID é
+            opcional. No piloto, só entram atletas de 18 anos ou mais.
           </p>
         </div>
       </div>
@@ -93,106 +98,300 @@ export function TelaCadastro() {
   );
 }
 
+/** Campo do formulário a que o erro devolvido pela API se refere. */
+type CampoCadastro =
+  "wsId" | "email" | "classeId" | "treinadorId" | "velaid" | "confirmaMaioridade";
+type ErrosCadastro = Partial<Record<CampoCadastro, string>>;
+
+const CAMPOS_CADASTRO: readonly CampoCadastro[] = [
+  "wsId",
+  "email",
+  "classeId",
+  "treinadorId",
+  "velaid",
+  "confirmaMaioridade",
+];
+
+/** Erros 400 (por campo ou só mensagem) e 409 (duplicidade) de `POST /atletas`, por campo. */
+function errosDoCadastro(err: unknown): { campos: ErrosCadastro; geral: string } {
+  const campos: ErrosCadastro = {};
+  const doServidor = errosPorCampo(err);
+  for (const c of CAMPOS_CADASTRO) {
+    if (doServidor[c]) campos[c] = doServidor[c];
+  }
+  if (Object.keys(campos).length > 0) return { campos, geral: "" };
+  const mensagem = mensagemDeErro(err);
+  if (err instanceof ErroApi && (err.status === 409 || err.status === 400)) {
+    if (/world sailing/i.test(mensagem)) return { campos: { wsId: mensagem }, geral: "" };
+    if (/velaid|código/i.test(mensagem)) return { campos: { velaid: mensagem }, geral: "" };
+    if (/18 anos|maioridade/i.test(mensagem)) {
+      return { campos: { confirmaMaioridade: mensagem }, geral: "" };
+    }
+  }
+  return { campos, geral: mensagem };
+}
+
 function NovoAtleta() {
-  const [codigo, setCodigo] = useState("");
-  const [dados, setDados] = useState<DadosVelaId | null>(null);
-  const [erroBusca, setErroBusca] = useState("");
+  const [wsId, setWsId] = useState("");
+  const [email, setEmail] = useState("");
   const [classeId, setClasseId] = useState("");
   const [treinadorId, setTreinadorId] = useState("");
-  const [erroCadastro, setErroCadastro] = useState("");
-  const [criado, setCriado] = useState<AtletaCadastrado | null>(null);
+  const [velaid, setVelaid] = useState("");
+  const [maior, setMaior] = useState(false);
   const [criarConta, setCriarConta] = useState(true);
+  const [tentou, setTentou] = useState(false);
+  const [dados, setDados] = useState<DadosVelaId | null>(null);
+  const [erroBusca, setErroBusca] = useState("");
+  const [errosApi, setErrosApi] = useState<ErrosCadastro>({});
+  const [erroGeral, setErroGeral] = useState("");
+  const [criado, setCriado] = useState<AtletaCadastrado | null>(null);
   const busca = useBuscarVelaId();
   const cadastro = useCadastrarAtleta();
   const classes = useClasses();
   const treinadores = useTreinadores();
-  const idCodigo = useId();
+  const id = useId();
+  const idWs = `${id}-ws`;
+  const idEmail = `${id}-email`;
+  const idClasse = `${id}-classe`;
+  const idTrein = `${id}-trein`;
+  const idVelaid = `${id}-velaid`;
+  const idMaior = `${id}-maior`;
 
-  const limpar = () => {
-    setDados(null);
+  // Erros locais só depois da primeira tentativa de envio; o da API vale até o campo mudar.
+  const locais: Partial<Record<CampoCadastro, string | undefined>> = tentou
+    ? {
+        wsId: mensagemWsId(wsId) ?? undefined,
+        email:
+          email.trim() === "" ? "Informe o e-mail do atleta." : (mensagemEmail(email) ?? undefined),
+        classeId: classeId ? undefined : "Escolha a classe e a função.",
+        treinadorId: treinadorId ? undefined : "Escolha o treinador responsável.",
+        confirmaMaioridade: maior ? undefined : "Confirme que o atleta tem 18 anos ou mais.",
+      }
+    : {};
+  const erro = (c: CampoCadastro) => locais[c] ?? errosApi[c];
+  const limparErro = (c: CampoCadastro) =>
+    setErrosApi((atual) => {
+      const { [c]: _removido, ...resto } = atual;
+      return resto;
+    });
+
+  const velaidBloqueado = !!dados && !dados.elegivel;
+
+  const buscar = () => {
     setErroBusca("");
-    setErroCadastro("");
-    setCriado(null);
-    setClasseId("");
-    setTreinadorId("");
-  };
-
-  const buscar = (e: FormEvent) => {
-    e.preventDefault();
-    limpar();
-    busca.mutate(codigo.trim(), {
+    setDados(null);
+    busca.mutate(velaid.trim(), {
       onSuccess: setDados,
       onError: (err) =>
         setErroBusca(
           err instanceof ErroApi && err.status === 404
-            ? "Nenhum atleta com esse código no VelaID."
+            ? "Nenhum atleta com esse código no VelaID. Se cadastrar assim, o código fica gravado sem dados de referência."
             : mensagemDeErro(err),
         ),
     });
   };
 
+  const aoMudarVelaid = (valor: string) => {
+    setVelaid(valor);
+    setDados(null);
+    setErroBusca("");
+    limparErro("velaid");
+  };
+
   const cadastrar = (e: FormEvent) => {
     e.preventDefault();
-    if (!dados) return;
-    setErroCadastro("");
+    setTentou(true);
+    setErrosApi({});
+    setErroGeral("");
+    const invalido =
+      !!mensagemWsId(wsId) ||
+      email.trim() === "" ||
+      !!mensagemEmail(email) ||
+      !classeId ||
+      !treinadorId ||
+      !maior;
+    if (invalido || velaidBloqueado) return;
     cadastro.mutate(
-      { velaidCodigo: dados.codigo, classeId, treinadorId, criarConta },
+      {
+        wsId: normalizarWsId(wsId),
+        email: email.trim(),
+        classeId,
+        treinadorId,
+        confirmaMaioridade: true,
+        criarConta,
+        ...(velaid.trim() ? { velaid: velaid.trim() } : {}),
+      },
       {
         onSuccess: (r) => {
           setCriado(r);
+          setWsId("");
+          setEmail("");
+          setClasseId("");
+          setTreinadorId("");
+          setVelaid("");
           setDados(null);
-          toast.success(`${r.nome} cadastrado. Termo enviado.`);
+          setErroBusca("");
+          setMaior(false);
+          setTentou(false);
+          toast.success(`Atleta ${r.wsId} cadastrado. Termo enviado.`);
         },
-        onError: (err) => setErroCadastro(mensagemDeErro(err)),
+        onError: (err) => {
+          const { campos, geral } = errosDoCadastro(err);
+          setErrosApi(campos);
+          setErroGeral(geral);
+        },
       },
     );
   };
 
   return (
-    <section className="panel" aria-labelledby="cad-busca-t">
+    <section className="panel" aria-labelledby="cad-novo-t">
       <div className="panel-head">
-        <h2 id="cad-busca-t">Buscar no VelaID</h2>
+        <h2 id="cad-novo-t">Novo atleta</h2>
+        <span className="muted cad-sub">
+          O atleta completa nome, gênero e nascimento no primeiro acesso
+        </span>
       </div>
-      <div className="stack" style={{ gap: 12 }}>
-        <form className="cad-form" onSubmit={buscar}>
-          <label className="field" htmlFor={idCodigo}>
-            Código VelaID
-            <input
-              id={idCodigo}
-              className="cad-codigo"
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
-              placeholder="Ex.: MG-T15"
-              autoComplete="off"
-              maxLength={40}
-            />
-          </label>
-          <button
-            type="submit"
-            className="btn primary"
-            disabled={!codigo.trim() || busca.isPending}
-          >
-            {busca.isPending ? "Buscando…" : "Buscar no VelaID"}
-          </button>
-        </form>
-        {erroBusca && (
+      {criado && (
+        <div className="note" role="status" style={{ marginBottom: 12 }}>
+          Atleta <LinkWsId wsId={criado.wsId} /> cadastrado. Termo enviado ({criado.termo.versao}).
+          Ele entra no ranking depois de completar o cadastro e aceitar o termo.{" "}
+          {MENSAGEM_CONTA[criado.conta]}
+        </div>
+      )}
+      <form className="stack" style={{ gap: 12 }} onSubmit={cadastrar} noValidate>
+        <div className="cad-grade">
+          <div>
+            <label className="field" htmlFor={idWs}>
+              ID World Sailing
+              <input
+                id={idWs}
+                className="cad-codigo"
+                value={wsId}
+                onChange={(e) => {
+                  setWsId(e.target.value.toUpperCase());
+                  limparErro("wsId");
+                }}
+                placeholder="Ex.: BRAJS12"
+                autoComplete="off"
+                maxLength={40}
+                required
+                {...atributosDoCampo(`${idWs}-erro`, erro("wsId"))}
+              />
+            </label>
+            <MensagemCampo id={`${idWs}-erro`} texto={erro("wsId")} />
+          </div>
+          <div>
+            <label className="field" htmlFor={idEmail}>
+              E-mail do atleta
+              <input
+                id={idEmail}
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  limparErro("email");
+                }}
+                maxLength={255}
+                autoComplete="off"
+                required
+                {...atributosDoCampo(`${idEmail}-erro`, erro("email"))}
+              />
+            </label>
+            <MensagemCampo id={`${idEmail}-erro`} texto={erro("email")} />
+          </div>
+          <div>
+            <label className="field" htmlFor={idClasse}>
+              Classe e função projetadas
+              <select
+                id={idClasse}
+                value={classeId}
+                onChange={(e) => {
+                  setClasseId(e.target.value);
+                  limparErro("classeId");
+                }}
+                required
+                {...atributosDoCampo(`${idClasse}-erro`, erro("classeId"))}
+              >
+                <option value="">Escolha</option>
+                {(classes.data ?? [])
+                  .filter((c) => c.ativa)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <MensagemCampo id={`${idClasse}-erro`} texto={erro("classeId")} />
+          </div>
+          <div>
+            <label className="field" htmlFor={idTrein}>
+              Treinador(a) responsável
+              <select
+                id={idTrein}
+                value={treinadorId}
+                onChange={(e) => {
+                  setTreinadorId(e.target.value);
+                  limparErro("treinadorId");
+                }}
+                required
+                {...atributosDoCampo(`${idTrein}-erro`, erro("treinadorId"))}
+              >
+                <option value="">Escolha</option>
+                {(treinadores.data ?? []).map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <MensagemCampo id={`${idTrein}-erro`} texto={erro("treinadorId")} />
+          </div>
+        </div>
+        {(classes.isError || treinadores.isError) && (
           <div className="note" role="alert">
-            {erroBusca}
+            Não foi possível carregar classes ou treinadores.
           </div>
         )}
 
-        {criado && (
-          <div className="note" role="status">
-            Termo enviado a {criado.nome} ({criado.termo.versao}). O atleta entra no ranking depois
-            do aceite. {MENSAGEM_CONTA[criado.conta]}
+        <fieldset className="cad-velaid">
+          <legend>VelaID (opcional)</legend>
+          <div className="cad-form">
+            <div>
+              <label className="field" htmlFor={idVelaid}>
+                Código VelaID
+                <input
+                  id={idVelaid}
+                  className="cad-codigo"
+                  value={velaid}
+                  onChange={(e) => aoMudarVelaid(e.target.value)}
+                  placeholder="Ex.: MG-T15"
+                  autoComplete="off"
+                  maxLength={40}
+                  {...atributosDoCampo(`${idVelaid}-erro`, erro("velaid"))}
+                />
+              </label>
+              <MensagemCampo id={`${idVelaid}-erro`} texto={erro("velaid")} />
+            </div>
+            <button
+              type="button"
+              className="btn"
+              onClick={buscar}
+              disabled={!velaid.trim() || busca.isPending}
+            >
+              {busca.isPending ? "Buscando…" : "Buscar no VelaID"}
+            </button>
           </div>
-        )}
-
-        {dados && (
-          <div className="grid-2">
-            <div className="stack" style={{ gap: 12 }}>
+          {erroBusca && (
+            <div className="note" role="alert">
+              {erroBusca}
+            </div>
+          )}
+          {dados && (
+            <div className="stack" style={{ gap: 8 }} role="status">
               <div className="note">
-                Veio do VelaID. Não trazemos CPF nem endereço: só o que o score usa.
+                Dados do VelaID, só como referência: o atleta confirma os dele no primeiro acesso.
               </div>
               <dl className="kv">
                 <dt>Nome</dt>
@@ -207,83 +406,54 @@ function NovoAtleta() {
                 <dd>{dados.clube ?? "—"}</dd>
                 <dt>Cidade</dt>
                 <dd>{dados.cidade ? `${dados.cidade}/${dados.uf ?? "—"}` : "—"}</dd>
-                <dt>ID World Sailing</dt>
+                <dt>ID World Sailing no VelaID</dt>
                 <dd>{dados.wsId ?? "—"}</dd>
               </dl>
-            </div>
-            {dados.elegivel ? (
-              <form className="stack" style={{ gap: 12 }} onSubmit={cadastrar}>
-                <label className="field" htmlFor="cad-classe">
-                  Classe e função projetadas
-                  <select
-                    id="cad-classe"
-                    value={classeId}
-                    onChange={(e) => setClasseId(e.target.value)}
-                  >
-                    <option value="">Escolha</option>
-                    {(classes.data ?? [])
-                      .filter((c) => c.ativa)
-                      .map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.nome}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                <label className="field" htmlFor="cad-trein">
-                  Treinador(a) responsável
-                  <select
-                    id="cad-trein"
-                    value={treinadorId}
-                    onChange={(e) => setTreinadorId(e.target.value)}
-                  >
-                    <option value="">Escolha</option>
-                    {(treinadores.data ?? []).map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.nome}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {(classes.isError || treinadores.isError) && (
-                  <div className="note" role="alert">
-                    Não foi possível carregar classes ou treinadores.
-                  </div>
-                )}
-                {erroCadastro && (
-                  <div className="note" role="alert">
-                    {erroCadastro}
-                  </div>
-                )}
-                <label className="painel-opcao">
-                  <input
-                    type="checkbox"
-                    checked={criarConta}
-                    onChange={(e) => setCriarConta(e.target.checked)}
-                  />
-                  Criar conta e enviar convite ao atleta
-                </label>
-                <div className="btn-row">
-                  <button
-                    type="submit"
-                    className="btn primary"
-                    disabled={!classeId || !treinadorId || cadastro.isPending}
-                  >
-                    {cadastro.isPending ? "Enviando…" : "Enviar termo de consentimento"}
-                  </button>
-                  <button type="button" className="btn" onClick={limpar}>
-                    Cancelar
-                  </button>
+              {velaidBloqueado && (
+                <div className="note cad-motivo" role="alert">
+                  Cadastro bloqueado com este código: {dados.motivo ?? "atleta não elegível."}
                 </div>
-              </form>
-            ) : (
-              <div className="note cad-motivo" role="alert">
-                Cadastro bloqueado: {dados.motivo ?? "atleta não elegível ao piloto."}
-              </div>
-            )}
+              )}
+            </div>
+          )}
+        </fieldset>
+
+        <div>
+          <label className="painel-opcao" htmlFor={idMaior}>
+            <input
+              id={idMaior}
+              type="checkbox"
+              checked={maior}
+              onChange={(e) => {
+                setMaior(e.target.checked);
+                limparErro("confirmaMaioridade");
+              }}
+              required
+              {...atributosDoCampo(`${idMaior}-erro`, erro("confirmaMaioridade"))}
+            />
+            Confirmo que o atleta tem 18 anos ou mais
+          </label>
+          <MensagemCampo id={`${idMaior}-erro`} texto={erro("confirmaMaioridade")} />
+        </div>
+        <label className="painel-opcao">
+          <input
+            type="checkbox"
+            checked={criarConta}
+            onChange={(e) => setCriarConta(e.target.checked)}
+          />
+          Criar conta e enviar convite ao atleta
+        </label>
+        {erroGeral && (
+          <div className="note" role="alert">
+            {erroGeral}
           </div>
         )}
-      </div>
+        <div className="btn-row">
+          <button type="submit" className="btn primary" disabled={cadastro.isPending}>
+            {cadastro.isPending ? "Enviando…" : "Enviar termo de consentimento"}
+          </button>
+        </div>
+      </form>
     </section>
   );
 }
@@ -310,7 +480,7 @@ function TermosPendentes() {
       {
         onSuccess: () => {
           setAlvo(null);
-          toast.success(`Aceite de ${atleta.nome} registrado. O atleta entra no ranking.`);
+          toast.success(`Aceite de ${nomeOuWsId(atleta)} registrado. O atleta entra no ranking.`);
         },
         onError: (err) => setErro(mensagemDeErro(err)),
       },
@@ -348,6 +518,7 @@ function TermosPendentes() {
             <thead>
               <tr>
                 <th>Atleta</th>
+                <th>ID World Sailing</th>
                 <th>VelaID</th>
                 <th>Classe</th>
                 <th>Cadastrado em</th>
@@ -360,10 +531,11 @@ function TermosPendentes() {
             <tbody>
               {pendentes.data.map((p) => (
                 <tr key={p.id}>
-                  <td>{p.nome}</td>
+                  <td>{nomeOuWsId(p)}</td>
                   <td className="nw">
-                    <code>{p.velaid}</code>
+                    <LinkWsId wsId={p.wsId} nome={p.nome} />
                   </td>
+                  <td className="nw">{p.velaid ? <code>{p.velaid}</code> : "—"}</td>
                   <td className="nw">{p.classe.nome}</td>
                   <td className="nw">{fmtInstante(p.criadoEm)}</td>
                   <td>
@@ -402,8 +574,8 @@ function TermosPendentes() {
         >
           <div className="stack" style={{ gap: 12 }}>
             <p>
-              Confirme que {alvo.nome} ({alvo.velaid}) devolveu aceito o termo{" "}
-              {qual === "proxima" ? "da próxima versão" : "vigente"}
+              Confirme que {alvo.nome ? `${alvo.nome} (${alvo.wsId})` : alvo.wsId} devolveu aceito o
+              termo {qual === "proxima" ? "da próxima versão" : "vigente"}
               {escolhida ? ` (${escolhida.versao})` : ""}. Depois disso o atleta entra no ranking. O
               compartilhamento com o IBVAR continua sendo decisão do atleta.
             </p>
