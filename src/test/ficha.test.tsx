@@ -10,6 +10,7 @@ const registrarPlano = vi.fn();
 const atualizarFinanceiro = vi.fn();
 const lancarResultado = vi.fn();
 const POST = vi.fn();
+const DELETE = vi.fn();
 const linkEvidencia = vi.hoisted(() => ({ url: "https://storage.exemplo.com/a.pdf?assinatura=1" }));
 const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
 
@@ -18,6 +19,7 @@ vi.mock("@/lib/api/cliente", async (importar) => ({
   api: {
     GET: (...args: unknown[]) => GET(...args),
     POST: (...args: unknown[]) => POST(...args),
+    DELETE: (...args: unknown[]) => DELETE(...args),
   },
 }));
 vi.mock("@/lib/api/mutacoes-ficha", () => ({
@@ -231,9 +233,36 @@ const ANEXOS = {
       tipoMime: "application/pdf",
       tamanhoBytes: 1000,
       indicadorId: "perf_1",
+      categoria: "evidencia" as const,
+      enviadoPor: { papel: "treinador" as const },
       enviadoEm: "2026-11-05T12:00:00.000Z",
+      removidoEm: null,
+    },
+    {
+      id: "e2",
+      nomeArquivo: "sumula-brasileiro.pdf",
+      tipoMime: "application/pdf",
+      tamanhoBytes: 2 * 1024 * 1024,
+      indicadorId: null,
+      categoria: "sumula" as const,
+      enviadoPor: { papel: "atleta" as const },
+      enviadoEm: "2026-11-06T12:00:00.000Z",
+      removidoEm: null,
+    },
+    {
+      id: "e3",
+      nomeArquivo: "balanca.jpg",
+      tipoMime: "image/jpeg",
+      tamanhoBytes: 500 * 1024,
+      indicadorId: null,
+      categoria: "balanca" as const,
+      enviadoPor: { papel: "gestor" as const },
+      enviadoEm: "2026-11-07T12:00:00.000Z",
+      removidoEm: null,
     },
   ],
+  usoBytes: 2 * 1024 * 1024 + 1000 + 500 * 1024,
+  cotaBytes: 200 * 1024 * 1024,
 };
 
 function montar(papel: string, dados: FichaAtleta | { erro: number }) {
@@ -294,6 +323,7 @@ describe("TelaFicha", () => {
     atualizarFinanceiro.mockReset();
     lancarResultado.mockReset();
     POST.mockReset();
+    DELETE.mockReset();
     toastFn.mockReset();
     toastFn.error.mockReset();
   });
@@ -401,7 +431,7 @@ describe("TelaFicha", () => {
     montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
     await screen.findByRole("heading", { name: "Helena Vasques" });
     expect(screen.queryByRole("heading", { name: "Plano individual" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Evidências anexadas" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Documentos" })).not.toBeInTheDocument();
     expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/evidencias", expect.anything());
   });
 
@@ -616,12 +646,12 @@ describe("TelaFicha", () => {
     const aba = { opener: {} as unknown, location: { href: "" }, close: vi.fn() };
     const abrir = vi.spyOn(window, "open").mockReturnValue(aba as unknown as Window);
     montar("atleta", ficha());
-    const secao = (await screen.findByRole("heading", { name: "Evidências anexadas" })).closest(
-      "section",
-    )!;
+    const secao = (await screen.findByRole("heading", { name: "Documentos" })).closest("section")!;
     expect(await within(secao).findByText("teste-de-campo.pdf")).toBeInTheDocument();
-    expect(within(secao).getByText(/Indicador de Performance · 05\/11\/2026/)).toBeInTheDocument();
-    expect(within(secao).queryByRole("button", { name: "Anexar arquivo" })).not.toBeInTheDocument();
+    expect(
+      within(secao).getByText(/Indicador de Performance · enviado por o treinador · 05\/11\/2026/),
+    ).toBeInTheDocument();
+    expect(within(secao).getByRole("button", { name: "Anexar arquivo" })).toBeInTheDocument();
 
     fireEvent.click(within(secao).getByRole("button", { name: "Abrir teste-de-campo.pdf" }));
     expect(abrir).toHaveBeenCalledTimes(1);
@@ -684,6 +714,7 @@ describe("TelaFicha", () => {
           tipoMime: "image/png",
           conteudoBase64: "YWJj",
           indicadorId: "perf_1",
+          categoria: "evidencia",
         },
       }),
     );
@@ -998,5 +1029,115 @@ describe("TelaFicha: ordem dos blocos e selos do financeiro", () => {
       (el) => leitura.find((c) => el.classList.contains(c)) ?? "",
     );
     expect(noDom).toEqual(leitura);
+  });
+});
+
+describe("TelaFicha: documentos do atleta (D11)", () => {
+  beforeEach(() => {
+    GET.mockReset();
+    POST.mockReset();
+    DELETE.mockReset();
+    toastFn.mockReset();
+    toastFn.error.mockReset();
+  });
+
+  const secao = async () =>
+    (await screen.findByRole("heading", { name: "Documentos" })).closest("section")!;
+
+  it("agrupa por categoria, mostra quem enviou e a cota", async () => {
+    montar("gestor", ficha());
+    const s = await secao();
+    expect(await within(s).findByText("teste-de-campo.pdf")).toBeInTheDocument();
+    expect(within(s).getByText("Cota de anexos: 2,5 MB de 200 MB")).toBeInTheDocument();
+    const grupos = within(s)
+      .getAllByRole("heading", { level: 3 })
+      .map((h) => h.textContent);
+    expect(grupos).toEqual(["Evidência (1)", "Súmula (1)", "Foto da balança (1)"]);
+    expect(within(s).getByText(/enviado por o treinador/)).toBeInTheDocument();
+    expect(within(s).getByText(/enviado por o atleta/)).toBeInTheDocument();
+    expect(within(s).getByText(/enviado por o gestor/)).toBeInTheDocument();
+    // Gestor não remove: só o atleta remove o que ele mesmo enviou.
+    expect(within(s).queryByRole("button", { name: /^Remover/ })).toBeNull();
+  });
+
+  it("atleta anexa com categoria escolhida", async () => {
+    POST.mockResolvedValue({ data: { ...ANEXOS.anexos[1], id: "e9" }, response: { status: 201 } });
+    montar("atleta", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: "Anexar arquivo" }));
+    const dialogo = screen.getByRole("dialog");
+    fireEvent.change(within(dialogo).getByLabelText("Arquivo"), {
+      target: { files: [new File(["abc"], "sumula.pdf", { type: "application/pdf" })] },
+    });
+    fireEvent.change(within(dialogo).getByLabelText("Categoria"), { target: { value: "sumula" } });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar arquivo" }));
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith("/atletas/{id}/evidencias", {
+        params: { path: { id: "a07" } },
+        body: {
+          nomeArquivo: "sumula.pdf",
+          tipoMime: "application/pdf",
+          conteudoBase64: "YWJj",
+          categoria: "sumula",
+        },
+      }),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("cota excedida (413) mostra mensagem clara e mantém o diálogo", async () => {
+    POST.mockResolvedValue({
+      error: { erro: "cota_excedida", mensagem: "Cota excedida." },
+      response: { status: 413 },
+    });
+    montar("atleta", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: "Anexar arquivo" }));
+    const dialogo = screen.getByRole("dialog");
+    fireEvent.change(within(dialogo).getByLabelText("Arquivo"), {
+      target: { files: [new File(["abc"], "a.pdf", { type: "application/pdf" })] },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar arquivo" }));
+    expect(await within(dialogo).findByRole("alert")).toHaveTextContent(
+      "A cota de 200 MB de anexos foi atingida",
+    );
+  });
+
+  it("atleta remove só o que enviou (204)", async () => {
+    DELETE.mockResolvedValue({ response: { status: 204, ok: true } });
+    montar("atleta", ficha());
+    const s = await secao();
+    await within(s).findByText("sumula-brasileiro.pdf");
+    expect(within(s).getAllByRole("button", { name: /^Remover/ })).toHaveLength(1);
+    expect(within(s).getByText(/enviado por você/)).toBeInTheDocument();
+    fireEvent.click(within(s).getByRole("button", { name: "Remover sumula-brasileiro.pdf" }));
+    const dialogo = screen.getByRole("dialog", { name: "Remover anexo" });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Remover anexo" }));
+    await waitFor(() =>
+      expect(DELETE).toHaveBeenCalledWith("/evidencias/{id}", { params: { path: { id: "e2" } } }),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(toastFn).toHaveBeenCalledWith("Anexo removido");
+  });
+
+  it("remoção de anexo ligado a uma nota (409) explica o motivo", async () => {
+    DELETE.mockResolvedValue({
+      error: { erro: "requisicao_invalida", mensagem: "Anexo em uso." },
+      response: { status: 409, ok: false },
+    });
+    montar("atleta", ficha());
+    const s = await secao();
+    await within(s).findByText("sumula-brasileiro.pdf");
+    fireEvent.click(within(s).getByRole("button", { name: "Remover sumula-brasileiro.pdf" }));
+    const dialogo = screen.getByRole("dialog", { name: "Remover anexo" });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Remover anexo" }));
+    expect(await within(dialogo).findByRole("alert")).toHaveTextContent(
+      "Este anexo está ligado a uma nota e não pode ser removido.",
+    );
+  });
+
+  it("IBVAR não monta o bloco nem consulta os anexos", async () => {
+    montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Documentos" })).not.toBeInTheDocument();
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/evidencias", expect.anything());
   });
 });

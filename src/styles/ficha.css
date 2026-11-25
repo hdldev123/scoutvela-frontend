@@ -91,3 +91,11 @@
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+
+.ficha-docs-grupo {
+  margin-top: 12px;
+}
+.ficha-docs-titulo {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+}
