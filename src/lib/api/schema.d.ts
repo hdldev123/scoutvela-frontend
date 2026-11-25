@@ -296,7 +296,7 @@ export interface paths {
         };
         /**
          * Contagens dos balões do menu lateral (itens que pedem atenção)
-         * @description Só as chaves do papel, sempre presentes (0 quando nada pede atenção). Gestor: `revisoes` (pedidos de revisão e do titular abertos), `cadastro` (atletas ativos sem aceite da versão vigente do termo) e `investimento`. Treinador: `revisoes` (pedidos de revisão abertos dos próprios atletas) e `avaliar` (próprios atletas com indicadores pendentes no ciclo aberto; 0 sem ciclo aberto). Atleta: `painel` (perguntas ainda sem resposta, hoje contadas só com ciclo aberto, + 1 se o termo vigente está pendente + respostas a pedidos de revisão e do titular dadas depois da última marcação de visto). IBVAR: só `investimento`. `investimento` (gestor e IBVAR) vale 1 quando há ciclo fechado depois da última vez que a pessoa marcou a tela como vista (PUT /me/notificacoes/vistas com chave `investimento`), senão 0. `total` é a soma. Feito para consulta a cada 60 s.
+         * @description Só as chaves do papel, sempre presentes (0 quando nada pede atenção). Gestor: `revisoes` (pedidos de revisão e do titular abertos), `cadastro` (atletas ativos sem aceite da versão vigente do termo), `investimento`, `sugestoes` (sugestões dos treinadores ainda abertas) e `avisos` (avisos não lidos, D8). Treinador: `revisoes` (pedidos de revisão abertos dos próprios atletas), `avaliar` (próprios atletas com indicadores pendentes no ciclo aberto; 0 sem ciclo aberto) e `avisos`. Atleta: `avisos` e `painel` (perguntas ainda sem resposta, hoje contadas só com ciclo aberto, + 1 se o termo vigente está pendente + respostas a pedidos de revisão e do titular dadas depois da última marcação de visto). IBVAR: só `investimento`. `investimento` (gestor e IBVAR) vale 1 quando há ciclo fechado depois da última vez que a pessoa marcou a tela como vista (PUT /me/notificacoes/vistas com chave `investimento`), senão 0. `total` é a soma. Feito para consulta a cada 60 s.
          */
         get: {
             parameters: {
@@ -8196,6 +8196,855 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/avisos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Meus avisos (sino), do mais recente para o mais antigo
+         * @description Avisos do próprio usuário (gestor, treinador e atleta). IBVAR não recebe avisos: lista vazia. Paginação por data: `antesDe` é o `proximoAntesDe` da página anterior (instante ISO; só vêm avisos criados antes dele). `limite` de 1 a 100 (padrão 20). Aviso que cita um atleta só aparece enquanto o usuário pode ver esse atleta. Para `pedido_ajuste` o item traz `mensagem` e `indicador` (o destinatário é o próprio atleta); o front monta a frase dos demais tipos.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    apenasNaoLidos?: "true" | "false";
+                    limite?: number;
+                    antesDe?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                id: string;
+                                /** @enum {string} */
+                                tipo: "atleta_respondeu" | "atleta_anexou" | "atleta_atualizou_perfil" | "atleta_completou_cadastro" | "pedido_ajuste" | "sugestao_respondida";
+                                /** @description Instante ISO */
+                                criadoEm: string;
+                                /** @description Instante ISO; nulo = não lido */
+                                lidoEm: string | null;
+                                atleta: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Só ids e nomes de campo: `{ indicadorId }`, `{ anexoId, categoria }`, `{ campos }`, `{ pedidoAjusteId }`, `{ sugestaoId, status }` */
+                                referencia: {
+                                    [key: string]: unknown;
+                                };
+                                criadoPor: {
+                                    nome: string;
+                                    papel: string;
+                                } | null;
+                                /** @description Texto puro do pedido de ajuste (tipo `pedido_ajuste`); nulo nos demais tipos */
+                                mensagem: string | null;
+                                /** @description Indicador do pedido de ajuste ou da resposta (`referencia.indicadorId`) */
+                                indicador: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                            }[];
+                            /** @description Passe em `antesDe` para a próxima página; nulo = não há mais */
+                            proximoAntesDe: string | null;
+                            /** @description Total de não lidos do usuário (não só da página) */
+                            naoLidos: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/avisos/lidos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Marca todos os meus avisos como lidos
+         * @description Gestor, treinador e atleta. IBVAR: 403. Não gera auditoria (dado de interface).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            marcados: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/avisos/{id}/lido": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Marca um aviso meu como lido
+         * @description Só o dono do aviso (o de outra pessoa responde 404). Repetir é aceito e mantém a primeira data. Gestor, treinador e atleta; IBVAR: 403. Não gera auditoria (dado de interface).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": null;
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/pedidos-ajuste": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pede ao atleta que revise algo (indicador ou perfil)
+         * @description Gestor, ou o treinador do atleta (o de outro atleta recebe 404). Atleta e IBVAR: 403. `indicadorId` é opcional: sem ele o pedido é sobre o perfil ou algo geral. `mensagem` é texto puro de 1 a 300 caracteres (o front não interpreta HTML). Grava o pedido (só inserção) e cria o aviso `pedido_ajuste` na conta do atleta; se o atleta ainda não tem conta de login, grava o pedido e responde `avisoEnviado: false`. A auditoria guarda só ids (nunca a mensagem).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        mensagem: string;
+                        indicadorId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Falso quando o atleta ainda não tem conta de login (o pedido fica gravado) */
+                            avisoEnviado: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sugestoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sugestões ao gestor: todas (gestor) ou só as minhas (treinador)
+         * @description Gestor vê todas; treinador, só as próprias. Atleta e IBVAR: 403. Do mais recente para o mais antigo, no máximo 200. `faixaAtual` traz a faixa de peso vigente da classe, para o gestor comparar com a `proposta`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "aberta" | "aprovada" | "recusada";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                id: string;
+                                /** @enum {string} */
+                                tipo: "class_fit" | "parametro" | "sistema";
+                                /** @enum {string} */
+                                status: "aberta" | "aprovada" | "recusada";
+                                texto: string;
+                                autor: {
+                                    nome: string;
+                                };
+                                classe: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Só em `class_fit`: a faixa de peso proposta (kg) */
+                                proposta: {
+                                    pesoMinKg: number;
+                                    pesoMedioKg: number;
+                                    pesoMaxKg: number;
+                                } | null;
+                                /** @description Só em `class_fit`: a faixa de peso vigente da classe, para o gestor comparar */
+                                faixaAtual: {
+                                    pesoMinKg: number;
+                                    pesoMedioKg: number;
+                                    pesoMaxKg: number;
+                                } | null;
+                                resposta: string | null;
+                                respondidoPor: {
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO */
+                                respondidoEm: string | null;
+                                /** @description Instante ISO */
+                                criadoEm: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * O treinador sugere uma mudança ao gestor
+         * @description Só o treinador (gestor, atleta e IBVAR: 403). `tipo`: `class_fit` (exige `classeId` existente e `proposta` com `pesoMinKg` <= `pesoMedioKg` <= `pesoMaxKg`, de 0 a 400 kg, arredondados a 1 casa, as mesmas regras de PUT /parametros), `parametro` ou `sistema` (sem `classeId` nem `proposta`). `texto` de 1 a 1.000 caracteres, texto puro. Até 10 sugestões abertas por autor: acima disso, 409. Nada muda nos parâmetros: o gestor responde em PUT /sugestoes/{id}.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        tipo: "class_fit" | "parametro" | "sistema";
+                        classeId?: string;
+                        proposta?: {
+                            pesoMinKg: number;
+                            pesoMedioKg: number;
+                            pesoMaxKg: number;
+                        };
+                        texto: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @enum {string} */
+                            tipo: "class_fit" | "parametro" | "sistema";
+                            /** @enum {string} */
+                            status: "aberta" | "aprovada" | "recusada";
+                            texto: string;
+                            autor: {
+                                nome: string;
+                            };
+                            classe: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Só em `class_fit`: a faixa de peso proposta (kg) */
+                            proposta: {
+                                pesoMinKg: number;
+                                pesoMedioKg: number;
+                                pesoMaxKg: number;
+                            } | null;
+                            /** @description Só em `class_fit`: a faixa de peso vigente da classe, para o gestor comparar */
+                            faixaAtual: {
+                                pesoMinKg: number;
+                                pesoMedioKg: number;
+                                pesoMaxKg: number;
+                            } | null;
+                            resposta: string | null;
+                            respondidoPor: {
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            respondidoEm: string | null;
+                            /** @description Instante ISO */
+                            criadoEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sugestoes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * O gestor aprova ou recusa uma sugestão
+         * @description Só o gestor. `resposta` é obrigatória ao recusar (até 1.000 caracteres) e opcional ao aprovar. Só sugestão aberta: já respondida dá 409. Aprovar NÃO muda o parâmetro: o front leva o gestor a Parâmetros com a proposta preenchida e a mudança segue por PUT /parametros, com a auditoria de sempre. Gera o aviso `sugestao_respondida` ao autor (`referencia`: `{ sugestaoId, status }`). Auditoria `responder_sugestao` só com ids e status.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "aprovada" | "recusada";
+                        resposta?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @enum {string} */
+                            tipo: "class_fit" | "parametro" | "sistema";
+                            /** @enum {string} */
+                            status: "aberta" | "aprovada" | "recusada";
+                            texto: string;
+                            autor: {
+                                nome: string;
+                            };
+                            classe: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Só em `class_fit`: a faixa de peso proposta (kg) */
+                            proposta: {
+                                pesoMinKg: number;
+                                pesoMedioKg: number;
+                                pesoMaxKg: number;
+                            } | null;
+                            /** @description Só em `class_fit`: a faixa de peso vigente da classe, para o gestor comparar */
+                            faixaAtual: {
+                                pesoMinKg: number;
+                                pesoMedioKg: number;
+                                pesoMaxKg: number;
+                            } | null;
+                            resposta: string | null;
+                            respondidoPor: {
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            respondidoEm: string | null;
+                            /** @description Instante ISO */
+                            criadoEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
