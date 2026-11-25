@@ -17,6 +17,7 @@ for (const largura of [900, 1024]) {
       "cadastro",
       "ciclos",
       "revisoes",
+      "mensagens",
       "investimento",
       "usuarios",
       "parametros",

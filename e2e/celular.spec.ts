@@ -19,13 +19,14 @@ const TELAS = {
     "cadastro",
     "ciclos",
     "revisoes",
+    "mensagens",
     "investimento",
     "usuarios",
     "parametros",
     "auditoria",
   ],
-  treinadora: ["ranking", "avaliar", "revisoes"],
-  atleta: ["painel"],
+  treinadora: ["ranking", "avaliar", "revisoes", "mensagens"],
+  atleta: ["painel", "mensagens"],
   ibvar: ["investimento", "ranking"],
 } as const;
 

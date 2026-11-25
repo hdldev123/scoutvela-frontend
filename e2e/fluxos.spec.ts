@@ -91,3 +91,41 @@ test("atleta pede revisão e o gestor responde", async ({ browser }) => {
   await atleta.reload();
   await expect(atleta.getByText("Nota conferida e mantida.")).toBeVisible();
 });
+
+test("atleta e treinadora conversam e o gestor lê por supervisão", async ({ browser }) => {
+  const atleta = await (await browser.newContext()).newPage();
+  await entrar(atleta, "atleta");
+  await linkDoMenu(atleta, "Mensagens").click();
+  await atleta.getByRole("button", { name: /Nova conversa/ }).click();
+  await atleta.getByRole("dialog").getByRole("button", { name: "Abrir conversa" }).click();
+  await expect(atleta).toHaveURL(/\/mensagens\?c=/);
+  await expect(
+    atleta.getByText(/Conversa privada\. A gestão da CBVela só pode lê-la/),
+  ).toBeVisible();
+  const texto = `Bom dia, treinadora ${Date.now()}`;
+  await atleta.getByLabel("Mensagem", { exact: true }).fill(texto);
+  await atleta.getByLabel("Mensagem", { exact: true }).press("Enter");
+  await expect(atleta.getByRole("log").getByText(texto)).toBeVisible();
+
+  const treinadora = await (await browser.newContext()).newPage();
+  await entrar(treinadora, "treinadora");
+  await linkDoMenu(treinadora, "Mensagens").click();
+  await treinadora.getByRole("list").getByRole("button").first().click();
+  await expect(treinadora.getByRole("log").getByText(texto)).toBeVisible();
+  const resposta = `Bom dia! ${Date.now()}`;
+  await treinadora.getByLabel("Mensagem", { exact: true }).fill(resposta);
+  await treinadora.getByRole("button", { name: "Enviar" }).click();
+  await expect(treinadora.getByRole("log").getByText(resposta)).toBeVisible();
+
+  const gestor = await (await browser.newContext()).newPage();
+  await entrar(gestor, "gestor");
+  await linkDoMenu(gestor, "Mensagens").click();
+  await gestor.getByRole("tab", { name: "Supervisão" }).click();
+  await gestor.getByRole("button", { name: "Abrir para supervisão" }).first().click();
+  const dialogo = gestor.getByRole("dialog");
+  await dialogo.getByLabel(/Motivo/).fill("Denúncia de teste");
+  await dialogo.getByRole("button", { name: "Abrir para supervisão" }).click();
+  await expect(gestor.getByText(/Leitura por supervisão até/)).toBeVisible();
+  await expect(gestor.getByRole("log").getByText(texto)).toBeVisible();
+  await expect(gestor.getByLabel("Mensagem", { exact: true })).toBeDisabled();
+});
