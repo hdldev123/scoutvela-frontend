@@ -618,3 +618,94 @@ describe("Mini bio (atleta, D14)", () => {
     expect(screen.queryByRole("textbox", { name: "Mini bio" })).toBeNull();
   });
 });
+
+describe("Modal Meu perfil: sugestão da World Sailing (D19)", () => {
+  const FOTO = "https://assets.sailing.org/images/ana.jpg";
+  const sugestao = (extra: Record<string, unknown> = {}) =>
+    perfil("atleta", {
+      sugestaoWorldSailing: { fotoUrl: FOTO, bio: "Velejadora de ILCA 6.", ...extra },
+    });
+
+  it("mostra a prévia da foto e da bio, com os quatro botões", async () => {
+    montar("atleta", sugestao());
+    await abrir();
+    const cartao = await screen.findByTestId("sugestao-ws");
+    const img = cartao.querySelector("img")!;
+    expect(img).toHaveAttribute("src", FOTO);
+    expect(cartao).toHaveTextContent("Velejadora de ILCA 6.");
+    for (const nome of ["Usar foto", "Usar bio", "Usar as duas", "Dispensar"]) {
+      expect(screen.getByRole("button", { name: nome })).toBeInTheDocument();
+    }
+  });
+
+  it("esconde a prévia quando a imagem não carrega, sem perder o botão", async () => {
+    montar("atleta", sugestao());
+    await abrir();
+    const cartao = await screen.findByTestId("sugestao-ws");
+    fireEvent.error(cartao.querySelector("img")!);
+    expect(cartao.querySelector("img")).toBeNull();
+    expect(cartao).toHaveTextContent("Não foi possível mostrar a prévia da foto aqui.");
+    expect(screen.getByRole("button", { name: "Usar foto" })).toBeInTheDocument();
+  });
+
+  it("só oferece o que veio: sem foto, não há 'Usar foto' nem 'Usar as duas'", async () => {
+    montar("atleta", sugestao({ fotoUrl: null }));
+    await abrir();
+    await screen.findByTestId("sugestao-ws");
+    expect(screen.getByRole("button", { name: "Usar bio" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Usar foto" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Usar as duas" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Dispensar" })).toBeInTheDocument();
+  });
+
+  it("não mostra foto de fora do host da World Sailing", async () => {
+    montar("atleta", sugestao({ fotoUrl: "https://exemplo.com/a.jpg", bio: null }));
+    await abrir();
+    await screen.findByRole("heading", { name: "Mini bio" });
+    expect(screen.queryByTestId("sugestao-ws")).toBeNull();
+  });
+
+  it("sem sugestão (ou para o treinador), o cartão não existe", async () => {
+    montar("atleta", perfil("atleta", { sugestaoWorldSailing: null }));
+    await abrir();
+    await screen.findByRole("heading", { name: "Mini bio" });
+    expect(screen.queryByText("Sugestão da World Sailing")).toBeNull();
+  });
+
+  it.each([
+    ["Usar foto", { usarFoto: true, usarBio: false }],
+    ["Usar bio", { usarFoto: false, usarBio: true }],
+    ["Usar as duas", { usarFoto: true, usarBio: true }],
+    ["Dispensar", { usarFoto: false, usarBio: false }],
+  ])("%s envia a decisão e refaz o perfil", async (botao, corpo) => {
+    POST.mockResolvedValue({
+      data: { ...corpo, usouFoto: corpo.usarFoto, usouBio: corpo.usarBio, fotoUrl: null, bio: "x" },
+      response: { status: 200 },
+    });
+    montar("atleta", sugestao());
+    await abrir();
+    await screen.findByTestId("sugestao-ws");
+    fireEvent.click(screen.getByRole("button", { name: botao }));
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith("/me/perfil/world-sailing", { body: corpo }),
+    );
+    await waitFor(() => expect(toastFn).toHaveBeenCalled());
+    // O perfil é lido de novo (a primeira leitura mais a de depois da decisão).
+    await waitFor(() =>
+      expect(GET.mock.calls.filter((c) => c[0] === "/me/perfil").length).toBeGreaterThan(1),
+    );
+  });
+
+  it("mostra o erro da API (foto inválida) e mantém o cartão", async () => {
+    POST.mockResolvedValue({
+      error: { erro: "requisicao_invalida", mensagem: "A foto precisa ser JPEG ou PNG." },
+      response: { status: 400 },
+    });
+    montar("atleta", sugestao());
+    await abrir();
+    await screen.findByTestId("sugestao-ws");
+    fireEvent.click(screen.getByRole("button", { name: "Usar foto" }));
+    expect(await screen.findByText("A foto precisa ser JPEG ou PNG.")).toBeInTheDocument();
+    expect(screen.getByTestId("sugestao-ws")).toBeInTheDocument();
+  });
+});

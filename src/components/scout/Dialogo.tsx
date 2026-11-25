@@ -36,9 +36,20 @@ export function Dialogo({ titulo, aoFechar, bloqueado = false, children }: Dialo
 
   useSobreposicao({ aoEsc: fechar, caixa: () => caixa.current });
 
+  // Último elemento focado dentro da caixa (ex.: o campo com `autoFocus`). No StrictMode (dev) o
+  // efeito roda, é desfeito e roda de novo: a limpeza devolve o foco a quem abriu, e o segundo efeito
+  // volta a este elemento em vez de cair no primeiro focável (o botão Fechar).
+  const ultimoFocoInterno = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
-    if (!caixa.current?.contains(document.activeElement)) {
-      caixa.current?.querySelector<HTMLElement>(FOCAVEIS)?.focus();
+    const dentro = caixa.current;
+    if (dentro && !dentro.contains(document.activeElement)) {
+      const anterior = ultimoFocoInterno.current;
+      const alvo =
+        anterior?.isConnected && dentro.contains(anterior)
+          ? anterior
+          : dentro.querySelector<HTMLElement>(FOCAVEIS);
+      alvo?.focus();
     }
     return () => {
       if (origem?.isConnected) origem.focus();
@@ -65,6 +76,9 @@ export function Dialogo({ titulo, aoFechar, bloqueado = false, children }: Dialo
         role="dialog"
         aria-modal="true"
         aria-labelledby={idTitulo}
+        onFocus={(e) => {
+          ultimoFocoInterno.current = e.target as HTMLElement;
+        }}
       >
         <div className="panel-head">
           <h2 id={idTitulo}>{titulo}</h2>

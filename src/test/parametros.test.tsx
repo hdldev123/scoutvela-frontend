@@ -1235,3 +1235,125 @@ describe("TelaParametros: fonte da faixa de peso (D18)", () => {
     expect(await screen.findByText("Data inválida.")).toBeInTheDocument();
   });
 });
+
+describe("TelaParametros: níveis da World Sailing (D19)", () => {
+  const REGRA_WS = {
+    niveis: {
+      "Olympic Games": "mundial",
+      "World Championships": "mundial",
+      Continental: "continental",
+    },
+  };
+  const comRegra: Parametros = {
+    ...params,
+    regras: [
+      ...params.regras,
+      {
+        codigo: "WS_NIVEIS",
+        descricao: "Níveis da World Sailing",
+        valor: REGRA_WS,
+        atualizadoEm: "2026-11-25T12:00:00.000Z",
+      },
+    ],
+  };
+  const NOME_SALVAR = "Salvar WS_NIVEIS · Níveis da World Sailing";
+
+  async function abrir() {
+    GET.mockImplementation(async (caminho: string) => ({
+      data: caminho === "/termos" ? [] : comRegra,
+      response: { status: 200 },
+    }));
+    PUT.mockResolvedValue({ data: comRegra, response: { status: 200 } });
+    renderizar();
+    await screen.findByRole("tab", { name: "Regras provisórias" });
+    irPara("Regras provisórias");
+    return screen.findByRole("button", { name: NOME_SALVAR });
+  }
+
+  beforeEach(() => {
+    GET.mockReset();
+    PUT.mockReset();
+    window.location.hash = "";
+    toastFn.success.mockReset();
+  });
+
+  it("mostra a tabela com os níveis atuais e a nota sobre o que fica fora", async () => {
+    const salvar = await abrir();
+    expect(screen.getByLabelText("Nível na World Sailing, linha 1")).toHaveValue("Olympic Games");
+    expect(screen.getByLabelText("Nível no Scout Vela, linha 1")).toHaveValue("mundial");
+    expect(screen.getByLabelText("Nível no Scout Vela, linha 3")).toHaveValue("continental");
+    expect(
+      screen.getByText(
+        /Nível da World Sailing fora da tabela vale como internacional aberto e não pontua/,
+      ),
+    ).toBeInTheDocument();
+    expect(salvar).toBeDisabled();
+    // A regra não aparece de novo na lista de somente leitura.
+    expect(screen.getAllByText("WS_NIVEIS")).toHaveLength(1);
+  });
+
+  it("adiciona, edita e remove linhas e envia o objeto niveis", async () => {
+    const salvar = await abrir();
+    fireEvent.click(screen.getByRole("button", { name: "Remover linha 2" }));
+    fireEvent.click(screen.getByRole("button", { name: /Adicionar nível/ }));
+    // Linha nova vazia: não dá para salvar.
+    expect(screen.getByRole("alert")).toHaveTextContent(/Linha 3: o nome do nível/);
+    expect(salvar).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Nível na World Sailing, linha 3"), {
+      target: { value: "  Sailing World Cup Series  " },
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent(/Linha 3: escolha o nível no Scout Vela/);
+    fireEvent.change(screen.getByLabelText("Nível no Scout Vela, linha 3"), {
+      target: { value: "sul_americano" },
+    });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(salvar).toBeEnabled();
+    fireEvent.click(salvar);
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          regras: {
+            WS_NIVEIS: {
+              niveis: {
+                "Olympic Games": "mundial",
+                Continental: "continental",
+                "Sailing World Cup Series": "sul_americano",
+              },
+            },
+          },
+        },
+      }),
+    );
+  });
+
+  it("recusa nome repetido e nome acima de 120 caracteres", async () => {
+    const salvar = await abrir();
+    fireEvent.change(screen.getByLabelText("Nível na World Sailing, linha 2"), {
+      target: { value: "Olympic Games" },
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent(/já está na tabela/);
+    expect(salvar).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Nível na World Sailing, linha 2"), {
+      target: { value: "x".repeat(120) },
+    });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(salvar).toBeEnabled();
+    expect(PUT).not.toHaveBeenCalled();
+  });
+
+  it("tabela vazia é válida: tudo vira internacional aberto", async () => {
+    const salvar = await abrir();
+    for (let i = 0; i < 3; i++) {
+      fireEvent.click(screen.getByRole("button", { name: "Remover linha 1" }));
+    }
+    expect(
+      screen.getByText(/toda regata importada vale como internacional aberto/),
+    ).toBeInTheDocument();
+    fireEvent.click(salvar);
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: { regras: { WS_NIVEIS: { niveis: {} } } },
+      }),
+    );
+  });
+});

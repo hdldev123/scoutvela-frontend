@@ -12,7 +12,7 @@ import { ACEITA_ARQUIVO, validarArquivo } from "@/lib/api/evidencias";
 import {
   ANO_MIN_RESULTADO,
   NIVEIS_RESULTADO,
-  ROTULO_STATUS_RESULTADO,
+  situacaoDoResultado,
   useEnviarResultado,
   useResultados,
   type NivelResultado,
@@ -411,7 +411,7 @@ function ListaResultadosEnviados({
       <h3 style={{ margin: "14px 0 0", fontSize: "1rem" }}>Resultados enviados</h3>
       <ul className="pes-lista">
         {itens.map((r) => {
-          const st = ROTULO_STATUS_RESULTADO[r.status];
+          const st = situacaoDoResultado(r);
           return (
             <li key={r.id}>
               <span className="pes-peso">
@@ -419,6 +419,7 @@ function ListaResultadosEnviados({
               </span>
               <span className="muted">{rotuloNivelHistorico(r.nivel)}</span>
               <span className={`pill ${st.classe}`}>{st.rotulo}</span>
+              {r.fonte === "world_sailing" && <span className="pill st-info">World Sailing</span>}
               {r.validadoPor && r.validadoEm && (
                 <span className="muted">
                   por {r.validadoPor.nome} em {fmtInstante(r.validadoEm)}
@@ -435,7 +436,10 @@ function ListaResultadosEnviados({
                 </AbrirEvidencia>
               )}
               {r.status === "recusado" && r.motivo && (
-                <span className="pes-motivo">Motivo da recusa: {r.motivo}</span>
+                <span className="pes-motivo">
+                  {r.fonte === "world_sailing" ? "Motivo da invalidação" : "Motivo da recusa"}:{" "}
+                  {r.motivo}
+                </span>
               )}
             </li>
           );

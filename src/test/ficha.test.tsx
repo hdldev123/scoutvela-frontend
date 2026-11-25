@@ -307,6 +307,13 @@ const SEM_AUTOAVALIACAO = {
 let autoavaliacao: unknown = SEM_AUTOAVALIACAO;
 let pesagens: unknown = { itens: [] };
 let resultadosApi: ({ status: string } & Record<string, unknown>)[] = [];
+const WS_VAZIO = {
+  perfilUrl: "https://www.sailing.org/sailor/?ref=BRAHV07",
+  importacaoAtiva: true,
+  ultimaImportacao: null,
+  ranking: [] as unknown[],
+};
+let wsApi: unknown = WS_VAZIO;
 let conquistasApi: { automaticas: unknown[]; manuais: unknown[] } = {
   automaticas: [],
   manuais: [],
@@ -327,6 +334,9 @@ function montar(papel: string, dados: FichaAtleta | { erro: number }) {
         data: { itens: resultadosApi.filter((x) => !status || x.status === status) },
         response: { status: 200 },
       });
+    }
+    if (caminho === "/atletas/{id}/world-sailing") {
+      return Promise.resolve({ data: wsApi, response: { status: 200 } });
     }
     if (caminho === "/atletas/{id}/conquistas") {
       return Promise.resolve({ data: conquistasApi, response: { status: 200 } });
@@ -383,6 +393,7 @@ describe("TelaFicha", () => {
     autoavaliacao = SEM_AUTOAVALIACAO;
     pesagens = { itens: [] };
     resultadosApi = [];
+    wsApi = WS_VAZIO;
     conquistasApi = { automaticas: [], manuais: [] };
     GET.mockReset();
     atualizarGate.mockReset();
@@ -1973,5 +1984,199 @@ describe("TelaFicha: fonte da faixa de Class Fit (D18)", () => {
     montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
     await screen.findByRole("heading", { name: "Helena Vasques" });
     expect(screen.queryByText(/Fonte da faixa/)).not.toBeInTheDocument();
+  });
+});
+
+describe("TelaFicha: World Sailing (D19)", () => {
+  const RANKING = [
+    { data: "2026-09-01", classe: "ILCA 6", tipo: "Senior", posicao: 12, pontos: 410.5 },
+    { data: "2026-06-01", classe: "ILCA 6", tipo: "Senior", posicao: 20, pontos: 380 },
+    { data: "2026-03-01", classe: "ILCA 6", tipo: "Senior", posicao: 31, pontos: 300 },
+    { data: "2026-09-01", classe: "ILCA 7", tipo: null, posicao: 80, pontos: null },
+  ];
+  const SECAO = {
+    perfilUrl: "https://www.sailing.org/sailor/?ref=BRAHV07",
+    importacaoAtiva: true,
+    ultimaImportacao: { em: "2026-11-25T15:00:00.000Z", status: "ok" },
+    ranking: RANKING,
+  };
+  const RES_WS = {
+    ...RES_BASE,
+    id: "w1",
+    data: "2026-08-10",
+    nivel: "mundial",
+    evento: "Sailing World Championships (ILCA 6)",
+    edicao: 2026,
+    posicao: 7,
+    tamanhoFrota: null,
+    internacional: true,
+    pontosCbvela: null,
+    fonte: "world_sailing" as const,
+    linkOficial: "https://www.sailing.org/sailor/?ref=BRAHV07",
+  };
+
+  beforeEach(() => {
+    GET.mockReset();
+    POST.mockReset();
+    PUT.mockReset();
+    toastFn.mockReset();
+    toastFn.error.mockReset();
+    toastFn.success.mockReset();
+    resultadosApi = [];
+    wsApi = SECAO;
+  });
+
+  it("mostra link do perfil, última atualização, gráfico e tabela do ranking", async () => {
+    montar("gestor", ficha());
+    const secao = (await screen.findByRole("heading", { name: "World Sailing" })).closest(
+      "section",
+    )!;
+    const link = await within(secao).findByRole("link", { name: /Ver perfil público/ });
+    expect(link).toHaveAttribute("href", "https://www.sailing.org/sailor/?ref=BRAHV07");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(within(secao).getByText(/Última atualização:/)).toHaveTextContent("Importado");
+    // Série com mais pontos primeiro; eixo invertido: a melhor posição fica acima da pior.
+    const pontos = within(secao).getAllByTestId("ws-ponto");
+    expect(pontos).toHaveLength(3);
+    const cy = (i: number) => Number(pontos[i]!.querySelector("circle")!.getAttribute("cy"));
+    expect(cy(2)).toBeLessThan(cy(0)); // 12º (mais novo) acima do 31º (mais antigo)
+    expect(within(secao).getByRole("img", { name: /Quanto menor o número, melhor/ })).toBeVisible();
+    const tabela = within(secao).getByRole("table");
+    expect(within(tabela).getByText("12º")).toBeInTheDocument();
+    expect(within(tabela).getByText("31º")).toBeInTheDocument();
+  });
+
+  it("filtra por classe e tipo", async () => {
+    montar("gestor", ficha());
+    const select = await screen.findByLabelText("Classe e tipo de ranking");
+    expect(
+      within(select)
+        .getAllByRole("option")
+        .map((o) => o.textContent),
+    ).toEqual(["ILCA 6 · Senior", "ILCA 7"]);
+    fireEvent.change(select, {
+      target: { value: (select as HTMLSelectElement).options[1]!.value },
+    });
+    expect(await screen.findAllByTestId("ws-ponto")).toHaveLength(1);
+    expect(
+      within(screen.getByRole("table", { name: /ILCA 7/ })).getByText("80º"),
+    ).toBeInTheDocument();
+  });
+
+  it("atualiza da World Sailing (gestor) e avisa o resumo", async () => {
+    POST.mockResolvedValue({
+      data: { status: "ok", resultadosNovos: 2, rankingNovos: 3 },
+      response: { status: 200 },
+    });
+    montar("gestor", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: /Atualizar da World Sailing/ }));
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith("/atletas/{id}/world-sailing", {
+        params: { path: { id: "a07" } },
+      }),
+    );
+    await waitFor(() =>
+      expect(toastFn.success).toHaveBeenCalledWith(
+        "Importados da World Sailing: 2 resultados e 3 posições de ranking.",
+      ),
+    );
+  });
+
+  it("mostra a mensagem da API quando o limite de buscas estoura", async () => {
+    POST.mockResolvedValue({
+      error: { erro: "limite_excedido", mensagem: "Aguarde 60 segundos para buscar de novo." },
+      response: { status: 429 },
+    });
+    montar("treinador", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: /Atualizar da World Sailing/ }));
+    await waitFor(() =>
+      expect(toastFn.error).toHaveBeenCalledWith("Aguarde 60 segundos para buscar de novo."),
+    );
+  });
+
+  it("esconde o botão com a importação desligada", async () => {
+    wsApi = { ...SECAO, importacaoAtiva: false };
+    montar("gestor", ficha());
+    await screen.findByRole("heading", { name: "World Sailing" });
+    expect(screen.queryByRole("button", { name: /Atualizar da World Sailing/ })).toBeNull();
+  });
+
+  it("o atleta vê a seção, sem o botão de atualizar", async () => {
+    montar("atleta", ficha());
+    await screen.findByRole("heading", { name: "World Sailing" });
+    expect(screen.queryByRole("button", { name: /Atualizar da World Sailing/ })).toBeNull();
+  });
+
+  it("o IBVAR não vê a seção e a rota nem é chamada", async () => {
+    montar("ibvar", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "World Sailing" })).toBeNull();
+    expect(GET.mock.calls.some((c) => c[0] === "/atletas/{id}/world-sailing")).toBe(false);
+  });
+
+  it("sem ranking, mostra o estado vazio e o status da busca", async () => {
+    wsApi = {
+      ...SECAO,
+      ranking: [],
+      ultimaImportacao: { em: "2026-11-25T15:00:00.000Z", status: "nao_encontrado" },
+    };
+    montar("gestor", ficha());
+    expect(await screen.findByText("Sem histórico de ranking importado")).toBeInTheDocument();
+    expect(screen.getByText(/ID não encontrado na World Sailing/)).toBeInTheDocument();
+  });
+
+  it("resultado da World Sailing: selo, vigente e invalidar com motivo obrigatório", async () => {
+    PUT.mockResolvedValue({ data: { ...RES_WS, status: "recusado" }, response: { status: 200 } });
+    montar("gestor", ficha({ resultados: [RES_WS] }));
+    const linha = (await screen.findByText("Sailing World Championships (ILCA 6)")).closest("tr")!;
+    expect(within(linha).getByRole("link", { name: /World Sailing/ })).toBeInTheDocument();
+    expect(within(linha).getByText("Vigente")).toBeInTheDocument();
+    expect(within(linha).queryByRole("button", { name: /Revalidar/ })).toBeNull();
+    fireEvent.click(within(linha).getByRole("button", { name: /^Invalidar 7º em/ }));
+    const dialogo = await screen.findByRole("dialog");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Invalidar resultado" }));
+    expect(
+      await within(dialogo).findByText("Explique o motivo da invalidação."),
+    ).toBeInTheDocument();
+    expect(PUT).not.toHaveBeenCalled();
+    fireEvent.change(within(dialogo).getByLabelText("Motivo (obrigatório)"), {
+      target: { value: "  Evento de outro velejador.  " },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Invalidar resultado" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/resultados/{id}/validacao", {
+        params: { path: { id: "w1" } },
+        body: { decisao: "recusar", motivo: "Evento de outro velejador." },
+      }),
+    );
+  });
+
+  it("resultado invalidado mostra o motivo e oferece só Revalidar", async () => {
+    PUT.mockResolvedValue({ data: { ...RES_WS, status: "validado" }, response: { status: 200 } });
+    montar(
+      "treinador",
+      ficha({
+        resultados: [{ ...RES_WS, status: "recusado", motivo: "Evento de outro velejador." }],
+      }),
+    );
+    const linha = (await screen.findByText("Sailing World Championships (ILCA 6)")).closest("tr")!;
+    expect(within(linha).getByText("Invalidado")).toBeInTheDocument();
+    expect(within(linha).getByText("Motivo: Evento de outro velejador.")).toBeInTheDocument();
+    expect(within(linha).queryByRole("button", { name: /^Invalidar/ })).toBeNull();
+    fireEvent.click(within(linha).getByRole("button", { name: /^Revalidar 7º em/ }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/resultados/{id}/validacao", {
+        params: { path: { id: "w1" } },
+        body: { decisao: "validar" },
+      }),
+    );
+  });
+
+  it("o atleta vê o selo e a situação, sem botões de decisão", async () => {
+    montar("atleta", ficha({ resultados: [RES_WS] }));
+    const linha = (await screen.findByText("Sailing World Championships (ILCA 6)")).closest("tr")!;
+    expect(within(linha).getByText("Vigente")).toBeInTheDocument();
+    expect(within(linha).queryByRole("button")).toBeNull();
   });
 });

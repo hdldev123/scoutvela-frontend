@@ -26,6 +26,13 @@ describe("CSP", () => {
     expect(diretiva(cspDoVercel(), "img-src")).toContain("https://*.supabase.co");
   });
 
+  it("libera só a prévia da foto da World Sailing em img-src, sem curinga", () => {
+    const img = diretiva(cspDoVercel(), "img-src")!;
+    expect(img).toContain("https://assets.sailing.org");
+    expect(img).not.toContain("*.sailing");
+    expect(diretiva(cspDoVercel(), "connect-src")).not.toContain("sailing.org");
+  });
+
   it("libera o vídeo do login hospedado no Storage em media-src", () => {
     expect(diretiva(cspDoVercel(), "media-src")).toContain("https://*.supabase.co");
   });
@@ -38,7 +45,9 @@ describe("CSP", () => {
   });
 
   it("o README descreve o img-src real", () => {
-    expect(ler("README.md")).toContain("img-src 'self' data: blob: https://*.supabase.co");
+    expect(ler("README.md")).toContain(
+      "img-src 'self' data: blob: https://*.supabase.co https://assets.sailing.org",
+    );
   });
 });
 

@@ -140,4 +140,20 @@ export const ROTULO_FONTE_RESULTADO: Record<ResultadoAtleta["fonte"], string> = 
   ranking_cbvela: "Ranking CBVela",
   manual: "Lançado pela equipe",
   atleta: "Informado pelo atleta",
+  world_sailing: "World Sailing",
 };
+
+/**
+ * Situação para mostrar. O resultado da World Sailing nasce vigente (`validado`) e, depois de
+ * invalidado pelo treinador ou pelo gestor (`recusado`, com motivo), fica "Invalidado".
+ */
+export function situacaoDoResultado(r: Pick<ResultadoAtleta, "fonte" | "status">): {
+  rotulo: string;
+  classe: string;
+} {
+  if (r.fonte === "world_sailing") {
+    if (r.status === "validado") return { rotulo: "Vigente", classe: "st-apto" };
+    if (r.status === "recusado") return { rotulo: "Invalidado", classe: "st-alerta" };
+  }
+  return ROTULO_STATUS_RESULTADO[r.status];
+}

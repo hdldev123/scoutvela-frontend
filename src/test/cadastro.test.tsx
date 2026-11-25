@@ -130,12 +130,41 @@ const criado = (extra: Record<string, unknown> = {}) =>
       cadastroCompleto: false,
       termo: { status: "aguardando_aceite", versao: "v1" },
       conta: "convite_enviado",
+      worldSailing: { status: "desligado", resultadosNovos: 0, rankingNovos: 0 },
       ...extra,
     },
     201,
   );
 
 describe("TelaCadastro", () => {
+  it.each([
+    [
+      { status: "ok", resultadosNovos: 12, rankingNovos: 40 },
+      "Importados da World Sailing: 12 resultados e 40 posições de ranking.",
+    ],
+    [
+      { status: "nao_encontrado", resultadosNovos: 0, rankingNovos: 0 },
+      /o ID não foi encontrado no site da World Sailing/,
+    ],
+    [
+      { status: "falhou", resultadosNovos: 0, rankingNovos: 0 },
+      /O cadastro foi salvo. World Sailing: a busca falhou agora/,
+    ],
+    [
+      { status: "desligado", resultadosNovos: 0, rankingNovos: 0 },
+      /importação está desligada neste ambiente/,
+    ],
+  ])("mostra o resumo da World Sailing (%j) sem bloquear o cadastro", async (ws, texto) => {
+    POST.mockImplementation(async () => criado({ worldSailing: ws }));
+    montar();
+    await aguardarOpcoes();
+    preencherBasico();
+    confirmar18();
+    enviar();
+    expect(await screen.findByText(/Termo enviado \(v1\)/)).toBeTruthy();
+    expect(screen.getByTestId("cad-ws-resumo")).toHaveTextContent(texto);
+  });
+
   it("cadastra pelo WS ID normalizado, sem VelaID, e mostra o link do atleta criado", async () => {
     POST.mockImplementation(async () => criado());
     montar();

@@ -77,7 +77,7 @@ describe("Primeiro acesso do atleta", () => {
   });
 
   it("com cadastro pendente mostra a tela, sem as outras telas, com a sugestão e o WS ID", () => {
-    montar({ wsId: "BRABL05", velaid: "MG-T15", sugestao: SUGESTAO });
+    montar({ wsId: "BRABL05", velaid: "MG-T15", sugestao: SUGESTAO, origemSugestao: "velaid" });
     expect(screen.getByRole("heading", { level: 1, name: "Complete seu cadastro" })).toBeTruthy();
     expect(screen.queryByTestId("outlet")).toBeNull();
     expect(screen.getByTestId("shell").getAttribute("data-com-menu")).toBe("nao");
@@ -88,12 +88,44 @@ describe("Primeiro acesso do atleta", () => {
     expect((screen.getByRole("radio", { name: "Masculino" }) as HTMLInputElement).checked).toBe(
       true,
     );
-    expect(screen.getByText(/Preenchemos com os dados do seu cadastro no VelaID/)).toBeTruthy();
+    expect(screen.getByTestId("cad-origem").textContent).toMatch(/^Sugerido pelo VelaID/);
     const link = screen.getByRole("link", {
       name: /Perfil de BRABL05 no World Sailing [(]abre em nova aba[)]/,
     });
     expect(link.getAttribute("href")).toBe("https://www.sailing.org/sailor/?ref=BRABL05");
     expect(screen.getByText(/Pedimos só o que o programa usa/)).toBeTruthy();
+  });
+
+  it("sugestão da World Sailing: pré-preenche o que veio, indica a origem e deixa o resto vazio", async () => {
+    PUT.mockResolvedValue(
+      ok({ nome: "Bruno Lima", genero: "M", dataNascimento: "2005-03-02", cadastroCompleto: true }),
+    );
+    montar({
+      wsId: "BRABL05",
+      velaid: null,
+      sugestao: { nome: "Bruno Lima", genero: null, dataNascimento: null },
+      origemSugestao: "world_sailing",
+    });
+    expect(screen.getByTestId("cad-origem").textContent).toMatch(/^Sugerido pela World Sailing/);
+    expect((screen.getByLabelText("Nome completo") as HTMLInputElement).value).toBe("Bruno Lima");
+    expect((screen.getByRole("radio", { name: "Masculino" }) as HTMLInputElement).checked).toBe(
+      false,
+    );
+    expect((screen.getByLabelText("Data de nascimento") as HTMLInputElement).value).toBe("");
+    // Campo nulo fica para o atleta: sem ele, a validação segura o envio.
+    fireEvent.click(screen.getByRole("button", { name: "Concluir cadastro" }));
+    expect(screen.getByText("Escolha o gênero.")).toBeTruthy();
+    expect(PUT).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("radio", { name: "Masculino" }));
+    fireEvent.change(screen.getByLabelText("Data de nascimento"), {
+      target: { value: "2005-03-02" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Concluir cadastro" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/me/cadastro", {
+        body: { nome: "Bruno Lima", genero: "M", dataNascimento: "2005-03-02" },
+      }),
+    );
   });
 
   it("envia os dados, invalida o ['me'] e agradece", async () => {
@@ -119,7 +151,7 @@ describe("Primeiro acesso do atleta", () => {
   it("sem sugestão os campos começam vazios e a validação aparece embaixo de cada um", () => {
     montar({ wsId: "BRABL05", velaid: null, sugestao: null });
     expect((screen.getByLabelText("Nome completo") as HTMLInputElement).value).toBe("");
-    expect(screen.queryByText(/Preenchemos com os dados/)).toBeNull();
+    expect(screen.queryByTestId("cad-origem")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Concluir cadastro" }));
     expect(screen.getByText("O nome precisa ter de 2 a 120 caracteres.")).toBeTruthy();
     expect(screen.getByText("Escolha o gênero.")).toBeTruthy();
