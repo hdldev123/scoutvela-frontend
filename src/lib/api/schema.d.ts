@@ -1215,11 +1215,17 @@ export interface paths {
                                         valor: number;
                                         lancadoEm: string;
                                     } | null;
-                                    /** @description Nota sugerida pelos pontos do Ranking CBVela (regra PERF_PONTOS). Só em perf_nacional e com a regra ativa; não entra no score até o avaliador lançar a nota. */
-                                    sugestaoPontos: {
-                                        nota: number;
-                                        /** @description Pontos do Ranking CBVela na janela */
-                                        pontos: number;
+                                    /** @description Só nos indicadores de resultado (perf_mundial, perf_continental, perf_nacional): de onde veio a nota calculada, em texto. Sem resultado validado no nível, a nota vale `sem_resultado` (0) e o texto diz isso */
+                                    explicacao: string | null;
+                                    /** @description Os dados de `explicacao`, para a tela montar o texto; nulo fora dos indicadores de resultado */
+                                    resultado: {
+                                        /** @enum {string} */
+                                        nivel: "mundial" | "continental" | "nacional";
+                                        /** @description Melhor colocação validada que definiu a nota */
+                                        posicao: number;
+                                        /** @description Ano da edição dessa colocação */
+                                        edicao: number;
+                                        evento: string;
                                     } | null;
                                     anexo: {
                                         id: string;
@@ -1264,17 +1270,47 @@ export interface paths {
                                     situacao: "dentro" | "abaixo" | "acima" | null;
                                 };
                             } | null;
+                            /** @description Todos os resultados do atleta, com a situação de cada um. O IBVAR recebe só os validados, sem anexo, motivo nem quem validou. Só os validados entram na nota e nos gates */
                             resultados: {
+                                /** @description Identificador do resultado (PUT /resultados/:id/validacao) */
+                                id: string;
+                                /** @description AAAA-MM-DD */
                                 data: string;
                                 nivel: string;
                                 evento: string;
+                                /** @description Ano da edição (nos resultados lançados antes da D10, o ano da data) */
+                                edicao: number;
                                 posicao: number;
-                                tamanhoFrota: number;
+                                /** @description Nulo quando o atleta informou o resultado sem a frota; a nota não depende dela */
+                                tamanhoFrota: number | null;
                                 internacional: boolean;
+                                /** @description Só informação: não entra na nota */
                                 pontosCbvela: number | null;
-                                /** @enum {string} */
-                                fonte: "ranking_cbvela" | "manual";
+                                /**
+                                 * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                                 * @enum {string}
+                                 */
+                                fonte: "ranking_cbvela" | "manual" | "atleta";
                                 linkOficial: string | null;
+                                /**
+                                 * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                                 * @enum {string}
+                                 */
+                                status: "validado" | "pendente" | "recusado";
+                                /** @description Motivo da recusa; nulo para o IBVAR */
+                                motivo: string | null;
+                                /** @description Súmula anexada pelo atleta (GET /evidencias/:id/link); nula para o IBVAR */
+                                anexo: {
+                                    id: string;
+                                    nomeArquivo: string;
+                                } | null;
+                                /** @description Quem validou ou recusou por último; nulo para o IBVAR */
+                                validadoPor: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO; nulo para o IBVAR */
+                                validadoEm: string | null;
                             }[];
                             financeiro: ({
                                 /** @enum {string} */
@@ -1532,7 +1568,7 @@ export interface paths {
         };
         /**
          * Histórico de lançamentos de um indicador, do mais novo para o mais antigo
-         * @description Mesma matriz de acesso da ficha: gestor vê todos, treinador só os próprios atletas, atleta só a si. Inclui a sugestão do atleta ainda pendente (pendente: true, origem resposta_sugerida ou autoavaliacao) e a justificativa da nota do treinador. cf_peso_kg (calculado) traz as pesagens, com a nota pela regra P3 atual. IBVAR: pilar sensível dá 403; nos demais, sem evidência, avaliador, anexo, justificativa nem sugestão pendente (a aprovação aparece como `avaliacao`). Atleta fora do acesso ou indicador inexistente: 404.
+         * @description Mesma matriz de acesso da ficha: gestor vê todos, treinador só os próprios atletas, atleta só a si. Inclui a sugestão do atleta ainda pendente (pendente: true, origem resposta_sugerida ou autoavaliacao) e a justificativa da nota do treinador. cf_peso_kg (calculado) traz as pesagens, com a nota pela regra P3 atual; perf_mundial, perf_continental e perf_nacional (calculados) trazem um item por resultado validado do nível, com a nota que a colocação daria pela regra PERF_RESULTADOS atual (só as últimas `edicoes_max` edições entram na nota do indicador). IBVAR: pilar sensível dá 403; nos demais, sem evidência, avaliador, anexo, justificativa nem sugestão pendente (a aprovação aparece como `avaliacao`). Atleta fora do acesso ou indicador inexistente: 404.
          */
         get: {
             parameters: {
@@ -1888,13 +1924,6 @@ export interface paths {
                                 /** @description Instante ISO */
                                 em: string;
                             }[];
-                            /** @description Nota sugerida para perf_nacional pelos pontos do Ranking CBVela (regra PERF_PONTOS). Nula com a regra desligada. Não entra na prévia nem no score: o avaliador confirma lançando a nota. */
-                            sugestaoPontos: {
-                                indicadorId: string;
-                                nota: number;
-                                /** @description Pontos do Ranking CBVela na janela */
-                                pontos: number;
-                            } | null;
                         };
                     };
                 };
@@ -1985,7 +2014,7 @@ export interface paths {
         put?: never;
         /**
          * Lança notas e/ou medida do atleta (série histórica: só insere)
-         * @description Origem da nota: se o atleta sugeriu a nota (autoavaliação) no ciclo aberto, nota igual grava `autoavaliacao_aprovada` e nota diferente grava a correção, com `justificativa` obrigatória (400 em `notas.N.justificativa`) e aviso `autoavaliacao_corrigida` ao atleta. Sem sugestão: resposta_confirmada se o atleta respondeu à pergunta do indicador, senão avaliacao (justificativa opcional). Indicador calculado (peso) ou tipo R é recusado.
+         * @description Origem da nota: se o atleta sugeriu a nota (autoavaliação) no ciclo aberto, nota igual grava `autoavaliacao_aprovada` e nota diferente grava a correção, com `justificativa` obrigatória (400 em `notas.N.justificativa`) e aviso `autoavaliacao_corrigida` ao atleta. Sem sugestão: resposta_confirmada se o atleta respondeu à pergunta do indicador, senão avaliacao (justificativa opcional). Indicador calculado (o peso e os de resultado: perf_mundial, perf_continental, perf_nacional) ou tipo R é recusado (400).
          */
         post: {
             parameters: {
@@ -2439,7 +2468,7 @@ export interface paths {
         };
         /**
          * Atleta × treinador: a sugestão do atleta e a nota do treinador por indicador
-         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). `?ciclo=<id>`; sem ele, o ciclo aberto ou, não havendo, o último fechado. Traz os indicadores com autoavaliação ligada e os que já têm sugestão no ciclo. `diferenca` = nota do treinador − nota do atleta. `resumoPorPilar` (diferença média por pilar) só vem para o gestor.
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). `?ciclo=<id>`; sem ele, o ciclo aberto ou, não havendo, o último fechado. Traz os indicadores com autoavaliação ligada e os que já têm sugestão no ciclo. `diferenca` = nota do treinador − nota do atleta. `resumoPorPilar` (diferença média por pilar) só vem para o gestor. Cada indicador traz `evidencia` (obrigatoria|opcional) e `orientacao`, e a resposta traz `rubricas` (escala geral com `pilarId` nulo e a de cada pilar com rubrica própria), porque o atleta não lê GET /parametros.
          */
         get: {
             parameters: {
@@ -2471,6 +2500,13 @@ export interface paths {
                                 indicadorId: string;
                                 nome: string;
                                 pilarId: string;
+                                /**
+                                 * @description Se a nota do indicador exige texto de evidência (regra do gestor)
+                                 * @enum {string}
+                                 */
+                                evidencia: "obrigatoria" | "opcional";
+                                /** @description Texto de ajuda do indicador, editável pelo gestor; nulo se não há */
+                                orientacao: string | null;
                                 /** @description Última sugestão do atleta no ciclo */
                                 sugestao: {
                                     /** @description Nota sugerida pelo atleta, de 0 a 5 */
@@ -2504,6 +2540,15 @@ export interface paths {
                                 } | null;
                                 /** @description Nota do treinador menos a do atleta; nulo se falta uma das duas */
                                 diferenca: number | null;
+                            }[];
+                            /** @description Escala de 0 a 5: a geral (pilarId nulo) e a de cada pilar com rubrica própria. O atleta não lê GET /parametros, por isso a escala vem aqui */
+                            rubricas: {
+                                /** @description Nulo = escala geral de 0 a 5 */
+                                pilarId: string | null;
+                                notas: {
+                                    nota: number;
+                                    descricao: string;
+                                }[];
                             }[];
                             /** @description Só para o gestor (nulo para treinador e atleta) */
                             resumoPorPilar: {
@@ -3021,6 +3066,681 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/resultados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O atleta informa um resultado (uma edição de um evento), com a súmula ou o link oficial
+         * @description Só o atleta, no próprio cadastro completo. `nivel`: mundial, continental (inclui Sul-Americano e Pan-Americano) ou nacional (Brasileiro); grava como `mundial`, `continental` ou `brasileiro`. `ano` é a edição (de 2000 ao ano atual). Exige a súmula (`anexoId`: anexo do próprio atleta com categoria `sumula`, enviado em POST /atletas/:id/evidencias) ou o `linkOficial` https (400 nos campos `anexoId` e `linkOficial` se faltar os dois). `tamanhoFrota` é opcional (a nota não depende dele; com ele, a posição não pode passar da frota). `data` é opcional (não futura, dentro do `ano`); sem ela, vale o último dia do ano da edição, ou hoje se o ano é o atual. Limite de edições: no máximo `edicoes_max` (regra PERF_RESULTADOS) do mesmo evento (mesmo nome, sem diferença de maiúsculas e espaços, e mesmo nível): acima disso, 409; edição repetida do mesmo evento, 409. Resultado já recusado não conta nos dois limites (dá para informar de novo). Nasce `pendente`: só entra na nota e nos gates depois da validação do treinador ou do gestor (PUT /resultados/:id/validacao). Avisa o treinador (`atleta_lancou_resultado`, `referencia: { resultadoId }`). Auditoria `informar_resultado` só com ids e nomes de campo.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        evento: string;
+                        /** @enum {string} */
+                        nivel: "mundial" | "continental" | "nacional";
+                        ano: number;
+                        posicao: number;
+                        tamanhoFrota?: number | null;
+                        /** Format: date */
+                        data?: string | null;
+                        /** Format: uuid */
+                        anexoId?: string | null;
+                        /** Format: uri */
+                        linkOficial?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Identificador do resultado (PUT /resultados/:id/validacao) */
+                            id: string;
+                            /** @description AAAA-MM-DD */
+                            data: string;
+                            nivel: string;
+                            evento: string;
+                            /** @description Ano da edição (nos resultados lançados antes da D10, o ano da data) */
+                            edicao: number;
+                            posicao: number;
+                            /** @description Nulo quando o atleta informou o resultado sem a frota; a nota não depende dela */
+                            tamanhoFrota: number | null;
+                            internacional: boolean;
+                            /** @description Só informação: não entra na nota */
+                            pontosCbvela: number | null;
+                            /**
+                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                             * @enum {string}
+                             */
+                            fonte: "ranking_cbvela" | "manual" | "atleta";
+                            linkOficial: string | null;
+                            /**
+                             * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                             * @enum {string}
+                             */
+                            status: "validado" | "pendente" | "recusado";
+                            /** @description Motivo da recusa; nulo para o IBVAR */
+                            motivo: string | null;
+                            /** @description Súmula anexada pelo atleta (GET /evidencias/:id/link); nula para o IBVAR */
+                            anexo: {
+                                id: string;
+                                nomeArquivo: string;
+                            } | null;
+                            /** @description Quem validou ou recusou por último; nulo para o IBVAR */
+                            validadoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO; nulo para o IBVAR */
+                            validadoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/resultados/{id}/validacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Valida ou recusa um resultado informado pelo atleta
+         * @description Gestor ou treinador do atleta (outro treinador e resultado inexistente: 404; atleta e IBVAR: 403). Só vale para resultado da fonte `atleta`; os lançados por gestor ou treinador e os do Ranking CBVela já valem (400). `recusar` exige `motivo` (até 300 caracteres; 400 em `motivo`). A decisão vira uma linha nova na série (nada é sobrescrito): a situação vigente é a da validação mais recente, então dá para mudar de `validado` para `recusado` e vice-versa; repetir a situação atual dá 409. Só o `validado` entra na nota (PERF_RESULTADOS) e nos gates G2 e G3. A súmula fica guardada. Avisa o atleta (`resultado_validado` ou `resultado_recusado`, `referencia: { resultadoId }`). Auditoria `decidir_resultado` sem o motivo.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decisao: "validar" | "recusar";
+                        motivo?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Identificador do resultado (PUT /resultados/:id/validacao) */
+                            id: string;
+                            /** @description AAAA-MM-DD */
+                            data: string;
+                            nivel: string;
+                            evento: string;
+                            /** @description Ano da edição (nos resultados lançados antes da D10, o ano da data) */
+                            edicao: number;
+                            posicao: number;
+                            /** @description Nulo quando o atleta informou o resultado sem a frota; a nota não depende dela */
+                            tamanhoFrota: number | null;
+                            internacional: boolean;
+                            /** @description Só informação: não entra na nota */
+                            pontosCbvela: number | null;
+                            /**
+                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                             * @enum {string}
+                             */
+                            fonte: "ranking_cbvela" | "manual" | "atleta";
+                            linkOficial: string | null;
+                            /**
+                             * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                             * @enum {string}
+                             */
+                            status: "validado" | "pendente" | "recusado";
+                            /** @description Motivo da recusa; nulo para o IBVAR */
+                            motivo: string | null;
+                            /** @description Súmula anexada pelo atleta (GET /evidencias/:id/link); nula para o IBVAR */
+                            anexo: {
+                                id: string;
+                                nomeArquivo: string;
+                            } | null;
+                            /** @description Quem validou ou recusou por último; nulo para o IBVAR */
+                            validadoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO; nulo para o IBVAR */
+                            validadoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/resultados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resultados do atleta, com a situação de cada um
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). Do mais recente para o mais antigo. `?status=validado|pendente|recusado` filtra pela situação (os resultados lançados por gestor, treinador ou importados do Ranking CBVela são sempre `validado`). Cada item traz fonte, edição, súmula (`anexo`), motivo da recusa e quem validou.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "validado" | "pendente" | "recusado";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                /** @description Identificador do resultado (PUT /resultados/:id/validacao) */
+                                id: string;
+                                /** @description AAAA-MM-DD */
+                                data: string;
+                                nivel: string;
+                                evento: string;
+                                /** @description Ano da edição (nos resultados lançados antes da D10, o ano da data) */
+                                edicao: number;
+                                posicao: number;
+                                /** @description Nulo quando o atleta informou o resultado sem a frota; a nota não depende dela */
+                                tamanhoFrota: number | null;
+                                internacional: boolean;
+                                /** @description Só informação: não entra na nota */
+                                pontosCbvela: number | null;
+                                /**
+                                 * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                                 * @enum {string}
+                                 */
+                                fonte: "ranking_cbvela" | "manual" | "atleta";
+                                linkOficial: string | null;
+                                /**
+                                 * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                                 * @enum {string}
+                                 */
+                                status: "validado" | "pendente" | "recusado";
+                                /** @description Motivo da recusa; nulo para o IBVAR */
+                                motivo: string | null;
+                                /** @description Súmula anexada pelo atleta (GET /evidencias/:id/link); nula para o IBVAR */
+                                anexo: {
+                                    id: string;
+                                    nomeArquivo: string;
+                                } | null;
+                                /** @description Quem validou ou recusou por último; nulo para o IBVAR */
+                                validadoPor: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO; nulo para o IBVAR */
+                                validadoEm: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Lança à mão um resultado internacional, com o link do resultado oficial
+         * @description Grava como internacional, fonte manual e sem pontos do Ranking CBVela. Os gates G2 e G3 são recalculados na leitura. Treinador só lança para os próprios atletas.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        nivel: "mundial" | "sul_americano" | "continental" | "internacional_aberto";
+                        evento: string;
+                        /**
+                         * Format: date
+                         * @description AAAA-MM-DD, não futura
+                         */
+                        data: string;
+                        posicao: number;
+                        tamanhoFrota: number;
+                        /** Format: uri */
+                        linkOficial: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Identificador do resultado (PUT /resultados/:id/validacao) */
+                            id: string;
+                            /** @description AAAA-MM-DD */
+                            data: string;
+                            nivel: string;
+                            evento: string;
+                            /** @description Ano da edição (nos resultados lançados antes da D10, o ano da data) */
+                            edicao: number;
+                            posicao: number;
+                            /** @description Nulo quando o atleta informou o resultado sem a frota; a nota não depende dela */
+                            tamanhoFrota: number | null;
+                            internacional: boolean;
+                            /** @description Só informação: não entra na nota */
+                            pontosCbvela: number | null;
+                            /**
+                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                             * @enum {string}
+                             */
+                            fonte: "ranking_cbvela" | "manual" | "atleta";
+                            linkOficial: string | null;
+                            /**
+                             * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                             * @enum {string}
+                             */
+                            status: "validado" | "pendente" | "recusado";
+                            /** @description Motivo da recusa; nulo para o IBVAR */
+                            motivo: string | null;
+                            /** @description Súmula anexada pelo atleta (GET /evidencias/:id/link); nula para o IBVAR */
+                            anexo: {
+                                id: string;
+                                nomeArquivo: string;
+                            } | null;
+                            /** @description Quem validou ou recusou por último; nulo para o IBVAR */
+                            validadoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO; nulo para o IBVAR */
+                            validadoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -5197,6 +5917,8 @@ export interface paths {
                                     exigeAnexo: boolean;
                                     /** @description O atleta pode sugerir a nota deste indicador (POST /autoavaliacoes). O gestor muda em PUT /parametros (indicadores) */
                                     autoavaliacao: boolean;
+                                    /** @description Texto de ajuda do indicador, mostrado embaixo do campo; nulo = sem orientação. O gestor muda em PUT /parametros (indicadores) */
+                                    orientacao: string | null;
                                 }[];
                             }[];
                             faixas: {
@@ -5308,17 +6030,19 @@ export interface paths {
                         }[];
                         /** @description Ids de pilar cujas rubricas próprias saem (volta a valer a escala geral). A escala geral não pode ser removida: nulo ou vazio dão 400 com mensagem explícita */
                         rubricasRemover?: (string | null)[];
-                        /** @description {codigo: valor}; códigos aceitos: P3, G1, G2, G3, G4, RANKING_CBVELA, TERMO_EXIGE_REACEITE, PERF_PONTOS. O valor segue o formato lido em GET /parametros. PERF_PONTOS: { ativa, indicador (opcional, padrão perf_nacional; precisa ser um indicador T não calculado), faixas: [{ ate, nota }] }, ate crescente e nota de 0 a 5 que não diminui */
+                        /** @description {codigo: valor}; códigos aceitos: P3, G1, G2, G3, G4, RANKING_CBVELA, TERMO_EXIGE_REACEITE, PERF_RESULTADOS. O valor segue o formato lido em GET /parametros. PERF_RESULTADOS (regra provisória P12): { edicoes_max (1 a 20), sem_resultado (nota 0 a 5 do nível sem resultado validado, padrão 0), niveis: { mundial, continental, nacional } }, cada nível uma lista de faixas { ate, nota } em ordem: ate crescente (inteiro, 1 a 500), só a última com ate nulo (qualquer colocação), nota inteira de 0 a 5 que não aumenta */
                         regras?: {
                             [key: string]: unknown;
                         };
-                        /** @description Regra por indicador: `evidencia` (obrigatoria ou opcional) e/ou `autoavaliacao` (boolean). A auditoria guarda antes e depois */
+                        /** @description Regra por indicador: `evidencia` (obrigatoria ou opcional), `autoavaliacao` (boolean) e/ou `orientacao` (texto de ajuda, até 1.000 caracteres; null remove). A auditoria guarda antes e depois (da orientação, só se havia texto) */
                         indicadores?: {
                             id: string;
                             /** @enum {string} */
                             evidencia?: "obrigatoria" | "opcional";
                             /** @description Liga ou desliga a autoavaliação do indicador (só tipo T não calculado pode ligar) */
                             autoavaliacao?: boolean;
+                            /** @description Texto de ajuda do indicador (até 1.000 caracteres); null remove */
+                            orientacao?: string | null;
                         }[];
                         classes?: {
                             id: string;
@@ -5365,6 +6089,8 @@ export interface paths {
                                     exigeAnexo: boolean;
                                     /** @description O atleta pode sugerir a nota deste indicador (POST /autoavaliacoes). O gestor muda em PUT /parametros (indicadores) */
                                     autoavaliacao: boolean;
+                                    /** @description Texto de ajuda do indicador, mostrado embaixo do campo; nulo = sem orientação. O gestor muda em PUT /parametros (indicadores) */
+                                    orientacao: string | null;
                                 }[];
                             }[];
                             faixas: {
@@ -6280,160 +7006,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/atletas/{id}/resultados": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Lança à mão um resultado internacional, com o link do resultado oficial
-         * @description Grava como internacional, fonte manual e sem pontos do Ranking CBVela. Os gates G2 e G3 são recalculados na leitura. Treinador só lança para os próprios atletas.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        nivel: "mundial" | "sul_americano" | "continental" | "internacional_aberto";
-                        evento: string;
-                        /**
-                         * Format: date
-                         * @description AAAA-MM-DD, não futura
-                         */
-                        data: string;
-                        posicao: number;
-                        tamanhoFrota: number;
-                        /** Format: uri */
-                        linkOficial: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Default Response */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: string;
-                            nivel: string;
-                            evento: string;
-                            posicao: number;
-                            tamanhoFrota: number;
-                            internacional: boolean;
-                            pontosCbvela: number | null;
-                            /** @enum {string} */
-                            fonte: "ranking_cbvela" | "manual";
-                            linkOficial: string | null;
-                        };
-                    };
-                };
-                /** @description Default Response */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
-                            mensagem: string;
-                            campos?: {
-                                campo: string;
-                                mensagem: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
-                            mensagem: string;
-                            campos?: {
-                                campo: string;
-                                mensagem: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
-                            mensagem: string;
-                            campos?: {
-                                campo: string;
-                                mensagem: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
-                            mensagem: string;
-                            campos?: {
-                                campo: string;
-                                mensagem: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
-                            mensagem: string;
-                            campos?: {
-                                campo: string;
-                                mensagem: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/auditoria": {
         parameters: {
             query?: never;
@@ -6563,7 +7135,7 @@ export interface paths {
         };
         /**
          * Exporta em JSON tudo o que o sistema guarda sobre o atleta (LGPD)
-         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados, decisões de gate, financeiro, pedidos de revisão (com o recurso, se houve) e pedidos do titular, telefone, validade do passaporte e aptidões conferidas, pesagens informadas, pedidos de ajuste recebidos, foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo) e plano individual (todas as versões). Só o atleta logado, só os próprios dados.
+         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados (com a edição e a situação da validação), decisões de gate, financeiro, pedidos de revisão (com o recurso, se houve) e pedidos do titular, telefone, validade do passaporte e aptidões conferidas, pesagens informadas, pedidos de ajuste recebidos, foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo) e plano individual (todas as versões). Só o atleta logado, só os próprios dados.
          */
         get: {
             parameters: {
@@ -9016,7 +9588,7 @@ export interface paths {
                             itens: {
                                 id: string;
                                 /** @enum {string} */
-                                tipo: "atleta_respondeu" | "atleta_anexou" | "atleta_atualizou_perfil" | "atleta_completou_cadastro" | "pedido_ajuste" | "sugestao_respondida" | "atleta_autoavaliou" | "autoavaliacao_corrigida" | "atleta_enviou_pesagem" | "pesagem_validada" | "pesagem_recusada";
+                                tipo: "atleta_respondeu" | "atleta_anexou" | "atleta_atualizou_perfil" | "atleta_completou_cadastro" | "pedido_ajuste" | "sugestao_respondida" | "atleta_autoavaliou" | "autoavaliacao_corrigida" | "atleta_enviou_pesagem" | "pesagem_validada" | "pesagem_recusada" | "atleta_lancou_resultado" | "resultado_validado" | "resultado_recusado";
                                 /** @description Instante ISO */
                                 criadoEm: string;
                                 /** @description Instante ISO; nulo = não lido */
