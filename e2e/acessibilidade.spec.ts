@@ -122,3 +122,13 @@ test("ficha do atleta e modal Meu perfil", async ({ page }) => {
   await expect(page.getByRole("dialog")).toBeVisible();
   await varrer(page, "modal Meu perfil");
 });
+
+test("Parâmetros: editor dos níveis da World Sailing (WS_NIVEIS)", async ({ page }) => {
+  await entrar(page, "gestor");
+  await page.goto("/parametros");
+  await page.getByRole("tab", { name: "Regras provisórias" }).click();
+  await expect(page.getByRole("form", { name: /WS_NIVEIS/ })).toBeVisible();
+  await expect(page.getByLabel("Nível na World Sailing, linha 1")).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  await varrer(page, "Parâmetros: regras provisórias com WS_NIVEIS");
+});
