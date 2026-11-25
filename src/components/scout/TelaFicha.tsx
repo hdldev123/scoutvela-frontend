@@ -6,12 +6,14 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BigScore } from "./BigScore";
+import { ComparacaoAutoavaliacao } from "./ComparacaoAutoavaliacao";
 import { Dialogo } from "./Dialogo";
 import { EvidenciasSecao, AbrirEvidencia, VerVideo } from "./EvidenciasSecao";
 import { FinanceiroDialog } from "./FinanceiroDialog";
 import { GaugeClassFit } from "./GaugeClassFit";
 import { PedirAjusteDialog } from "./PedirAjusteDialog";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
+import { PesagensPendentes } from "./PesagensPendentes";
 import { PlanoIndividual } from "./PlanoIndividual";
 import { ResultadoDialog } from "./ResultadoDialog";
 import { SemAcesso } from "./SemAcesso";
@@ -55,6 +57,8 @@ const ORIGEM_LANCAMENTO: Record<LancamentoHistorico["origem"], string> = {
   avaliacao: "Avaliação",
   resposta_confirmada: "Resposta do atleta confirmada",
   resposta_sugerida: "Sugestão do atleta, aguardando avaliador",
+  autoavaliacao: "Autoavaliação do atleta, aguardando avaliador",
+  autoavaliacao_aprovada: "Autoavaliação do atleta aprovada",
   calculado: "Calculada pela pesagem",
 };
 
@@ -98,6 +102,7 @@ function HistoricoDialog({
               <div className="src">
                 {[ORIGEM_LANCAMENTO[l.origem], l.avaliador?.nome].filter(Boolean).join(" · ")}
               </div>
+              {l.justificativa && <div className="src">Justificativa: {l.justificativa}</div>}
               {l.evidencia ? (
                 <div className="src">Evidência: {l.evidencia}</div>
               ) : (
@@ -182,7 +187,9 @@ function LinhaIndicador({
     const quem =
       ind.origem === "resposta_confirmada"
         ? `Resposta do atleta · nota de ${ind.avaliador?.nome ?? "avaliador"}`
-        : ind.avaliador?.nome;
+        : ind.origem === "autoavaliacao_aprovada"
+          ? `Autoavaliação aprovada por ${ind.avaliador?.nome ?? "avaliador"}`
+          : ind.avaliador?.nome;
     origem =
       [
         ind.evidencia ?? (papel !== "ibvar" && !ind.calculado ? SEM_EVIDENCIA : null),
@@ -197,6 +204,7 @@ function LinhaIndicador({
       <div>
         {ind.nome}
         <div className="src">{origem}</div>
+        {ind.justificativa && <div className="src">Justificativa: {ind.justificativa}</div>}
         {ind.sugestaoPendente && (
           <div className="src">
             Sugestão do atleta: {ind.sugestaoPendente.valor}, aguardando avaliador
@@ -715,6 +723,12 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               lançados com o link do resultado oficial.
             </p>
           </section>
+          {papel !== "ibvar" && (
+            <ComparacaoAutoavaliacao
+              atletaId={atleta.id}
+              pilares={pilares.map((p) => ({ id: p.id, nomeCurto: p.nomeCurto }))}
+            />
+          )}
         </div>
         <div className="ficha-col ficha-col-b">
           <section className="panel ordem-classfit">
@@ -752,6 +766,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               </div>
             )}
           </section>
+          {podeLancar && <PesagensPendentes atletaId={atleta.id} />}
           {ficha.contato && (
             <BlocoContato atletaId={atleta.id} contato={ficha.contato} papel={papel} />
           )}

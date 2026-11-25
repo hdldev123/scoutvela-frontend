@@ -91,6 +91,7 @@ function pilar(
         lancadoEm: nota == null ? null : "2026-11-05T12:00:00.000Z",
         resposta: null,
         sugestaoPendente: null,
+        justificativa: null,
         sugestaoPontos: null,
         anexo: null,
       },
@@ -273,8 +274,18 @@ const ANEXOS = {
   cotaBytes: 200 * 1024 * 1024,
 };
 
+const SEM_AUTOAVALIACAO = { ciclo: null, indicadores: [], resumoPorPilar: null };
+let autoavaliacao: unknown = SEM_AUTOAVALIACAO;
+let pesagens: unknown = { itens: [] };
+
 function montar(papel: string, dados: FichaAtleta | { erro: number }) {
   GET.mockImplementation((caminho: string) => {
+    if (caminho === "/atletas/{id}/autoavaliacao") {
+      return Promise.resolve({ data: autoavaliacao, response: { status: 200 } });
+    }
+    if (caminho === "/atletas/{id}/pesagens") {
+      return Promise.resolve({ data: pesagens, response: { status: 200 } });
+    }
     if (caminho === "/parametros") {
       return Promise.resolve({ data: PARAMETROS, response: { status: 200 } });
     }
@@ -324,6 +335,8 @@ const PLANO = {
 
 describe("TelaFicha", () => {
   beforeEach(() => {
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
     GET.mockReset();
     atualizarGate.mockReset();
     criarRevisao.mockReset();
@@ -1022,7 +1035,7 @@ describe("TelaFicha: ordem dos blocos e selos do financeiro", () => {
     expect(selos2[1]).toHaveClass("st-neutro");
     // Duas colunas reais: a esquerda inteira, depois a direita. A sequência do DOM é a ordem de
     // leitura e de foco no celular.
-    const esquerda = ["ordem-pilares", "ordem-gates", "ordem-historico"];
+    const esquerda = ["ordem-pilares", "ordem-gates", "ordem-historico", "ordem-comparacao"];
     const direita = [
       "ordem-classfit",
       "ordem-contato",
@@ -1224,5 +1237,137 @@ describe("TelaFicha: contato, passaporte e aptidão (D15)", () => {
     await screen.findByRole("heading", { name: "Helena Vasques" });
     expect(screen.queryByRole("heading", { name: "Contato e viagens" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Passaporte/)).not.toBeInTheDocument();
+  });
+});
+
+describe("TelaFicha: atleta × treinador e pesagem (D9)", () => {
+  beforeEach(() => {
+    GET.mockReset();
+  });
+
+  const AUTO = {
+    ciclo: { id: "c1", nome: "Novembro de 2026", status: "aberto" },
+    indicadores: [
+      {
+        indicadorId: "perf_nacional",
+        nome: "Indicador de Performance",
+        pilarId: "perf",
+        sugestao: {
+          valor: 5,
+          evidencia: null,
+          link: null,
+          anexo: null,
+          em: "2026-11-10T12:00:00.000Z",
+        },
+        treinador: {
+          valor: 3,
+          origem: "avaliacao",
+          justificativa: "Resultados abaixo do esperado",
+          avaliador: { nome: "Ana Ribeiro" },
+          em: "2026-11-12T12:00:00.000Z",
+        },
+        diferenca: -2,
+      },
+    ],
+    resumoPorPilar: [{ pilarId: "perf", nomeCurto: "Performance", diferencaMedia: -2 }],
+  };
+
+  const PESAGEM_PENDENTE = {
+    id: "p1",
+    pesoKg: 71.4,
+    status: "pendente",
+    enviadoEm: "2026-11-20T12:00:00.000Z",
+    motivo: null,
+    decididoPor: null,
+    decididoEm: null,
+    anexoId: "anx9",
+  };
+
+  it("gestor vê a comparação com o resumo por pilar", async () => {
+    autoavaliacao = AUTO;
+    montar("gestor", ficha());
+    expect(await screen.findByRole("heading", { name: "Atleta × treinador" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Diferença média por pilar" }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Resultados abaixo do esperado")).toBeInTheDocument();
+    expect(GET).toHaveBeenCalledWith("/atletas/{id}/autoavaliacao", expect.anything());
+  });
+
+  it("treinador vê a comparação sem o resumo por pilar", async () => {
+    autoavaliacao = { ...AUTO, resumoPorPilar: null };
+    montar("treinador", ficha());
+    expect(await screen.findByText("Resultados abaixo do esperado")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Diferença média por pilar" })).toBeNull();
+  });
+
+  it("IBVAR não monta o bloco nem consulta a autoavaliação e as pesagens", async () => {
+    montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Atleta × treinador" })).toBeNull();
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/autoavaliacao", expect.anything());
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/pesagens", expect.anything());
+  });
+
+  it("treinador vê a pesagem pendente para validar", async () => {
+    pesagens = { itens: [PESAGEM_PENDENTE] };
+    montar("treinador", ficha());
+    expect(
+      await screen.findByRole("heading", { name: "Pesagem para validar" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Validar pesagem de 71,4 kg" })).toBeInTheDocument();
+  });
+
+  it("o atleta não vê a lista de pesagens para validar", async () => {
+    pesagens = { itens: [{ ...PESAGEM_PENDENTE, anexoId: null }] };
+    montar("atleta", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Pesagem para validar" })).toBeNull();
+  });
+
+  it("o histórico do indicador mostra a justificativa e a origem da autoavaliação", async () => {
+    montar("gestor", ficha());
+    const anterior = GET.getMockImplementation()!;
+    GET.mockImplementation((caminho: string, opcoes: unknown) =>
+      caminho === "/atletas/{id}/indicadores/{indicadorId}/historico"
+        ? Promise.resolve({
+            data: [
+              {
+                valor: 3,
+                pesoKg: null,
+                evidencia: null,
+                link: null,
+                origem: "avaliacao",
+                justificativa: "Largadas irregulares",
+                pendente: false,
+                avaliador: { id: "u1", nome: "Ana Ribeiro" },
+                lancadoEm: "2026-11-12T12:00:00.000Z",
+                cicloNome: "Novembro de 2026",
+                anexo: null,
+              },
+              {
+                valor: 5,
+                pesoKg: null,
+                evidencia: null,
+                link: null,
+                origem: "autoavaliacao",
+                justificativa: null,
+                pendente: true,
+                avaliador: null,
+                lancadoEm: "2026-11-10T12:00:00.000Z",
+                cicloNome: "Novembro de 2026",
+                anexo: null,
+              },
+            ],
+            response: { status: 200 },
+          })
+        : anterior(caminho, opcoes),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /^Performance/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ver histórico de Indicador de Performance" }),
+    );
+    expect(await screen.findByText("Justificativa: Largadas irregulares")).toBeInTheDocument();
+    expect(screen.getByText(/Autoavaliação do atleta, aguardando avaliador/)).toBeInTheDocument();
   });
 });
