@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { Shell } from "@/components/scout/Shell";
+import { TelaCompletarCadastro } from "@/components/scout/TelaCompletarCadastro";
 import { ErroApi } from "@/lib/api/cliente";
 import { useMe, useSessao } from "@/lib/auth/sessao";
 
@@ -44,6 +45,16 @@ export function LayoutAutenticado() {
     );
   }
   if (isPending || !me) return <Aviso texto="Carregando…" />;
+
+  // Primeiro acesso do atleta: nenhuma outra tela antes de completar o cadastro.
+  if (me.cadastroPendente) {
+    return (
+      <Shell me={null} onSair={sair}>
+        <TelaCompletarCadastro pendente={me.cadastroPendente} aoSair={() => void sair()} />
+        <Toaster position="bottom-center" containerAriaLabel="Notificações" />
+      </Shell>
+    );
+  }
 
   return (
     <Shell me={me} onSair={sair}>
