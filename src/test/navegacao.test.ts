@@ -8,7 +8,7 @@ const gestor = {
 };
 
 describe("navegação por papel", () => {
-  it("gestor vê as cinco telas com rótulo e rota", () => {
+  it("gestor vê as telas liberadas e Sugestões, com rótulo e rota", () => {
     const itens = itensDeNavegacao(gestor);
     expect(itens.map((i) => i.rotulo)).toEqual([
       "Ranking",
@@ -16,6 +16,7 @@ describe("navegação por papel", () => {
       "Cadastrar atleta",
       "Investimento",
       "Parâmetros",
+      "Sugestões",
     ]);
     expect(itens.map((i) => i.to)).toEqual([
       "/ranking",
@@ -23,7 +24,23 @@ describe("navegação por papel", () => {
       "/cadastro",
       "/investimento",
       "/parametros",
+      "/sugestoes",
     ]);
+  });
+
+  it("Sugestões é de gestor e treinador; atleta e IBVAR não ganham o item", () => {
+    const tem = (papel: string, telas: string[]) =>
+      itensDeNavegacao({ usuario: { papel }, atleta: null, telas }).some(
+        (i) => i.tela === "sugestoes",
+      );
+    expect(tem("gestor", ["ranking"])).toBe(true);
+    expect(tem("treinador", ["ranking"])).toBe(true);
+    expect(tem("atleta", ["painel"])).toBe(false);
+    expect(tem("ibvar", ["investimento"])).toBe(false);
+    // Se o back passar a listar a tela em `telas`, o item não duplica.
+    expect(
+      itensDeNavegacao({ usuario: { papel: "gestor" }, atleta: null, telas: ["sugestoes"] }),
+    ).toHaveLength(1);
   });
 
   it("treinador vê o ranking como Meus atletas", () => {
@@ -32,7 +49,7 @@ describe("navegação por papel", () => {
       atleta: null,
       telas: ["ranking", "avaliar"],
     });
-    expect(itens.map((i) => i.rotulo)).toEqual(["Meus atletas", "Lançar avaliação"]);
+    expect(itens.map((i) => i.rotulo)).toEqual(["Meus atletas", "Lançar avaliação", "Sugestões"]);
     expect(itens[0]?.to).toBe("/ranking");
   });
 

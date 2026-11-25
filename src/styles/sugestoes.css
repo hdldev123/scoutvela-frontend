@@ -1,0 +1,122 @@
+.scout .panel-head .filters.sug-filtro {
+  margin-bottom: 0;
+}
+.sug-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.sug-acoes p {
+  flex: 1 1 100%;
+  margin: 0;
+}
+.sug-lista {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sug-item {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  min-width: 0;
+}
+.sug-topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.sug-meta {
+  margin-left: auto;
+  font-size: 0.85rem;
+}
+.sug-texto,
+.sug-resposta,
+.sug-contexto {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.sug-contexto {
+  margin-bottom: 12px;
+}
+.sug-resposta {
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+}
+.sug-compara {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+.sug-compara dt {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+.sug-compara dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+@media (width <= 520px) {
+  .sug-compara {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sug-meta {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}
+.sug-atual {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+.sug-pesos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.sug-pesos legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.sug-pesos legend {
+  grid-column: 1 / -1;
+}
+@media (width <= 520px) {
+  .sug-pesos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.sug-contador {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}
+.par-proposta {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--sea);
+  border-radius: 10px;
+  background: var(--paper);
+  font-size: 0.9rem;
+}

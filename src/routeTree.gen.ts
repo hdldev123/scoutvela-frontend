@@ -23,6 +23,7 @@ import { Route as AppPainelRouteImport } from './routes/_app/painel'
 import { Route as AppParametrosRouteImport } from './routes/_app/parametros'
 import { Route as AppRankingRouteImport } from './routes/_app/ranking'
 import { Route as AppRevisoesRouteImport } from './routes/_app/revisoes'
+import { Route as AppSugestoesRouteImport } from './routes/_app/sugestoes'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 import { Route as AppAtletasIdRouteImport } from './routes/_app/atletas.$id'
 
@@ -95,6 +96,11 @@ const AppRevisoesRoute = AppRevisoesRouteImport.update({
   path: '/revisoes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSugestoesRoute = AppSugestoesRouteImport.update({
+  id: '/sugestoes',
+  path: '/sugestoes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppUsuariosRoute = AppUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/parametros': typeof AppParametrosRoute
   '/ranking': typeof AppRankingRoute
   '/revisoes': typeof AppRevisoesRoute
+  '/sugestoes': typeof AppSugestoesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/atletas/$id': typeof AppAtletasIdRoute
 }
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/parametros': typeof AppParametrosRoute
   '/ranking': typeof AppRankingRoute
   '/revisoes': typeof AppRevisoesRoute
+  '/sugestoes': typeof AppSugestoesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/atletas/$id': typeof AppAtletasIdRoute
 }
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/_app/parametros': typeof AppParametrosRoute
   '/_app/ranking': typeof AppRankingRoute
   '/_app/revisoes': typeof AppRevisoesRoute
+  '/_app/sugestoes': typeof AppSugestoesRoute
   '/_app/usuarios': typeof AppUsuariosRoute
   '/_app/atletas/$id': typeof AppAtletasIdRoute
 }
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | '/parametros'
     | '/ranking'
     | '/revisoes'
+    | '/sugestoes'
     | '/usuarios'
     | '/atletas/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/parametros'
     | '/ranking'
     | '/revisoes'
+    | '/sugestoes'
     | '/usuarios'
     | '/atletas/$id'
   id:
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/_app/parametros'
     | '/_app/ranking'
     | '/_app/revisoes'
+    | '/_app/sugestoes'
     | '/_app/usuarios'
     | '/_app/atletas/$id'
   fileRoutesById: FileRoutesById
@@ -322,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRevisoesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/sugestoes': {
+      id: '/_app/sugestoes'
+      path: '/sugestoes'
+      fullPath: '/sugestoes'
+      preLoaderRoute: typeof AppSugestoesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/usuarios': {
       id: '/_app/usuarios'
       path: '/usuarios'
@@ -349,6 +368,7 @@ interface AppRouteChildren {
   AppParametrosRoute: typeof AppParametrosRoute
   AppRankingRoute: typeof AppRankingRoute
   AppRevisoesRoute: typeof AppRevisoesRoute
+  AppSugestoesRoute: typeof AppSugestoesRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
   AppAtletasIdRoute: typeof AppAtletasIdRoute
 }
@@ -363,6 +383,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppParametrosRoute: AppParametrosRoute,
   AppRankingRoute: AppRankingRoute,
   AppRevisoesRoute: AppRevisoesRoute,
+  AppSugestoesRoute: AppSugestoesRoute,
   AppUsuariosRoute: AppUsuariosRoute,
   AppAtletasIdRoute: AppAtletasIdRoute,
 }

@@ -10,7 +10,8 @@ import { SecaoEvidencia } from "./ParametrosEvidencia";
 import { SecaoFaixas, SecaoRubricas } from "./ParametrosFaixasRubricas";
 import { SecaoRegras } from "./ParametrosRegras";
 import { SecaoTermos } from "./ParametrosTermos";
-import { analisarAltura, MSG_SALVO } from "./parametros-util";
+import { SugestaoDialog } from "./SugestaoDialog";
+import { analisarAltura, MSG_SALVO, type PropostaClasse } from "./parametros-util";
 import { errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
 import { useParametros, useSalvarParametros, type Parametros } from "@/lib/api/parametros";
 
@@ -25,7 +26,14 @@ function lerKg(texto: string): number | null {
 }
 
 /** Tela de parâmetros da metodologia (gestor). Pesos e faixas de peso editáveis; o resto é leitura. */
-export function TelaParametros({ papel = "gestor" }: { papel?: string }) {
+export function TelaParametros({
+  papel = "gestor",
+  proposta,
+}: {
+  papel?: string;
+  /** Faixa proposta por uma sugestão aprovada (D7): preenche o Class Fit, sem salvar. */
+  proposta?: PropostaClasse;
+}) {
   const consulta = useParametros();
   return (
     <>
@@ -55,7 +63,7 @@ export function TelaParametros({ papel = "gestor" }: { papel?: string }) {
           {mensagemDeErro(consulta.error)}
         </div>
       ) : (
-        <ConteudoParametros dados={consulta.data} gestor={papel === "gestor"} />
+        <ConteudoParametros dados={consulta.data} gestor={papel === "gestor"} proposta={proposta} />
       )}
     </>
   );
@@ -101,7 +109,15 @@ function useAbaNoHash(validas: string[]): [string, (id: string) => void] {
   return [ativa, mudar];
 }
 
-function ConteudoParametros({ dados, gestor }: { dados: Parametros; gestor: boolean }) {
+function ConteudoParametros({
+  dados,
+  gestor,
+  proposta,
+}: {
+  dados: Parametros;
+  gestor: boolean;
+  proposta: PropostaClasse | undefined;
+}) {
   const itens = ABAS.filter((a) => gestor || a.id !== "termo");
   const [ativa, mudar] = useAbaNoHash(itens.map((i) => i.id));
   return (
@@ -115,13 +131,15 @@ function ConteudoParametros({ dados, gestor }: { dados: Parametros; gestor: bool
       </PainelAba>
       <PainelAba id="classes" ativa={ativa === "classes"} manter>
         <SecaoClasses
-          key={dados.classes
+          key={`${proposta ? JSON.stringify(proposta) : ""}|${dados.classes
             .map(
               (c) =>
                 `${c.pesoMinKg}/${c.pesoMedioKg}/${c.pesoMaxKg}/${c.alturaMinCm}/${c.alturaMediaCm}/${c.alturaMaxCm}/${c.ativa}`,
             )
-            .join(",")}
+            .join(",")}`}
           dados={dados}
+          gestor={gestor}
+          proposta={proposta}
         />
       </PainelAba>
       <PainelAba id="rubricas" ativa={ativa === "rubricas"} manter>
@@ -228,16 +246,28 @@ type Linha = Record<Campo, string> & { ativa: boolean };
 
 const txtAltura = (v: number | null) => (v == null ? "" : String(v).replace(".", ","));
 
-function SecaoClasses({ dados }: { dados: Parametros }) {
+function SecaoClasses({
+  dados,
+  gestor,
+  proposta,
+}: {
+  dados: Parametros;
+  gestor: boolean;
+  proposta: PropostaClasse | undefined;
+}) {
   const salvar = useSalvarParametros();
+  const [sugerindo, setSugerindo] = useState<string | null>(null);
+  const classeDaProposta = proposta
+    ? dados.classes.find((c) => c.id === proposta.classe)
+    : undefined;
   const [linhas, setLinhas] = useState<Record<string, Linha>>(() =>
     Object.fromEntries(
       dados.classes.map((c) => [
         c.id,
         {
-          min: fmt1(c.pesoMinKg),
-          med: fmt1(c.pesoMedioKg),
-          max: fmt1(c.pesoMaxKg),
+          min: fmt1(proposta && c.id === proposta.classe ? proposta.min : c.pesoMinKg),
+          med: fmt1(proposta && c.id === proposta.classe ? proposta.med : c.pesoMedioKg),
+          max: fmt1(proposta && c.id === proposta.classe ? proposta.max : c.pesoMaxKg),
           aMin: txtAltura(c.alturaMinCm),
           aMed: txtAltura(c.alturaMediaCm),
           aMax: txtAltura(c.alturaMaxCm),
@@ -336,6 +366,7 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
         ? atributosDoCampo(`classe-erro-${c.id}`, erroServidorDaClasse(c.id, [CAMPOS_API[k]]))
         : { "aria-invalid": erro })}
       value={linhas[c.id]![k]}
+      readOnly={!gestor}
       onChange={(e) => mudar(c.id, k, e.target.value)}
     />
   );
@@ -350,6 +381,22 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
           </span>
         </div>
         <p className="panel-dica">A altura é informativa (não entra no score nem nos gates).</p>
+        {classeDaProposta && proposta && (
+          <p className="par-proposta" role="note">
+            <i className="ph ph-lightbulb" aria-hidden="true" />
+            <span>
+              Proposta de uma sugestão aprovada preenchida em {classeDaProposta.nome}:{" "}
+              {fmt1(proposta.min)} / {fmt1(proposta.med)} / {fmt1(proposta.max)} kg. A faixa só muda
+              quando você salvar; se não concordar, ajuste os valores ou saia sem salvar.
+            </span>
+          </p>
+        )}
+        {!gestor && (
+          <p className="panel-dica">
+            Você vê as faixas em leitura. Para propor uma mudança, use "Sugerir mudança": o gestor
+            aprova ou recusa.
+          </p>
+        )}
         <div
           className="table-scroll"
           tabIndex={0}
@@ -401,6 +448,14 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
                       id={`classe-erro-${c.id}`}
                       texto={erroServidorDaClasse(c.id, Object.values(CAMPOS_API))}
                     />
+                    {!gestor && (
+                      <button type="button" className="btn sm" onClick={() => setSugerindo(c.id)}>
+                        Sugerir mudança{" "}
+                        <span className="sr-only">
+                          em {c.nome}, {POSICAO[c.posicao]}
+                        </span>
+                      </button>
+                    )}
                   </td>
                   <td className="num">{campo(c, "min", "Mínimo", !!a.erro)}</td>
                   <td className="num">{campo(c, "med", "Média", !!a.erro)}</td>
@@ -433,20 +488,29 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
             {mensagemDeErro(salvar.error)}
           </p>
         )}
-        <div className="btn-row" style={{ marginTop: 14 }}>
-          <button
-            className="btn primary"
-            type="submit"
-            disabled={alteradas.length === 0 || comErro || salvar.isPending}
-          >
-            {salvar.isPending
-              ? "Salvando…"
-              : alteradas.length > 1
-                ? `Salvar ${alteradas.length} classes`
-                : "Salvar faixas da classe"}
-          </button>
-        </div>
+        {gestor && (
+          <div className="btn-row" style={{ marginTop: 14 }}>
+            <button
+              className="btn primary"
+              type="submit"
+              disabled={alteradas.length === 0 || comErro || salvar.isPending}
+            >
+              {salvar.isPending
+                ? "Salvando…"
+                : alteradas.length > 1
+                  ? `Salvar ${alteradas.length} classes`
+                  : "Salvar faixas da classe"}
+            </button>
+          </div>
+        )}
       </form>
+      {sugerindo && (
+        <SugestaoDialog
+          modo="class_fit"
+          classeInicial={sugerindo}
+          aoFechar={() => setSugerindo(null)}
+        />
+      )}
     </section>
   );
 }

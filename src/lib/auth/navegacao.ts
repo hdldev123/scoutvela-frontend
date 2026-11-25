@@ -29,15 +29,35 @@ const ITENS: Record<string, { rotulo: string; icone: string; to: string }> = {
   investimento: { rotulo: "Investimento", icone: "chart-line-up", to: "/investimento" },
   usuarios: { rotulo: "Contas", icone: "users-three", to: "/usuarios" },
   parametros: { rotulo: "Parâmetros", icone: "sliders-horizontal", to: "/parametros" },
+  sugestoes: { rotulo: "Sugestões", icone: "lightbulb", to: "/sugestoes" },
   auditoria: { rotulo: "Auditoria", icone: "list-magnifying-glass", to: "/auditoria" },
   painel: { rotulo: "Meu painel", icone: "gauge", to: "/painel" },
   ficha: { rotulo: "Minha ficha", icone: "identification-card", to: "/atletas/$id" },
 };
 
+/**
+ * Telas que o back ainda não lista em `telas` de `/me`, mas que o papel acessa: Sugestões (D7)
+ * é de gestor e treinador. É só o menu; a API segue decidindo (403 para atleta e IBVAR).
+ */
+const TELAS_POR_PAPEL: Record<string, string[]> = {
+  gestor: ["sugestoes"],
+  treinador: ["sugestoes"],
+};
+
+function telasDoMenu(me: Me): string[] {
+  const extras = (TELAS_POR_PAPEL[me.usuario.papel] ?? []).filter((t) => !me.telas.includes(t));
+  return [...me.telas, ...extras];
+}
+
+/** O papel tem esta tela (liberada pela API em `/me` ou por `TELAS_POR_PAPEL`)? */
+export function temTela(me: Me, tela: string): boolean {
+  return telasDoMenu(me).includes(tela);
+}
+
 /** Itens de navegação a partir das telas liberadas pela API (`/me`). */
 export function itensDeNavegacao(me: Me): ItemNav[] {
   const itens: ItemNav[] = [];
-  for (const tela of me.telas) {
+  for (const tela of telasDoMenu(me)) {
     const base = ITENS[tela];
     if (!base) continue;
     if (tela === "ficha") {
@@ -66,7 +86,14 @@ export function rotaDaTelaInicial(telaInicial: string): string {
 }
 
 /** Telas do menu que têm balão; a chave de `/me/notificacoes` tem o mesmo nome da tela. */
-const TELAS_COM_BALAO = new Set(["revisoes", "cadastro", "avaliar", "painel", "investimento"]);
+const TELAS_COM_BALAO = new Set([
+  "revisoes",
+  "cadastro",
+  "avaliar",
+  "painel",
+  "investimento",
+  "sugestoes",
+]);
 
 /** Contagem do balão de uma tela (0 quando a tela não tem balão ou nada pede atenção). */
 export function contagemDaTela(
