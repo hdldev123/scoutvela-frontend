@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { capturarHashDoLink } from "./link-senha";
 
 let cliente: SupabaseClient | null = null;
 
@@ -7,6 +8,8 @@ export function getSupabase(): SupabaseClient {
   if (typeof window === "undefined") {
     throw new Error("O cliente Supabase só pode ser usado no navegador.");
   }
+  // Antes de criar o cliente: ele consome e limpa o hash do link de convite ou de redefinição.
+  if (!cliente) capturarHashDoLink();
   cliente ??= createClient(
     import.meta.env.VITE_SUPABASE_URL,
     import.meta.env.VITE_SUPABASE_ANON_KEY,

@@ -26,6 +26,11 @@ const TELAS = {
 
 const LARGURAS = [1280, 1024, 390] as const;
 
+// O axe mede o contraste do estado na tela. Um aviso (sonner) ainda entrando, com o texto
+// semitransparente, dava falso "color-contrast" no CI. Com "reduzir movimento" o sonner tira
+// as transições, e a varredura vê o estado final.
+test.use({ reducedMotion: "reduce" });
+
 async function varrer(page: Page, rotulo: string) {
   const r = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   const resumo = r.violations.map(
