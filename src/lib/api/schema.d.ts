@@ -296,7 +296,7 @@ export interface paths {
         };
         /**
          * Contagens dos balões do menu lateral (itens que pedem atenção)
-         * @description Só as chaves do papel, sempre presentes (0 quando nada pede atenção). Gestor: `revisoes` (pedidos de revisão e do titular abertos), `cadastro` (atletas ativos sem aceite da versão vigente do termo), `investimento`, `sugestoes` (sugestões dos treinadores ainda abertas) e `avisos` (avisos não lidos, D8). Treinador: `revisoes` (pedidos de revisão abertos dos próprios atletas), `avaliar` (próprios atletas com indicadores pendentes no ciclo aberto; 0 sem ciclo aberto) e `avisos`. Atleta: `avisos` e `painel` (perguntas ainda sem resposta, hoje contadas só com ciclo aberto, + 1 se o termo vigente está pendente + respostas a pedidos de revisão e do titular dadas depois da última marcação de visto). IBVAR: só `investimento`. `investimento` (gestor e IBVAR) vale 1 quando há ciclo fechado depois da última vez que a pessoa marcou a tela como vista (PUT /me/notificacoes/vistas com chave `investimento`), senão 0. `total` é a soma. Feito para consulta a cada 60 s.
+         * @description Só as chaves do papel, sempre presentes (0 quando nada pede atenção). Gestor: `revisoes` (pedidos de revisão e do titular abertos), `cadastro` (atletas ativos sem aceite da versão vigente do termo), `investimento`, `sugestoes` (sugestões dos treinadores ainda abertas), `avisos` (avisos não lidos, D8, sem os de mensagem nova, que já contam em `conversas`) e `conversas` (mensagens não lidas das caixas compartilhadas da gestão, D16). Treinador: `revisoes` (pedidos de revisão abertos dos próprios atletas), `avaliar` (próprios atletas com indicadores pendentes no ciclo aberto; 0 sem ciclo aberto), `avisos` e `conversas` (mensagens não lidas, D16). Atleta: `avisos`, `conversas` (mensagens não lidas) e `painel` (perguntas ainda sem resposta, hoje contadas só com ciclo aberto, + 1 se o termo vigente está pendente + respostas a pedidos de revisão e do titular dadas depois da última marcação de visto). IBVAR: só `investimento`. `investimento` (gestor e IBVAR) vale 1 quando há ciclo fechado depois da última vez que a pessoa marcou a tela como vista (PUT /me/notificacoes/vistas com chave `investimento`), senão 0. `total` é a soma. Feito para consulta a cada 60 s.
          */
         get: {
             parameters: {
@@ -3603,6 +3603,810 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Minhas conversas (chat), da mais recente para a mais antiga
+         * @description Gestor, treinador e atleta; IBVAR: 403. Atleta: a conversa com o treinador atual, as de treinadores antigos (somente leitura) e a com a gestão. Treinador: as com os próprios atletas, as de pares antigos (somente leitura) e a com a gestão. Gestor: as caixas compartilhadas `gestao_atleta` e `gestao_treinador` (todos os gestores ativos veem e respondem; `naoLidas` é por gestor). `naoLidas` conta as mensagens de outras pessoas depois de PUT /conversas/{id}/lidas. Com `?supervisao=true` (só gestor; outros 403): as conversas `treinador_atleta` só com metadados (participantes e datas; `naoLidas` sempre 0, sem trecho nem contagem de mensagens), para o gestor saber que existem; a leitura exige POST /conversas/{id}/acesso-supervisao.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    supervisao?: "true" | "false";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                /** Format: uuid */
+                                id: string;
+                                /** @enum {string} */
+                                tipo: "treinador_atleta" | "gestao_atleta" | "gestao_treinador";
+                                /** @description Com quem a pessoa conversa: o outro lado (nome e papel) ou `{ gestao: true }` (caixa compartilhada da gestão da CBVela) */
+                                com: {
+                                    nome: string;
+                                    /** @enum {string} */
+                                    papel: "atleta" | "treinador";
+                                } | {
+                                    /** @enum {boolean} */
+                                    gestao: true;
+                                };
+                                atleta: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Treinador do par (tipos `treinador_atleta` e `gestao_treinador`) */
+                                treinador: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO */
+                                criadaEm: string;
+                                /** @description Instante ISO; nulo = ainda sem mensagens */
+                                ultimaMensagemEm: string | null;
+                                naoLidas: number;
+                                /** @description Verdadeiro quando não dá para enviar: par antigo (troca de treinador), conta desativada ou gestor lendo por supervisão */
+                                somenteLeitura: boolean;
+                                /** @description Só para o gestor: até quando vale o acesso de supervisão dele; nulo = sem acesso */
+                                supervisaoAte: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Abre uma conversa (ou devolve a que já existe)
+         * @description `tipo`: `treinador_atleta`, `gestao_atleta` ou `gestao_treinador`. Quem pode abrir com quem (regra no SQL): o atleta abre `treinador_atleta` com o próprio treinador atual e `gestao_atleta` (`atletaId` e `treinadorId` são dispensáveis; apontar outra pessoa dá 403); o treinador abre `treinador_atleta` com atleta próprio e ativo (`atletaId` obrigatório; de outro treinador, 404) e `gestao_treinador`; o gestor abre `gestao_atleta` com qualquer atleta ativo (`atletaId`) e `gestao_treinador` com qualquer treinador ativo (`treinadorId`), e não abre `treinador_atleta` (403). Atleta com atleta não existe; IBVAR: 403. Há uma conversa por par, uma `gestao_atleta` por atleta e uma `gestao_treinador` por treinador: se já existe, devolve a existente com 200; se criou, 201. Auditoria `abrir_conversa` só com ids e tipo.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        tipo: "treinador_atleta" | "gestao_atleta" | "gestao_treinador";
+                        /** Format: uuid */
+                        atletaId?: string;
+                        /** Format: uuid */
+                        treinadorId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** @enum {string} */
+                            tipo: "treinador_atleta" | "gestao_atleta" | "gestao_treinador";
+                            /** @description Com quem a pessoa conversa: o outro lado (nome e papel) ou `{ gestao: true }` (caixa compartilhada da gestão da CBVela) */
+                            com: {
+                                nome: string;
+                                /** @enum {string} */
+                                papel: "atleta" | "treinador";
+                            } | {
+                                /** @enum {boolean} */
+                                gestao: true;
+                            };
+                            atleta: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Treinador do par (tipos `treinador_atleta` e `gestao_treinador`) */
+                            treinador: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            criadaEm: string;
+                            /** @description Instante ISO; nulo = ainda sem mensagens */
+                            ultimaMensagemEm: string | null;
+                            naoLidas: number;
+                            /** @description Verdadeiro quando não dá para enviar: par antigo (troca de treinador), conta desativada ou gestor lendo por supervisão */
+                            somenteLeitura: boolean;
+                            /** @description Só para o gestor: até quando vale o acesso de supervisão dele; nulo = sem acesso */
+                            supervisaoAte: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** @enum {string} */
+                            tipo: "treinador_atleta" | "gestao_atleta" | "gestao_treinador";
+                            /** @description Com quem a pessoa conversa: o outro lado (nome e papel) ou `{ gestao: true }` (caixa compartilhada da gestão da CBVela) */
+                            com: {
+                                nome: string;
+                                /** @enum {string} */
+                                papel: "atleta" | "treinador";
+                            } | {
+                                /** @enum {boolean} */
+                                gestao: true;
+                            };
+                            atleta: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Treinador do par (tipos `treinador_atleta` e `gestao_treinador`) */
+                            treinador: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            criadaEm: string;
+                            /** @description Instante ISO; nulo = ainda sem mensagens */
+                            ultimaMensagemEm: string | null;
+                            naoLidas: number;
+                            /** @description Verdadeiro quando não dá para enviar: par antigo (troca de treinador), conta desativada ou gestor lendo por supervisão */
+                            somenteLeitura: boolean;
+                            /** @description Só para o gestor: até quando vale o acesso de supervisão dele; nulo = sem acesso */
+                            supervisaoAte: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversas/{id}/mensagens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mensagens de uma conversa, em ordem cronológica
+         * @description Só as partes da conversa; o gestor lê uma `treinador_atleta` só com supervisão vigente (POST /conversas/{id}/acesso-supervisao); sem acesso, 404 (não revela que a conversa existe). Sem filtros: as `limite` mais recentes. `antesDe` (instante ISO): as mensagens anteriores a ele, para rolar o histórico (`proximoAntesDe` da resposta anterior). `depoisDe` (instante ISO): só as mais novas, para consulta a cada 15 a 30 segundos. `propria` é verdadeiro nas mensagens de quem chama. O texto é puro: o front escapa.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    depoisDe?: string;
+                    antesDe?: string;
+                    limite?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                id: string;
+                                autor: {
+                                    nome: string;
+                                    papel: string;
+                                };
+                                /** @description Verdadeiro quando quem chama é o autor */
+                                propria: boolean;
+                                /** @description Texto puro: o front escapa, nunca monta HTML */
+                                texto: string;
+                                /** @description Instante ISO */
+                                enviadaEm: string;
+                            }[];
+                            /** @description Passe em `antesDe` para a página anterior; nulo = não há mais */
+                            proximoAntesDe: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Envia uma mensagem
+         * @description Só quem é parte da conversa e ela não está somente leitura: par antigo (troca de treinador) ou conta desativada dão 409; o gestor lendo por supervisão não envia (403). Sem acesso à conversa, 404. `texto`: texto puro de 1 a 2000 caracteres (sem HTML; o texto é guardado como veio e o front escapa). Limite de 30 mensagens por minuto por usuário (429 `limite_excedido`). Avisa o outro lado (`mensagem_nova`, `referencia: { conversaId }`), só se a pessoa ainda não tem aviso não lido desta conversa; na caixa compartilhada, avisa os gestores ativos. A auditoria guarda só ids e tipo, nunca o texto.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        texto: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            autor: {
+                                nome: string;
+                                papel: string;
+                            };
+                            /** @description Verdadeiro quando quem chama é o autor */
+                            propria: boolean;
+                            /** @description Texto puro: o front escapa, nunca monta HTML */
+                            texto: string;
+                            /** @description Instante ISO */
+                            enviadaEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversas/{id}/lidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Marca a conversa como lida, até agora, para quem chama
+         * @description Vale só para quem chama (na caixa compartilhada, cada gestor tem a sua marca). Também marca como lidos os avisos `mensagem_nova` desta conversa. O gestor em supervisão não grava marca (204 sem efeito). Não gera auditoria (dado de interface).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": null;
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversas/{id}/acesso-supervisao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gestor pede acesso de leitura a uma conversa entre treinador e atleta
+         * @description Só o gestor, só conversas `treinador_atleta` (as outras dão 400; conversa inexistente, 404). `motivo` obrigatório, de 5 a 500 caracteres (ex.: denúncia). Libera a leitura daquela conversa, para aquele gestor, por 24 horas (GET /conversas/{id}/mensagens); durante a supervisão ele só lê, não envia. Pedir de novo renova o prazo e registra outro acesso. Cada pedido vai para a auditoria (`acessar_conversa_supervisao`) com o motivo e sem o conteúdo das mensagens. Os participantes veem na tela que a conversa pode ser lida pelo gestor em caso de denúncia.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        motivo: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            conversaId: string;
+                            /** @description Instante ISO: fim da leitura liberada */
+                            expiraEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -7857,7 +8661,7 @@ export interface paths {
         };
         /**
          * Exporta em JSON tudo o que o sistema guarda sobre o atleta (LGPD)
-         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados (com a edição e a situação da validação), decisões de gate, financeiro, pedidos de revisão (com o recurso, se houve) e pedidos do titular, telefone, validade do passaporte e aptidões conferidas, pesagens informadas, pedidos de ajuste recebidos, foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo) e plano individual (todas as versões). Só o atleta logado, só os próprios dados.
+         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados (com a edição e a situação da validação), decisões de gate, financeiro, pedidos de revisão (com o recurso, se houve) e pedidos do titular, telefone, validade do passaporte e aptidões conferidas, pesagens informadas, pedidos de ajuste recebidos, mensagens das conversas (D16), foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo) e plano individual (todas as versões). Só o atleta logado, só os próprios dados.
          */
         get: {
             parameters: {
@@ -7930,6 +8734,10 @@ export interface paths {
                             }[];
                             /** @description Pedidos de ajuste recebidos do treinador ou do gestor: mensagem, indicador, quem pediu e quando */
                             pedidosAjuste: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Mensagens das conversas do atleta (com o treinador, atuais e antigas, e com a gestão): conversa, tipo, texto, autor (nome e papel) e data */
+                            mensagens: {
                                 [key: string]: unknown;
                             }[];
                             /** @description Foto de perfil da conta do atleta (o caminho interno não é exportado) */
@@ -10324,7 +11132,7 @@ export interface paths {
                             itens: {
                                 id: string;
                                 /** @enum {string} */
-                                tipo: "atleta_respondeu" | "atleta_anexou" | "atleta_atualizou_perfil" | "atleta_completou_cadastro" | "pedido_ajuste" | "sugestao_respondida" | "atleta_autoavaliou" | "autoavaliacao_corrigida" | "atleta_enviou_pesagem" | "pesagem_validada" | "pesagem_recusada" | "atleta_lancou_resultado" | "resultado_validado" | "resultado_recusado" | "atleta_registrou_conquista" | "conquista_validada" | "conquista_recusada";
+                                tipo: "atleta_respondeu" | "atleta_anexou" | "atleta_atualizou_perfil" | "atleta_completou_cadastro" | "pedido_ajuste" | "sugestao_respondida" | "atleta_autoavaliou" | "autoavaliacao_corrigida" | "atleta_enviou_pesagem" | "pesagem_validada" | "pesagem_recusada" | "atleta_lancou_resultado" | "resultado_validado" | "resultado_recusado" | "atleta_registrou_conquista" | "conquista_validada" | "conquista_recusada" | "mensagem_nova";
                                 /** @description Instante ISO */
                                 criadoEm: string;
                                 /** @description Instante ISO; nulo = não lido */
