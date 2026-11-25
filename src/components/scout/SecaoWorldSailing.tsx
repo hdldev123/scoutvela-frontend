@@ -235,7 +235,9 @@ export function SecaoWorldSailing({ atletaId, papel }: { atletaId: string; papel
             <figcaption>{serie.rotulo}: posição ao longo do tempo (1º lugar no topo)</figcaption>
             <Grafico serie={serie} />
           </figure>
-          <details className="evo-tabela" open>
+          {/* Fechada por padrão: com dados reais o histórico passa de 100 linhas. O gráfico já tem a
+              descrição acessível, e a tabela abre com um clique ou com Enter. */}
+          <details className="evo-tabela">
             <summary>Números em tabela</summary>
             <TabelaRanking serie={serie} />
           </details>

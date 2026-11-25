@@ -82,6 +82,8 @@ test("ficha: seção World Sailing com link, gráfico, tabela e filtro por class
   // A maior série (ILCA 6 Senior, 2 pontos) abre primeiro; a tabela é a alternativa ao gráfico.
   await expect(secao.getByRole("img", { name: /ILCA 6 · Senior/ })).toBeVisible();
   await expect(secao.getByTestId("ws-ponto")).toHaveCount(2);
+  // A tabela alternativa começa fechada (o histórico real passa de 100 linhas).
+  await secao.getByText("Números em tabela").click();
   const tabela = secao.getByRole("table", { name: /ILCA 6 · Senior/ });
   await expect(tabela.getByRole("row", { name: /18º/ })).toBeVisible();
   await expect(tabela.getByRole("row", { name: /24º/ })).toBeVisible();
