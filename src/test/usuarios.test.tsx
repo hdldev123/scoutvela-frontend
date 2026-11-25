@@ -44,12 +44,15 @@ const usuario = (extra: Record<string, unknown> = {}) => ({
 const atleta = (extra: Record<string, unknown> = {}) => ({
   id: "a1",
   nome: "Bruno Lima",
+  wsId: "BRAMG15",
   velaid: "MG-T15",
   classe: { id: "ilca7", nome: "ILCA 7" },
   treinador: { id: "t1", nome: "Ana Ribeiro" },
   numeroVela: "BRA 1766",
   ativo: true,
   termoAceito: true,
+  cadastroCompleto: true,
+  cadastroRecusado: false,
   contaVinculada: false,
   ...extra,
 });
@@ -315,5 +318,86 @@ describe("TelaUsuarios", () => {
       }),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("atleta incompleto aparece com o WS ID no lugar do nome, o selo e o VelaID como traço", async () => {
+    GET.mockImplementation(async (caminho: string, opcoes?: { params?: { query?: never } }) => {
+      if (caminho === "/atletas") {
+        return ok([
+          atleta({ id: "a5", nome: null, wsId: "BRAXY99", velaid: null, cadastroCompleto: false }),
+          atleta({
+            id: "a6",
+            nome: null,
+            wsId: "BRAZZ11",
+            velaid: null,
+            cadastroCompleto: false,
+            cadastroRecusado: true,
+            ativo: false,
+          }),
+          atleta(),
+        ]);
+      }
+      if (caminho === "/usuarios") return ok(usuarios);
+      if (caminho === "/parametros") return ok({ classes: [] });
+      if (caminho === "/treinadores") return ok([]);
+      void opcoes;
+      return falha(404, "nao_encontrado", "?");
+    });
+    montar();
+    const bloco = (await screen.findByRole("heading", { name: "Atletas do piloto" })).closest(
+      "section",
+    )!;
+    const incompleto = await within(bloco).findByRole("cell", { name: /^BRAXY99/ });
+    expect(within(incompleto).getByText("Cadastro incompleto")).toBeTruthy();
+    expect(within(incompleto).queryByText("Recusado (menor de 18)")).toBeNull();
+    const linha = incompleto.closest("tr")!;
+    expect(within(linha).getByText("—", { selector: "td.mono" })).toBeTruthy();
+    const recusado = within(bloco).getByRole("cell", { name: /^BRAZZ11/ });
+    expect(within(recusado).getByText("Recusado (menor de 18)")).toBeTruthy();
+    expect(within(recusado).queryByText("Cadastro incompleto")).toBeNull();
+    // Atleta completo não leva selo.
+    const completo = within(bloco).getByRole("cell", { name: /^Bruno Lima/ });
+    expect(within(completo).queryByText("Cadastro incompleto")).toBeNull();
+    expect(within(bloco).getByRole("button", { name: "Editar BRAXY99" })).toBeTruthy();
+  });
+
+  it("o filtro Cadastro vai para a API", async () => {
+    montar();
+    const bloco = (await screen.findByRole("heading", { name: "Atletas do piloto" })).closest(
+      "section",
+    )!;
+    await within(bloco).findByRole("cell", { name: /^Bruno Lima/ });
+    fireEvent.change(within(bloco).getByLabelText("Cadastro"), { target: { value: "false" } });
+    await waitFor(() =>
+      expect(GET).toHaveBeenCalledWith("/atletas", {
+        params: { query: { cadastroCompleto: "false" } },
+      }),
+    );
+  });
+
+  it("edita o ID World Sailing: normaliza, valida e mostra o 409 embaixo do campo", async () => {
+    PUT.mockResolvedValueOnce(
+      falha(409, "requisicao_invalida", "Já existe um atleta com este ID World Sailing."),
+    );
+    montar();
+    fireEvent.click(await screen.findByRole("button", { name: "Editar Bruno Lima" }));
+    const dialogo = await screen.findByRole("dialog");
+    const campo = within(dialogo).getByLabelText("ID World Sailing") as HTMLInputElement;
+    expect(campo.value).toBe("BRAMG15");
+
+    fireEvent.change(campo, { target: { value: "12" } });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Salvar" }));
+    expect(await within(dialogo).findByText(/ID World Sailing inválido/)).toBeTruthy();
+    expect(PUT).not.toHaveBeenCalled();
+
+    fireEvent.change(campo, { target: { value: " brax 77 " } });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Salvar" }));
+    const msg = await within(dialogo).findByText("Já existe um atleta com este ID World Sailing.");
+    expect(PUT).toHaveBeenCalledWith("/atletas/{id}", {
+      params: { path: { id: "a1" } },
+      body: { wsId: "BRAX77" },
+    });
+    expect(campo.getAttribute("aria-describedby")).toBe(msg.id);
+    expect(screen.getByRole("dialog")).toBeTruthy();
   });
 });
