@@ -176,8 +176,8 @@ export function TelaRanking({ papel, filtros, aoMudarFiltros }: TelaRankingProps
                       <strong>{i.atleta.nome}</strong>
                       <span className="meta">
                         <span className="meta-txt">
-                          <code>{i.atleta.velaid ?? "—"}</code> · {i.atleta.classe.nome} ·{" "}
-                          {i.atleta.idade} anos
+                          <code title="ID World Sailing">{i.atleta.wsId}</code> ·{" "}
+                          {i.atleta.classe.nome} · {i.atleta.idade} anos
                           {i.atleta.uf ? ` · ${i.atleta.uf}` : ""}
                         </span>
                         {!i.completo && <span className="pill st-parcial">Parcial</span>}

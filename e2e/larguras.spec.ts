@@ -103,7 +103,7 @@ for (const largura of [800, 900, 1000]) {
         const caixaLinha = await linha.boundingBox();
         const selo = linha.locator(".who .pill");
         if (await selo.count()) {
-          // O selo "Parcial" fica na linha da meta (depois do VelaID · classe · idade), nunca
+          // O selo "Parcial" fica na linha da meta (depois do WS ID · classe · idade), nunca
           // numa célula implícita da grade, e não encosta no selo de faixa. No cartão, .who e
           // .who-txt são display: contents (sem caixa); a referência é o .meta.
           const caixaSelo = await selo.first().boundingBox();

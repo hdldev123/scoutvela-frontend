@@ -484,13 +484,6 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
             </div>
             <h1>{atleta.nome}</h1>
             <ul className="facts">
-              {atleta.numeroVela && (
-                <li>
-                  <span className="sail" title="Número de vela">
-                    {atleta.numeroVela}
-                  </span>
-                </li>
-              )}
               <li>
                 <i className="ph ph-identification-card" aria-hidden="true" />
                 <span className="fato-rot">ID World Sailing</span>{" "}
@@ -513,6 +506,12 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 <li>
                   <i className="ph ph-map-pin" aria-hidden="true" />
                   {local}
+                </li>
+              )}
+              {/* Muda com o barco e a classe: informação secundária, não identifica o atleta. */}
+              {atleta.numeroVela && (
+                <li>
+                  <span className="fato-rot">Nº de vela</span> {atleta.numeroVela}
                 </li>
               )}
               {ficha.contato?.treinador && (

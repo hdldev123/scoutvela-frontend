@@ -105,6 +105,9 @@ describe("TelaRanking", () => {
     expect(within(linha).getByText("Apto")).toBeInTheDocument();
     expect(within(linha).getByText("80,3")).toBeInTheDocument();
     expect(within(linha).getByText("1.234")).toBeInTheDocument();
+    // D2: a linha identifica o atleta pelo WS ID, não pelo VelaID.
+    expect(within(linha).getByText("BRAS02")).toHaveAttribute("title", "ID World Sailing");
+    expect(within(linha).queryByText("SC-T02")).toBeNull();
   });
 
   it("mostra a foto do atleta quando a API manda, e as iniciais quando não", async () => {

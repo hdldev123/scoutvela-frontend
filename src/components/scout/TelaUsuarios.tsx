@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
+import { LinkWsId } from "./LinkWsId";
 import { fmtInstante, nomeOuWsId } from "./formato";
 import { MensagemCampo } from "./MensagemCampo";
 import { atributosDoCampo } from "./campo-util";
@@ -496,10 +497,11 @@ function AtletasDoPiloto() {
             <thead>
               <tr>
                 <th>Atleta</th>
-                <th>VelaID</th>
+                <th>ID World Sailing</th>
+                <th className="ct-col-vela">VelaID</th>
                 <th>Classe</th>
+                <th>Idade</th>
                 <th className="ct-col-treinador">Treinador(a)</th>
-                <th className="ct-col-vela">Nº de vela</th>
                 <th>Situação</th>
                 <th>Termo</th>
                 <th>Conta</th>
@@ -520,21 +522,24 @@ function AtletasDoPiloto() {
                         <span className="pill st-cond ct-selo">Cadastro incompleto</span>
                       )
                     )}
-                    {(a.treinador || a.numeroVela) && (
+                    {(a.treinador || a.velaid) && (
                       <small className="ct-sub-txt ct-vinculo">
                         {[
                           a.treinador ? `Treinador: ${a.treinador.nome}` : null,
-                          a.numeroVela ?? null,
+                          a.velaid ? `VelaID: ${a.velaid}` : null,
                         ]
                           .filter(Boolean)
                           .join(" · ")}
                       </small>
                     )}
                   </td>
-                  <td className="nw mono">{a.velaid ?? "—"}</td>
+                  <td className="nw">
+                    <LinkWsId wsId={a.wsId} nome={a.nome} />
+                  </td>
+                  <td className="nw mono ct-col-vela">{a.velaid ?? "—"}</td>
                   <td className="nw">{a.classe.nome}</td>
+                  <td className="nw">{a.idade == null ? "—" : `${a.idade} anos`}</td>
                   <td className="nw ct-col-treinador">{a.treinador?.nome ?? "—"}</td>
-                  <td className="nw ct-col-vela">{a.numeroVela ?? "—"}</td>
                   <td className="nw">
                     <span className={`pill ${a.ativo ? "st-apto" : "st-neutro"}`}>
                       {a.ativo ? "Ativo" : "Inativo"}

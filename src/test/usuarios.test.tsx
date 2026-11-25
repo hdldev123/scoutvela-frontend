@@ -49,6 +49,7 @@ const atleta = (extra: Record<string, unknown> = {}) => ({
   classe: { id: "ilca7", nome: "ILCA 7" },
   treinador: { id: "t1", nome: "Ana Ribeiro" },
   numeroVela: "BRA 1766",
+  idade: 24,
   ativo: true,
   termoAceito: true,
   cadastroCompleto: true,
@@ -185,14 +186,22 @@ describe("TelaUsuarios", () => {
     )!;
     const linha = async (nome: string) =>
       (await within(bloco).findByRole("cell", { name: new RegExp(`^${nome}`) })).closest("tr")!;
-    expect(await linha("Bruno Lima")).toHaveTextContent(
-      "Bruno LimaTreinador: Ana Ribeiro · BRA 1766MG-T15ILCA 7Ana RibeiroBRA 1766AtivoAceitoSem conta",
-    );
+    const bruno = await linha("Bruno Lima");
+    expect(bruno).toHaveTextContent("Treinador: Ana Ribeiro · VelaID: MG-T15");
+    // D2: o WS ID com link no lugar do número de vela, e a idade em coluna própria.
+    expect(
+      within(bruno).getByRole("link", { name: /BRAMG15.*Perfil de Bruno Lima no World Sailing/ }),
+    ).toHaveAttribute("href", "https://www.sailing.org/sailor/?ref=BRAMG15");
+    expect(bruno).toHaveTextContent("ILCA 724 anosAna RibeiroAtivoAceitoSem conta");
+    expect(bruno).not.toHaveTextContent("BRA 1766");
+    expect(within(bloco).getByRole("columnheader", { name: "ID World Sailing" })).toBeTruthy();
+    expect(within(bloco).getByRole("columnheader", { name: "Idade" })).toBeTruthy();
+    expect(within(bloco).queryByRole("columnheader", { name: "Nº de vela" })).toBeNull();
     expect(await linha("Carla Sem Termo")).toHaveTextContent("Pendente");
     expect(within(await linha("Carla Sem Termo")).getByText("Pendente").className).toContain(
       "st-cond",
     );
-    expect(await linha("Davi Inativo")).toHaveTextContent("BRA 1766Inativo");
+    expect(await linha("Davi Inativo")).toHaveTextContent("—Inativo");
     expect(await linha("Eva Com Conta")).toHaveTextContent("Com conta");
     expect(GET).toHaveBeenCalledWith("/atletas", { params: { query: {} } });
   });
@@ -324,7 +333,14 @@ describe("TelaUsuarios", () => {
     GET.mockImplementation(async (caminho: string, opcoes?: { params?: { query?: never } }) => {
       if (caminho === "/atletas") {
         return ok([
-          atleta({ id: "a5", nome: null, wsId: "BRAXY99", velaid: null, cadastroCompleto: false }),
+          atleta({
+            id: "a5",
+            nome: null,
+            wsId: "BRAXY99",
+            velaid: null,
+            idade: null,
+            cadastroCompleto: false,
+          }),
           atleta({
             id: "a6",
             nome: null,
@@ -347,12 +363,16 @@ describe("TelaUsuarios", () => {
     const bloco = (await screen.findByRole("heading", { name: "Atletas do piloto" })).closest(
       "section",
     )!;
-    const incompleto = await within(bloco).findByRole("cell", { name: /^BRAXY99/ });
+    const incompleto = await within(bloco).findByRole("cell", {
+      name: /^BRAXY99\s?Cadastro incompleto/,
+    });
     expect(within(incompleto).getByText("Cadastro incompleto")).toBeTruthy();
     expect(within(incompleto).queryByText("Recusado (menor de 18)")).toBeNull();
     const linha = incompleto.closest("tr")!;
     expect(within(linha).getByText("—", { selector: "td.mono" })).toBeTruthy();
-    const recusado = within(bloco).getByRole("cell", { name: /^BRAZZ11/ });
+    const recusado = within(bloco).getByRole("cell", { name: /^BRAZZ11\s?Recusado/ });
+    // Idade nula com o cadastro incompleto.
+    expect(within(linha).getAllByText("—").length).toBeGreaterThanOrEqual(2);
     expect(within(recusado).getByText("Recusado (menor de 18)")).toBeTruthy();
     expect(within(recusado).queryByText("Cadastro incompleto")).toBeNull();
     // Atleta completo não leva selo.

@@ -2317,6 +2317,8 @@ export interface paths {
                                 nome: string;
                             } | null;
                             numeroVela: string | null;
+                            /** @description Calculada no servidor; nula com o cadastro incompleto. A data de nascimento não sai na lista */
+                            idade: number | null;
                             ativo: boolean;
                             termoAceito: boolean;
                             cadastroCompleto: boolean;

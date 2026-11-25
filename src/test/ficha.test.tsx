@@ -304,6 +304,13 @@ describe("TelaFicha", () => {
     });
     expect(ws).toHaveAttribute("href", "https://www.sailing.org/sailor/?ref=BRAHV07");
     expect(ws).toHaveAttribute("target", "_blank");
+    // D2: o número de vela é informação secundária, depois do WS ID e da classe.
+    const fatos = ws.closest("ul")!;
+    const itens = Array.from(fatos.querySelectorAll(":scope > li")).map((li) => li.textContent);
+    const iVela = itens.findIndex((t) => t?.includes("Nº de vela BRA 123"));
+    const iWs = itens.findIndex((t) => t?.includes("ID World Sailing"));
+    expect(iVela).toBeGreaterThan(iWs);
+    expect(iWs).toBe(0);
     expect(screen.getByText("71,5")).toBeInTheDocument();
     expect(screen.getByText("Parcial")).toBeInTheDocument();
     expect(screen.getByText("Ana Ribeiro", { exact: false, selector: "li" })).toBeInTheDocument();
