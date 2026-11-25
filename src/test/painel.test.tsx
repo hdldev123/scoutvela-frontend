@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const GET = vi.fn();
 const POST = vi.fn();
 const PUT = vi.fn();
-const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
+const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }));
 
 vi.mock("@/lib/api/cliente", async (importar) => ({
   ...(await importar<typeof import("@/lib/api/cliente")>()),
@@ -114,6 +114,15 @@ function revisao(extra: Record<string, unknown> = {}) {
     criadoEm: "2026-11-02T12:00:00.000Z",
     resposta: "Revisamos e mantivemos a nota.",
     respondidoEm: "2026-11-04T12:00:00.000Z",
+    instancia: 1,
+    primeiraResposta: {
+      texto: "Revisamos e mantivemos a nota.",
+      papel: "treinador",
+      respondidoEm: "2026-11-04T12:00:00.000Z",
+    },
+    recurso: null,
+    respostaFinal: null,
+    podeRecurso: false,
     ...extra,
   };
 }
@@ -262,11 +271,84 @@ describe("TelaPainel", () => {
   });
 
   it("lista os pedidos de revisão com status e resposta", async () => {
-    montar(painel(), [revisao(), revisao({ id: "r2", status: "aberto", resposta: null })]);
+    montar(painel(), [
+      revisao(),
+      revisao({ id: "r2", status: "aberto", resposta: null, primeiraResposta: null }),
+    ]);
     expect(await screen.findByText("Respondido")).toBeInTheDocument();
     expect(screen.getByText("Aberto")).toBeInTheDocument();
     expect(screen.getByText(/Revisamos e mantivemos a nota/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Pedir revisão de nota" })).toBeInTheDocument();
+  });
+
+  it("mostra o andamento de cada pedido e o botão só quando cabe recurso", async () => {
+    montar(painel(), [
+      revisao({ podeRecurso: true }),
+      revisao({
+        id: "r2",
+        status: "aberto",
+        instancia: 2,
+        resposta: null,
+        respondidoEm: null,
+        recurso: { texto: "Discordo da nota.", em: "2026-11-06T12:00:00.000Z" },
+      }),
+      revisao({
+        id: "r3",
+        instancia: 2,
+        resposta: "Mantida pela gestão.",
+        recurso: { texto: "Discordo.", em: "2026-11-06T12:00:00.000Z" },
+        respostaFinal: {
+          texto: "Mantida pela gestão.",
+          papel: "gestor",
+          respondidoEm: "2026-11-07T12:00:00.000Z",
+        },
+      }),
+    ]);
+    expect(await screen.findByText(/Respondido pelo treinador/)).toBeInTheDocument();
+    expect(screen.getByText(/Em análise pela gestão \(2ª instância\)/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Seu recurso:/)).toHaveLength(2);
+    expect(screen.getAllByText(/Resposta final da gestão/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Mantida pela gestão./)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Discordar da resposta" })).toHaveLength(1);
+  });
+
+  it("recurso: envia o texto e fecha o diálogo", async () => {
+    POST.mockResolvedValue({ data: revisao(), response: { status: 200 } });
+    montar(painel(), [revisao({ podeRecurso: true })]);
+    fireEvent.click(await screen.findByRole("button", { name: "Discordar da resposta" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Discordar da resposta" });
+    expect(within(dialogo).getByText(/gestão da CBVela/)).toBeInTheDocument();
+    expect(within(dialogo).getByText("0 de 1000 caracteres")).toBeInTheDocument();
+    const enviar = within(dialogo).getByRole("button", { name: "Enviar recurso" });
+    expect(enviar).toBeDisabled();
+    fireEvent.change(within(dialogo).getByLabelText(/Por que você discorda/), {
+      target: { value: "A nota não reflete a regata." },
+    });
+    expect(within(dialogo).getByText("28 de 1000 caracteres")).toBeInTheDocument();
+    fireEvent.click(enviar);
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith("/revisoes/{id}/recurso", {
+        params: { path: { id: "r1" } },
+        body: { texto: "A nota não reflete a regata." },
+      }),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("recurso: 409 mostra a mensagem da API e mantém o diálogo", async () => {
+    POST.mockResolvedValue({
+      error: { erro: "conflito", mensagem: "O recurso já foi feito." },
+      response: { status: 409 },
+    });
+    montar(painel(), [revisao({ podeRecurso: true })]);
+    fireEvent.click(await screen.findByRole("button", { name: "Discordar da resposta" }));
+    const dialogo = await screen.findByRole("dialog");
+    fireEvent.change(within(dialogo).getByLabelText(/Por que você discorda/), {
+      target: { value: "Discordo." },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar recurso" }));
+    expect(await within(dialogo).findByRole("alert")).toHaveTextContent("O recurso já foi feito.");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("mostra o termo e registra o aceite com a versão vigente", async () => {

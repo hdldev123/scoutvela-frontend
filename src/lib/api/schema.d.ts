@@ -523,6 +523,19 @@ export interface paths {
                                 /** @description Instante ISO do aceite do termo do piloto */
                                 termoAceitoEm: string | null;
                                 compartilharIbvar: boolean;
+                                /** @description E.164 (+5511999998888); nulo se não informado */
+                                telefone: string | null;
+                                /** @description AAAA-MM (último dia do mês); sem número nem cópia do passaporte */
+                                passaporteValidoAte: string | null;
+                                /** @description Última aptidão conferida pelo gestor; nulo se nunca conferida */
+                                aptidao: {
+                                    apto: boolean;
+                                    /** @description Instante ISO em que o gestor conferiu */
+                                    conferidoEm: string;
+                                    conferidoPor: {
+                                        nome: string;
+                                    };
+                                } | null;
                             } | null;
                             treinador: {
                                 quantidadeAtletas: number;
@@ -567,8 +580,8 @@ export interface paths {
             };
         };
         /**
-         * Edita o perfil: nome (treinador e gestor) ou e-mail de contato (atleta)
-         * @description Nome, gênero e data de nascimento do atleta (informados em PUT /me/cadastro) e o ID World Sailing não são editáveis aqui: a correção é pelo pedido do titular (tipo `correcao`); só o gestor troca o WS ID. A auditoria guarda só os nomes dos campos.
+         * Edita o perfil: nome (treinador e gestor) ou e-mail, telefone e validade do passaporte (atleta)
+         * @description Nome, gênero e data de nascimento do atleta (informados em PUT /me/cadastro) e o ID World Sailing não são editáveis aqui: a correção é pelo pedido do titular (tipo `correcao`); só o gestor troca o WS ID. `telefone` (atleta): E.164; aceita espaços, parênteses, traços e pontos, que são removidos; sem `+` só com DDD brasileiro (10 ou 11 dígitos), e então vira `+55...`; outro formato é 400. `passaporteValidoAte` (atleta): `AAAA-MM`, gravado como o último dia do mês; data passada é aceita (serve para avisar que venceu); não guardamos número nem cópia do passaporte. `telefone` e `passaporteValidoAte` aceitam `null` para apagar. A auditoria guarda só os nomes dos campos.
          */
         put: {
             parameters: {
@@ -583,6 +596,10 @@ export interface paths {
                         nome?: string;
                         /** Format: email */
                         emailContato?: string | null;
+                        /** @description E.164, ou só com DDD brasileiro (vira +55...); null apaga */
+                        telefone?: string | null;
+                        /** @description AAAA-MM; null apaga */
+                        passaporteValidoAte?: string | null;
                     };
                 };
             };
@@ -628,6 +645,19 @@ export interface paths {
                                 /** @description Instante ISO do aceite do termo do piloto */
                                 termoAceitoEm: string | null;
                                 compartilharIbvar: boolean;
+                                /** @description E.164 (+5511999998888); nulo se não informado */
+                                telefone: string | null;
+                                /** @description AAAA-MM (último dia do mês); sem número nem cópia do passaporte */
+                                passaporteValidoAte: string | null;
+                                /** @description Última aptidão conferida pelo gestor; nulo se nunca conferida */
+                                aptidao: {
+                                    apto: boolean;
+                                    /** @description Instante ISO em que o gestor conferiu */
+                                    conferidoEm: string;
+                                    conferidoPor: {
+                                        nome: string;
+                                    };
+                                } | null;
                             } | null;
                             treinador: {
                                 quantidadeAtletas: number;
@@ -1103,11 +1133,25 @@ export interface paths {
                                     posicao: "helm" | "crew" | "ind";
                                 };
                             };
+                            /** @description Nulo para o IBVAR: contato, passaporte e aptidão não são dele (matriz de acesso) */
                             contato: {
                                 email: string | null;
                                 treinador: {
                                     id: string;
                                     nome: string;
+                                } | null;
+                                /** @description E.164 (+5511999998888); nulo se não informado */
+                                telefone: string | null;
+                                /** @description AAAA-MM (último dia do mês); sem número nem cópia do passaporte */
+                                passaporteValidoAte: string | null;
+                                /** @description Última aptidão conferida pelo gestor (dado de saúde; cada leitura de gestor ou treinador é auditada); nulo se nunca conferida */
+                                aptidao: {
+                                    apto: boolean;
+                                    /** @description Instante ISO em que o gestor conferiu */
+                                    conferidoEm: string;
+                                    conferidoPor: {
+                                        nome: string;
+                                    };
                                 } | null;
                             } | null;
                             ciclo: {
@@ -1600,6 +1644,145 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/aptidao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registra a aptidão para a prática esportiva conferida pelo gestor
+         * @description Só o gestor, depois de conferir o atestado FORA do sistema: grava apenas `apto`, quem conferiu e quando (sem texto livre e sem arquivo). Cada registro é novo (só inserção); vale o mais recente. Dado de saúde: a auditoria guarda só os ids.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        apto: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            apto: boolean;
+                            /** @description Instante ISO em que o gestor conferiu */
+                            conferidoEm: string;
+                            conferidoPor: {
+                                nome: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -3284,7 +3467,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lista pedidos de revisão (gestor: todos, abertos primeiro; treinador: dos próprios atletas; atleta: os seus) */
+        /**
+         * Lista pedidos de revisão (gestor: todos, abertos primeiro; treinador: dos próprios atletas; atleta: os seus)
+         * @description Cada pedido traz a instância (1 ou 2), a resposta da 1ª instância (texto, papel e data de quem respondeu), o recurso do atleta e a resposta final do gestor na 2ª instância.
+         */
         get: {
             parameters: {
                 query?: {
@@ -3320,8 +3506,38 @@ export interface paths {
                             /** @enum {string} */
                             status: "aberto" | "respondido";
                             criadoEm: string;
+                            /** @description Resposta vigente: a da 1ª instância enquanto não há recurso; depois do recurso, a da 2ª (nula até o gestor responder) */
                             resposta: string | null;
                             respondidoEm: string | null;
+                            /** @description 1: treinador ou gestor responde; 2: recurso do atleta, só o gestor responde */
+                            instancia: 1 | 2;
+                            /** @description Resposta da 1ª instância (também depois do recurso); nula enquanto não respondida */
+                            primeiraResposta: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description Recurso do atleta contra a resposta da 1ª instância; nulo se não houve */
+                            recurso: {
+                                texto: string;
+                                em: string;
+                            } | null;
+                            /** @description Resposta do gestor na 2ª instância; nula se não houve recurso ou se ainda aberto */
+                            respostaFinal: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description true quando o atleta ainda pode pedir a 2ª instância (respondido pelo treinador, sem recurso) */
+                            podeRecurso: boolean;
                             /** @description Lançamento ligado à resposta, se houver */
                             avaliacaoId: string | null;
                             /** @description Nota do lançamento anterior ao ligado (mesmo atleta e indicador) */
@@ -3484,7 +3700,7 @@ export interface paths {
         };
         /**
          * Lista os lançamentos que podem ser ligados ao pedido de revisão
-         * @description Só os lançamentos que o PUT /revisoes/:id aceitaria em avaliacaoId (mesmo atleta, indicador do pedido ou de um indicador do pilar, e lançados depois do pedido), do mais novo para o mais antigo. Vale para pedido aberto ou respondido. Sem evidência.
+         * @description Gestor (qualquer pedido) e treinador (só de atleta dele; outro pedido dá 404). Só os lançamentos que o PUT /revisoes/:id aceitaria em avaliacaoId (mesmo atleta, indicador do pedido ou de um indicador do pilar, e lançados depois do pedido), do mais novo para o mais antigo. Vale para pedido aberto ou respondido. Sem evidência.
          */
         get: {
             parameters: {
@@ -3608,7 +3824,7 @@ export interface paths {
         get?: never;
         /**
          * Responde um pedido de revisão
-         * @description Pedido já respondido devolve 409 (código requisicao_invalida). avaliacaoId (opcional) liga a resposta ao lançamento que a atendeu: do mesmo atleta, do indicador do pedido (ou de um indicador do pilar, se o pedido foi por pilar) e lançado depois do pedido. Depois de gravar, o atleta recebe um e-mail só com o aviso e o link; falha no envio não desfaz a resposta.
+         * @description Gestor responde qualquer pedido; treinador, só o de atleta dele (outro dá 404) e só na 1ª instância (pedido em 2ª instância dá 403). A resposta do gestor na 2ª instância encerra o pedido. Pedido já respondido devolve 409 (código requisicao_invalida). avaliacaoId (opcional) liga a resposta ao lançamento que a atendeu: do mesmo atleta, do indicador do pedido (ou de um indicador do pilar, se o pedido foi por pilar) e lançado depois do pedido. Depois de gravar, o atleta recebe um e-mail só com o aviso e o link; falha no envio não desfaz a resposta.
          */
         put: {
             parameters: {
@@ -3653,8 +3869,38 @@ export interface paths {
                             /** @enum {string} */
                             status: "aberto" | "respondido";
                             criadoEm: string;
+                            /** @description Resposta vigente: a da 1ª instância enquanto não há recurso; depois do recurso, a da 2ª (nula até o gestor responder) */
                             resposta: string | null;
                             respondidoEm: string | null;
+                            /** @description 1: treinador ou gestor responde; 2: recurso do atleta, só o gestor responde */
+                            instancia: 1 | 2;
+                            /** @description Resposta da 1ª instância (também depois do recurso); nula enquanto não respondida */
+                            primeiraResposta: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description Recurso do atleta contra a resposta da 1ª instância; nulo se não houve */
+                            recurso: {
+                                texto: string;
+                                em: string;
+                            } | null;
+                            /** @description Resposta do gestor na 2ª instância; nula se não houve recurso ou se ainda aberto */
+                            respostaFinal: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description true quando o atleta ainda pode pedir a 2ª instância (respondido pelo treinador, sem recurso) */
+                            podeRecurso: boolean;
                             /** @description Lançamento ligado à resposta, se houver */
                             avaliacaoId: string | null;
                             /** @description Nota do lançamento anterior ao ligado (mesmo atleta e indicador) */
@@ -3752,6 +3998,194 @@ export interface paths {
             };
         };
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/revisoes/{id}/recurso": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atleta discorda da resposta do treinador e pede a 2ª instância (gestor)
+         * @description Só o atleta dono do pedido (outro pedido dá 404). Só uma vez por pedido e só depois da resposta do treinador na 1ª instância; fora disso, 409 (inclusive pedido respondido pelo gestor, que já é a instância final). O pedido volta a `aberto` com `instancia` 2 e só o gestor responde. A auditoria guarda a instância, sem o texto.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        texto: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            atleta: {
+                                id: string;
+                                nome: string;
+                            };
+                            pilar: {
+                                id: string;
+                                nomeCurto: string;
+                            } | null;
+                            indicador: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            motivo: string;
+                            /** @enum {string} */
+                            status: "aberto" | "respondido";
+                            criadoEm: string;
+                            /** @description Resposta vigente: a da 1ª instância enquanto não há recurso; depois do recurso, a da 2ª (nula até o gestor responder) */
+                            resposta: string | null;
+                            respondidoEm: string | null;
+                            /** @description 1: treinador ou gestor responde; 2: recurso do atleta, só o gestor responde */
+                            instancia: 1 | 2;
+                            /** @description Resposta da 1ª instância (também depois do recurso); nula enquanto não respondida */
+                            primeiraResposta: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description Recurso do atleta contra a resposta da 1ª instância; nulo se não houve */
+                            recurso: {
+                                texto: string;
+                                em: string;
+                            } | null;
+                            /** @description Resposta do gestor na 2ª instância; nula se não houve recurso ou se ainda aberto */
+                            respostaFinal: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description true quando o atleta ainda pode pedir a 2ª instância (respondido pelo treinador, sem recurso) */
+                            podeRecurso: boolean;
+                            /** @description Lançamento ligado à resposta, se houver */
+                            avaliacaoId: string | null;
+                            /** @description Nota do lançamento anterior ao ligado (mesmo atleta e indicador) */
+                            notaAnterior: number | null;
+                            /** @description Nota do lançamento ligado */
+                            notaNova: number | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -5357,7 +5791,7 @@ export interface paths {
         };
         /**
          * Exporta em JSON tudo o que o sistema guarda sobre o atleta (LGPD)
-         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados, decisões de gate, financeiro, pedidos de revisão e pedidos do titular, foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo) e plano individual (todas as versões). Só o atleta logado, só os próprios dados.
+         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados, decisões de gate, financeiro, pedidos de revisão (com o recurso, se houve) e pedidos do titular, telefone, validade do passaporte e aptidões conferidas, foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo) e plano individual (todas as versões). Só o atleta logado, só os próprios dados.
          */
         get: {
             parameters: {
@@ -5414,6 +5848,10 @@ export interface paths {
                                 [key: string]: unknown;
                             }[];
                             pedidosTitular: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Aptidão para a prática esportiva conferida pelo gestor (apto, quem conferiu e quando; sem arquivo) */
+                            aptidoes: {
                                 [key: string]: unknown;
                             }[];
                             /** @description Foto de perfil da conta do atleta (o caminho interno não é exportado) */

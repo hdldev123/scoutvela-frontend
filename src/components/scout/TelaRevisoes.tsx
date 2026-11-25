@@ -8,6 +8,7 @@ import { fmtInstante } from "./formato";
 import { atributosDoCampo } from "./campo-util";
 import { MensagemCampo } from "./MensagemCampo";
 import { NotaRevisao } from "./NotaRevisao";
+import { andamentoRevisao, rotuloPapel } from "./revisao-util";
 import { errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
 import { LIMITES, mensagemResposta } from "@/lib/validacao";
 import { useAnonimizarAtleta, type ResultadoAnonimizacao } from "@/lib/api/titular";
@@ -34,11 +35,47 @@ const ROTULO_TIPO: Record<TipoPedido, string> = {
 type Aba = "notas" | "titular";
 type FiltroStatus = StatusRevisao | "todos";
 
-function Status({ status }: { status: StatusRevisao }) {
+function Status({ status, instancia = 1 }: { status: StatusRevisao; instancia?: 1 | 2 }) {
   return (
-    <span className={`pill ${status === "aberto" ? "st-cond" : "st-apto"}`}>
-      {status === "aberto" ? "Aberto" : "Respondido"}
-    </span>
+    <>
+      <span className={`pill ${status === "aberto" ? "st-cond" : "st-apto"}`}>
+        {status === "aberto" ? "Aberto" : "Respondido"}
+      </span>
+      {instancia === 2 && <span className="pill st-alerta">2ª instância</span>}
+    </>
+  );
+}
+
+/** Primeira resposta e recurso do atleta, para quem vai dar a resposta final. */
+function FluxoRecurso({ r }: { r: Revisao }) {
+  if (!r.recurso) return null;
+  return (
+    <div className="rev-fluxo">
+      {r.primeiraResposta && (
+        <p>
+          <strong>
+            1ª resposta ({rotuloPapel(r.primeiraResposta.papel).toLowerCase()},{" "}
+            {fmtInstante(r.primeiraResposta.respondidoEm)}):
+          </strong>{" "}
+          {r.primeiraResposta.texto}
+        </p>
+      )}
+      <p>
+        <strong>Recurso do atleta ({fmtInstante(r.recurso.em)}):</strong> {r.recurso.texto}
+      </p>
+    </div>
+  );
+}
+
+/** Resposta vigente com o papel de quem respondeu (a final, quando há). */
+function RespostaVigente({ r }: { r: Revisao }) {
+  const v = r.respostaFinal ?? r.primeiraResposta;
+  if (!v || (r.instancia === 2 && r.status === "aberto")) return <>—</>;
+  return (
+    <>
+      <strong>{r.respostaFinal ? "Final (gestor)" : rotuloPapel(v.papel)}:</strong> {v.texto}
+      <span className="muted"> ({fmtInstante(v.respondidoEm)})</span>
+    </>
   );
 }
 
@@ -228,7 +265,8 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
       </div>
       {!gestor && (
         <p className="muted">
-          Você acompanha os pedidos dos seus atletas. Quem responde é o gestor da CBVela.
+          Você responde os pedidos de revisão dos seus atletas. Se o atleta discordar, o pedido vai
+          para a gestão da CBVela (2ª instância) e deixa de ser seu.
         </p>
       )}
       {q.isPending ? (
@@ -265,11 +303,9 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                 <th className="rev-col-data">Pedido em</th>
                 <th>Status</th>
                 <th className="rev-col-resp">Resposta</th>
-                {gestor && (
-                  <th className="acoes">
-                    <span className="sr-only">Ação</span>
-                  </th>
-                )}
+                <th className="acoes">
+                  <span className="sr-only">Ação</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -292,6 +328,7 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                         <NotaRevisao notaAnterior={r.notaAnterior} notaNova={r.notaNova} />
                       </div>
                     )}
+                    <FluxoRecurso r={r} />
                     <Extra
                       criadoEm={r.criadoEm}
                       resposta={r.resposta}
@@ -300,37 +337,27 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
                   </td>
                   <td className="nw rev-col-data">{fmtInstante(r.criadoEm)}</td>
                   <td className="nw">
-                    <Status status={r.status} />
+                    <Status status={r.status} instancia={r.instancia} />
                   </td>
                   <td className="rev-texto rev-col-resp">
-                    {r.resposta ? (
-                      <>
-                        {r.resposta}
-                        {r.respondidoEm && (
-                          <span className="muted"> ({fmtInstante(r.respondidoEm)})</span>
-                        )}
-                      </>
-                    ) : (
-                      "—"
+                    <RespostaVigente r={r} />
+                  </td>
+                  <td className="acoes">
+                    {r.status === "aberto" && (gestor || r.instancia === 1) && (
+                      <button
+                        type="button"
+                        className="btn sm"
+                        onClick={() => {
+                          responder.reset();
+                          setErro("");
+                          setAvaliacaoId("");
+                          setAlvo(r);
+                        }}
+                      >
+                        Responder
+                      </button>
                     )}
                   </td>
-                  {gestor && (
-                    <td className="acoes">
-                      {r.status === "aberto" && (
-                        <button
-                          type="button"
-                          className="btn sm"
-                          onClick={() => {
-                            setErro("");
-                            setAvaliacaoId("");
-                            setAlvo(r);
-                          }}
-                        >
-                          Responder
-                        </button>
-                      )}
-                    </td>
-                  )}
                 </tr>
               ))}
             </tbody>
@@ -338,12 +365,23 @@ function RevisoesNota({ gestor }: { gestor: boolean }) {
         </div>
       )}
       {alvo && (
-        <Dialogo titulo="Responder revisão de nota" aoFechar={() => setAlvo(null)}>
+        <Dialogo
+          titulo={alvo.instancia === 2 ? "Resposta final do recurso" : "Responder revisão de nota"}
+          aoFechar={() => setAlvo(null)}
+        >
           <p className="rev-contexto">
             <strong>{alvo.atleta.nome}</strong>: {alvo.motivo}
           </p>
+          {alvo.instancia === 2 && (
+            <div className="rev-contexto">
+              <FluxoRecurso r={alvo} />
+              <p className="muted" style={{ margin: "8px 0 0" }}>
+                {andamentoRevisao(alvo)}. A sua resposta encerra o pedido.
+              </p>
+            </div>
+          )}
           <FormResposta
-            rotuloBotao="Enviar resposta"
+            rotuloBotao={alvo.instancia === 2 ? "Enviar resposta final" : "Enviar resposta"}
             pendente={responder.isPending}
             erro={erro}
             erroCampo={errosPorCampo(responder.error)["resposta"]}

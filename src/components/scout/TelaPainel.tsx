@@ -9,6 +9,8 @@ import { EstadoVazio } from "./EstadoVazio";
 import { Interruptor } from "./Interruptor";
 import { NotaRevisao } from "./NotaRevisao";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
+import { RecursoRevisaoDialog } from "./RecursoRevisaoDialog";
+import { andamentoRevisao, rotuloPapelAtleta } from "./revisao-util";
 import { fmtData, fmtInstante, primeiroNome } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useFicha } from "@/lib/api/consultas";
@@ -557,6 +559,7 @@ function DialogoRevisao({ atletaId, aoFechar }: { atletaId: string; aoFechar: ()
 function Revisoes({ atletaId }: { atletaId: string }) {
   const { data, error, isPending } = useRevisoes();
   const [pedindo, setPedindo] = useState(false);
+  const [recorrendo, setRecorrendo] = useState<string | null>(null);
   return (
     <section className="panel" aria-labelledby="painel-rev">
       <div className="panel-head">
@@ -604,14 +607,38 @@ function Revisoes({ atletaId }: { atletaId: string }) {
               <b>Nota:</b> <NotaRevisao notaAnterior={r.notaAnterior} notaNova={r.notaNova} />
             </p>
           )}
-          {r.resposta && (
+          <p>
+            <b>Andamento:</b> {andamentoRevisao(r)}
+          </p>
+          {r.primeiraResposta && (
             <p>
-              <b>Resposta do gestor:</b> {r.resposta}
-              {r.respondidoEm ? ` (${fmtInstante(r.respondidoEm)})` : ""}
+              <b>Resposta do {rotuloPapelAtleta(r.primeiraResposta.papel).toLowerCase()}:</b>{" "}
+              {r.primeiraResposta.texto} ({fmtInstante(r.primeiraResposta.respondidoEm)})
             </p>
+          )}
+          {r.recurso && (
+            <p>
+              <b>Seu recurso:</b> {r.recurso.texto} ({fmtInstante(r.recurso.em)})
+            </p>
+          )}
+          {r.respostaFinal && (
+            <p>
+              <b>Resposta final da gestão:</b> {r.respostaFinal.texto} (
+              {fmtInstante(r.respostaFinal.respondidoEm)})
+            </p>
+          )}
+          {r.podeRecurso && (
+            <div>
+              <button type="button" className="btn sm" onClick={() => setRecorrendo(r.id)}>
+                Discordar da resposta
+              </button>
+            </div>
           )}
         </div>
       ))}
+      {recorrendo && (
+        <RecursoRevisaoDialog revisaoId={recorrendo} aoFechar={() => setRecorrendo(null)} />
+      )}
       {pedindo && <DialogoRevisao atletaId={atletaId} aoFechar={() => setPedindo(false)} />}
     </section>
   );
