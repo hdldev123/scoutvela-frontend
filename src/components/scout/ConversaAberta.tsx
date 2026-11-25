@@ -334,8 +334,8 @@ export function ConversaAberta({
               : "Esta conversa está somente leitura (par anterior, depois da troca de treinador, ou conta desativada). Não é possível enviar mensagens."}
           </p>
         )}
-        <label className="field" htmlFor={`msg-texto-${id}`}>
-          Mensagem
+        <div className="field">
+          <label htmlFor={`msg-texto-${id}`}>Mensagem</label>
           <textarea
             id={`msg-texto-${id}`}
             rows={3}
@@ -347,7 +347,7 @@ export function ConversaAberta({
             aria-describedby={descricao}
             {...atributosDoCampo(`msg-erro-${id}`, erroTexto)}
           />
-        </label>
+        </div>
         <p className="muted msg-dica" id={`msg-dica-${id}`}>
           Enter envia a mensagem. Shift+Enter quebra a linha. Só texto.
         </p>
