@@ -17,24 +17,30 @@ test("gestor lança uma avaliação com prévia", async ({ page }) => {
   await expect(page.getByText(/Avaliação lançada\. Novo score/)).toBeVisible();
 });
 
-test("gestor cadastra atleta e registra o aceite do termo", async ({ page }) => {
+test("gestor cadastra atleta pelo WS ID e registra o aceite do termo", async ({ page }) => {
   await entrar(page, "gestor");
   await linkDoMenu(page, "Cadastrar atleta").click();
+  await page.getByLabel("ID World Sailing").fill("braxx 01");
+  await page.getByLabel("E-mail do atleta").fill("novo.atleta@scoutvela.dev");
+  await page.getByLabel("Classe e função projetadas").selectOption({ index: 1 });
+  await page.getByLabel("Treinador(a) responsável").selectOption({ index: 1 });
+  // O VelaID é opcional: a busca só mostra os dados de referência.
   await page.getByLabel("Código VelaID").fill(SEED.velaid.codigo);
   await page.getByRole("button", { name: "Buscar no VelaID" }).click();
   await expect(page.getByText(SEED.velaid.nome)).toBeVisible();
-  await page.getByLabel("Classe e função projetadas").selectOption({ index: 1 });
-  await page.getByLabel("Treinador(a) responsável").selectOption({ index: 1 });
+  // Sem a confirmação de 18+, o envio é barrado no formulário.
   await page.getByRole("button", { name: "Enviar termo de consentimento" }).click();
-  await expect(page.getByText(new RegExp(`Termo enviado a ${SEED.velaid.nome}`))).toBeVisible();
+  await expect(page.getByText("Confirme que o atleta tem 18 anos ou mais.")).toBeVisible();
+  await page.getByLabel("Confirmo que o atleta tem 18 anos ou mais").check();
+  await page.getByRole("button", { name: "Enviar termo de consentimento" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Termo enviado (" })).toBeVisible();
 
-  const linha = page.getByRole("row", { name: new RegExp(SEED.velaid.nome) });
+  // Atleta incompleto: sem nome, aparece pelo WS ID.
+  const linha = page.getByRole("row", { name: /BRAXX01/ });
   await linha.getByRole("button", { name: "Registrar aceite recebido" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Confirmar aceite" }).click();
-  await expect(
-    page.getByText(new RegExp(`Aceite de ${SEED.velaid.nome} registrado`)),
-  ).toBeVisible();
-  await expect(page.getByRole("row", { name: new RegExp(SEED.velaid.nome) })).toHaveCount(0);
+  await expect(page.getByText(/Aceite de BRAXX01 registrado/)).toBeVisible();
+  await expect(page.getByRole("row", { name: /BRAXX01/ })).toHaveCount(0);
 });
 
 test("gestor fecha o ciclo e abre o próximo", async ({ page }) => {
