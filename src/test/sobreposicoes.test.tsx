@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { useState } from "react";
+import { StrictMode, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.stubGlobal(
@@ -199,6 +199,20 @@ describe("foco ao fechar o diálogo", () => {
     expect(document.activeElement).toBe(screen.getByLabelText("campo"));
     teclar({ key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.activeElement).toBe(abrir);
+  });
+
+  it("no StrictMode (efeito duplo do dev), o foco fica no campo com autoFocus, não no Fechar", () => {
+    render(
+      <StrictMode>
+        <ComAutoFocus />
+      </StrictMode>,
+    );
+    const abrir = screen.getByRole("button", { name: "abrir" });
+    abrir.focus();
+    fireEvent.click(abrir);
+    expect(document.activeElement).toBe(screen.getByLabelText("campo"));
+    teclar({ key: "Escape" });
     expect(document.activeElement).toBe(abrir);
   });
 });
