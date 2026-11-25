@@ -64,6 +64,17 @@ function ItemAviso({ a, aoAbrir }: { a: Aviso; aoAbrir: (a: Aviso) => void }) {
         <ConteudoDoAviso a={a} />
       </Link>
     );
+  } else if (destino?.to === "/mensagens") {
+    acao = (
+      <Link
+        to="/mensagens"
+        {...(destino.search ? { search: destino.search } : {})}
+        className={classe}
+        onClick={() => aoAbrir(a)}
+      >
+        <ConteudoDoAviso a={a} />
+      </Link>
+    );
   } else if (destino) {
     acao = (
       <Link to={destino.to} className={classe} onClick={() => aoAbrir(a)}>

@@ -91,6 +91,8 @@ export function fraseDoAviso(a: Aviso): string {
       return "Sua conquista foi validada";
     case "conquista_recusada":
       return "Sua conquista foi recusada";
+    case "mensagem_nova":
+      return `Nova mensagem de ${a.criadoPor?.nome ?? "alguém"}`;
   }
 }
 
@@ -100,11 +102,18 @@ export function detalheDoAviso(a: Aviso): string | null {
 }
 
 export type DestinoAviso =
-  { to: "/atletas/$id"; params: { id: string } } | { to: "/painel" } | { to: "/sugestoes" };
+  | { to: "/atletas/$id"; params: { id: string } }
+  | { to: "/painel" }
+  | { to: "/sugestoes" }
+  | { to: "/mensagens"; search?: { c: string } };
 
 /** Tela para onde o aviso leva; `null` quando não há tela certa (o item só marca como lido). */
 export function destinoDoAviso(a: Aviso): DestinoAviso | null {
   switch (a.tipo) {
+    case "mensagem_nova": {
+      const conversaId = texto((a.referencia as Record<string, unknown>)["conversaId"]);
+      return conversaId ? { to: "/mensagens", search: { c: conversaId } } : { to: "/mensagens" };
+    }
     case "pedido_ajuste":
       return { to: "/painel" };
     case "sugestao_respondida":
