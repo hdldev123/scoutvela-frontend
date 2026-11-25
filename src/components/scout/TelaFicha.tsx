@@ -15,6 +15,8 @@ import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
 import { PesagensPendentes } from "./PesagensPendentes";
 import { ConquistasParaValidar } from "./ConquistasParaValidar";
 import { ResultadosParaValidar } from "./ResultadosParaValidar";
+import { AcoesResultadoWorldSailing } from "./ResultadoWorldSailing";
+import { SecaoWorldSailing } from "./SecaoWorldSailing";
 import { PlanoIndividual } from "./PlanoIndividual";
 import { ResultadoDialog } from "./ResultadoDialog";
 import { SemAcesso } from "./SemAcesso";
@@ -33,7 +35,7 @@ import {
   type LancamentoHistorico,
 } from "@/lib/api/consultas";
 import { atualizarGate } from "@/lib/api/mutacoes-ficha";
-import { INDICADORES_DE_RESULTADO, ROTULO_STATUS_RESULTADO } from "@/lib/api/resultados";
+import { INDICADORES_DE_RESULTADO, situacaoDoResultado } from "@/lib/api/resultados";
 import "@/styles/ficha.css";
 
 type Pilar = FichaAtleta["pilares"][number];
@@ -72,6 +74,7 @@ const FONTE_RESULTADO: Record<string, string> = {
   ranking_cbvela: "Ranking CBVela",
   manual: "Lançado",
   atleta: "Atleta",
+  world_sailing: "World Sailing",
 };
 
 /** Lançamentos do indicador, do mais novo para o mais antigo. Mostra só o que a API devolve ao papel. */
@@ -684,7 +687,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                             <span className="pill st-info">Ranking CBVela</span>
                           ) : link ? (
                             <a
-                              className="pill st-neutro"
+                              className={`pill ${r.fonte === "world_sailing" ? "st-info" : "st-neutro"}`}
                               href={link}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -699,8 +702,8 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                         </td>
                         {papel !== "ibvar" && (
                           <td>
-                            <span className={`pill ${ROTULO_STATUS_RESULTADO[r.status].classe}`}>
-                              {ROTULO_STATUS_RESULTADO[r.status].rotulo}
+                            <span className={`pill ${situacaoDoResultado(r).classe}`}>
+                              {situacaoDoResultado(r).rotulo}
                             </span>
                             {r.validadoPor && r.validadoEm && (
                               <small className="sub">
@@ -709,6 +712,9 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                             )}
                             {r.status === "recusado" && r.motivo && (
                               <small className="sub">Motivo: {r.motivo}</small>
+                            )}
+                            {podeLancar && (
+                              <AcoesResultadoWorldSailing atletaId={atleta.id} resultado={r} />
                             )}
                           </td>
                         )}
@@ -723,6 +729,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               indicadores de resultado sai dos resultados validados.
             </p>
           </section>
+          {papel !== "ibvar" && <SecaoWorldSailing atletaId={atleta.id} papel={papel} />}
           {podeLancar && <ResultadosParaValidar atletaId={atleta.id} />}
           {podeLancar && <ConquistasParaValidar atletaId={atleta.id} />}
           {papel !== "ibvar" && (
