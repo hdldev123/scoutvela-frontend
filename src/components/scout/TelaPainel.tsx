@@ -7,8 +7,10 @@ import { BigScore } from "./BigScore";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
 import { Interruptor } from "./Interruptor";
+import { MinhaAutoavaliacao } from "./MinhaAutoavaliacao";
 import { NotaRevisao } from "./NotaRevisao";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
+import { PesagemAtleta } from "./PesagemAtleta";
 import { RecursoRevisaoDialog } from "./RecursoRevisaoDialog";
 import { andamentoRevisao, rotuloPapelAtleta } from "./revisao-util";
 import { fraseDoAviso } from "./avisos-util";
@@ -692,6 +694,7 @@ function PedidosDeAjuste() {
 function Conteudo({ painel }: { painel: PainelAtleta }) {
   const queryClient = useQueryClient();
   const [aberto, setAberto] = useState<string | null>(null);
+  const [pedindoRevisao, setPedindoRevisao] = useState(false);
   // Painel carregado: marca as respostas novas como vistas (uma vez por montagem; falha em silêncio).
   useEffect(() => {
     void marcarPainelVisto(queryClient);
@@ -753,10 +756,19 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
         {modulo && (
           <Questionario m={modulo} atletaId={painel.atleta.id} aoFechar={() => setAberto(null)} />
         )}
+        <MinhaAutoavaliacao
+          atletaId={painel.atleta.id}
+          pilares={painel.modulos.map((m) => ({ id: m.pilarId, nome: m.nome }))}
+          aoPedirRevisao={() => setPedindoRevisao(true)}
+        />
+        <PesagemAtleta atletaId={painel.atleta.id} />
         <Consentimento c={painel.consentimento} />
         <PedidosTitular />
         <Revisoes atletaId={painel.atleta.id} />
       </div>
+      {pedindoRevisao && (
+        <DialogoRevisao atletaId={painel.atleta.id} aoFechar={() => setPedindoRevisao(false)} />
+      )}
     </>
   );
 }

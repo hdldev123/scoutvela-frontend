@@ -137,12 +137,22 @@ const TERMO = {
 let proximaDoTermo: unknown = null;
 let avisosDoAtleta: unknown[] = [];
 
+const SEM_AUTOAVALIACAO = { ciclo: null, indicadores: [], resumoPorPilar: null };
+let autoavaliacao: unknown = SEM_AUTOAVALIACAO;
+let pesagens: unknown = { itens: [] };
+
 function montar(
   dados: PainelAtleta | { erro: number },
   revisoes: unknown[] = [],
   pedidos: unknown[] = [],
 ) {
   GET.mockImplementation((caminho: string) => {
+    if (caminho === "/atletas/{id}/autoavaliacao") {
+      return Promise.resolve({ data: autoavaliacao, response: { status: 200 } });
+    }
+    if (caminho === "/atletas/{id}/pesagens") {
+      return Promise.resolve({ data: pesagens, response: { status: 200 } });
+    }
     if (caminho === "/painel") {
       return Promise.resolve(
         "erro" in dados
@@ -193,6 +203,8 @@ describe("TelaPainel", () => {
     toastFn.error.mockReset();
     proximaDoTermo = null;
     avisosDoAtleta = [];
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
   });
 
   it("destaca os pedidos de ajuste não lidos e marca como lido", async () => {
