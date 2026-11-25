@@ -11,6 +11,24 @@ export type Evidencia =
 export type ListaEvidencias =
   paths["/atletas/{id}/evidencias"]["get"]["responses"][200]["content"]["application/json"];
 
+export type CategoriaAnexo = NonNullable<CorpoEvidencia["categoria"]>;
+export const CATEGORIAS: readonly { id: CategoriaAnexo; rotulo: string }[] = [
+  { id: "evidencia", rotulo: "Evidência" },
+  { id: "sumula", rotulo: "Súmula" },
+  { id: "balanca", rotulo: "Foto da balança" },
+];
+export const ROTULO_PAPEL = {
+  gestor: "o gestor",
+  treinador: "o treinador",
+  atleta: "o atleta",
+} as const;
+
+/** Bytes em MB, no formato brasileiro ("12,5"). Abaixo de 0,1 MB não mostra zero enganoso. */
+export function fmtMb(bytes: number): string {
+  if (bytes > 0 && bytes < 0.05 * 1024 * 1024) return "menos de 0,1";
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(bytes / 1048576);
+}
+
 export const TAMANHO_MAX_BYTES = 5 * 1024 * 1024;
 export const TIPOS_ACEITOS: readonly CorpoEvidencia["tipoMime"][] = [
   "application/pdf",
@@ -65,6 +83,7 @@ export async function enviarEvidencia(
   atletaId: string,
   arquivo: File,
   indicadorId?: string,
+  categoria?: CategoriaAnexo,
 ): Promise<Evidencia> {
   const recusa = validarArquivo(arquivo);
   if (recusa) throw new Error(recusa);
@@ -76,6 +95,7 @@ export async function enviarEvidencia(
       tipoMime: arquivo.type as CorpoEvidencia["tipoMime"],
       conteudoBase64,
       ...(indicadorId ? { indicadorId } : {}),
+      ...(categoria ? { categoria } : {}),
     },
   });
   if (error || !data) throw paraErroApi(response.status, error);
@@ -149,4 +169,14 @@ export async function removerEvidenciaOrfa(id: string): Promise<void> {
   } catch (e) {
     if (import.meta.env.DEV) console.warn(`Anexo órfão ${id} não removido.`, e);
   }
+}
+
+/**
+ * `DELETE /evidencias/{id}` pedido pelo atleta sobre um anexo que ele enviou. Lança `ErroApi`:
+ * 409 (ligado a uma nota), 403 (enviado por outra pessoa) ou 404.
+ */
+export async function removerAnexo(id: string): Promise<void> {
+  const { error, response } = await api.DELETE("/evidencias/{id}", { params: { path: { id } } });
+  if (response.status === 204 || response.ok) return;
+  throw paraErroApi(response.status, error);
 }

@@ -12,7 +12,10 @@ async function gestorLancaNota(gestor: Page): Promise<void> {
   await gestor.getByRole("button", { name: new RegExp(`^${SEED.pilar.nomeCurto}`) }).click();
   const grupo = gestor.getByRole("radiogroup", { name: `Nota de ${SEED.indicador.nome}` });
   await grupo.locator("label:not(:has(input:checked))").first().click();
-  await gestor.getByLabel("Evidência (obrigatória)").first().fill("Conferido em vídeo de treino");
+  await gestor
+    .getByLabel(/^Evidência \((obrigatória|opcional)\)/)
+    .first()
+    .fill("Conferido em vídeo de treino");
   await gestor.getByRole("button", { name: "Salvar avaliação" }).click();
   await expect(gestor.getByText(/Avaliação lançada\. Novo score/)).toBeVisible();
 }

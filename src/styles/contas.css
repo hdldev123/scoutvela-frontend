@@ -53,3 +53,13 @@
   padding-top: 8px;
   margin-top: 8px;
 }
+.ct-wsid {
+  max-width: 14rem;
+  font-family: var(--f-mono);
+  text-transform: uppercase;
+}
+.ct-selo {
+  display: block;
+  width: fit-content;
+  margin-top: 4px;
+}

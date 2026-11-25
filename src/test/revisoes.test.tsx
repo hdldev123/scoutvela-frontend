@@ -43,6 +43,11 @@ const revisao = {
   criadoEm: "2026-11-05T12:00:00.000Z",
   resposta: null,
   respondidoEm: null,
+  instancia: 1,
+  primeiraResposta: null,
+  recurso: null,
+  respostaFinal: null,
+  podeRecurso: false,
 };
 const pedido = {
   id: "t1",
@@ -184,13 +189,70 @@ describe("TelaRevisoes", () => {
     expect(screen.getByText("Nota nova: 3")).toBeTruthy();
   });
 
-  it("treinador só lê e não vê a aba LGPD", async () => {
-    montar("treinador");
+  it("treinador responde o pedido de 1ª instância e não vê a aba LGPD", async () => {
+    PUT.mockResolvedValue(ok({ ...revisao, status: "respondido", resposta: "Revisada." }));
+    const inv = montar("treinador");
     await screen.findByRole("link", { name: "Helena Prado" });
-    expect(screen.queryByRole("button", { name: "Responder" })).toBeNull();
     expect(screen.queryByRole("tab")).toBeNull();
-    expect(screen.getByText(/Quem responde é o gestor/)).toBeTruthy();
+    expect(screen.getByText(/Você responde os pedidos de revisão dos seus atletas/)).toBeTruthy();
     expect(GET).not.toHaveBeenCalledWith("/pedidos-titular");
+    fireEvent.click(screen.getByRole("button", { name: "Responder" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Responder revisão de nota" });
+    expect(await within(dialogo).findByLabelText(/Lançamento que corrigiu a nota/)).toBeTruthy();
+    fireEvent.change(within(dialogo).getByLabelText("Resposta"), {
+      target: { value: "Revisada." },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar resposta" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/revisoes/{id}", {
+        params: { path: { id: "r1" } },
+        body: { resposta: "Revisada." },
+      }),
+    );
+    await waitFor(() => expect(inv).toHaveBeenCalledWith({ queryKey: ["revisoes"] }));
+  });
+
+  const recurso = {
+    ...revisao,
+    instancia: 2,
+    primeiraResposta: {
+      texto: "Mantive a nota.",
+      papel: "treinador",
+      respondidoEm: "2026-11-06T12:00:00.000Z",
+    },
+    recurso: { texto: "Discordo da avaliação da largada.", em: "2026-11-07T12:00:00.000Z" },
+  };
+
+  it("gestor vê o selo 2ª instância, a primeira resposta e o recurso, e responde de forma final", async () => {
+    GET.mockImplementation(async (caminho: string) =>
+      ok(
+        caminho === "/revisoes" ? [recurso] : caminho === "/pedidos-titular" ? [] : { lancamentos },
+      ),
+    );
+    PUT.mockResolvedValue(ok({ ...recurso, status: "respondido" }));
+    montar("gestor");
+    expect(await screen.findByText("2ª instância")).toBeTruthy();
+    expect(screen.getByText(/1ª resposta \(treinador,/)).toBeTruthy();
+    expect(screen.getByText(/Mantive a nota./)).toBeTruthy();
+    expect(screen.getByText(/Discordo da avaliação da largada./)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Responder" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Resposta final do recurso" });
+    expect(within(dialogo).getByText(/Em análise pela gestão \(2ª instância\)/)).toBeTruthy();
+    fireEvent.change(within(dialogo).getByLabelText("Resposta"), { target: { value: "Final." } });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar resposta final" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/revisoes/{id}", {
+        params: { path: { id: "r1" } },
+        body: { resposta: "Final." },
+      }),
+    );
+  });
+
+  it("treinador não tem o botão Responder na 2ª instância", async () => {
+    GET.mockImplementation(async () => ok([recurso]));
+    montar("treinador");
+    expect(await screen.findByText("2ª instância")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Responder" })).toBeNull();
   });
 
   it("gestor tem duas abas, a de notas começa ativa e o teclado troca de aba", async () => {

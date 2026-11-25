@@ -31,7 +31,8 @@ export default defineConfig({
       command: "npm run dev:local -- --recriar",
       cwd: caminhoDoBack(),
       url: `${API}/health`,
-      env: { DADOS_LOCAIS_DIR: ".dados-e2e" },
+      // A suíte roda em paralelo pelo mesmo IP: sem isso, o limite global da API (300/min) derruba testes.
+      env: { DADOS_LOCAIS_DIR: ".dados-e2e", LIMITE_REQUISICOES_LOCAL: "3000" },
       // O log do back (erros da API, links de convite) aparece na saída do teste que falhou.
       stdout: "pipe",
       reuseExistingServer: false,

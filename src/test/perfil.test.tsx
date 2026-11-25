@@ -58,6 +58,8 @@ function perfil(papel: Papel, extra: Record<string, unknown> = {}) {
     atleta:
       papel === "atleta"
         ? {
+            wsId: "BRAHV07",
+            cadastroCompleto: true,
             velaid: "SC-T07",
             classe: { id: "c1", nome: "ILCA 6" },
             numeroVela: "BRA 123",
@@ -69,6 +71,13 @@ function perfil(papel: Papel, extra: Record<string, unknown> = {}) {
             emailContato: "ana@contato.com",
             termoAceitoEm: "2026-10-01T10:00:00Z",
             compartilharIbvar: false,
+            telefone: "+5521988887777",
+            passaporteValidoAte: "2030-05",
+            aptidao: {
+              apto: true,
+              conferidoEm: "2026-11-10T15:00:00.000Z",
+              conferidoPor: { nome: "Carla Gestora" },
+            },
           }
         : null,
     treinador: papel === "treinador" ? { quantidadeAtletas: 7 } : null,
@@ -153,7 +162,7 @@ describe("Modal Meu perfil", () => {
   it("não abre para o IBVAR", () => {
     montar("ibvar");
     expect(screen.queryByRole("button", { name: /Ana Souza/ })).toBeNull();
-    expect(GET).not.toHaveBeenCalled();
+    expect(GET).not.toHaveBeenCalledWith("/me/perfil");
   });
 
   it("treinador vê a quantidade de atletas", async () => {
@@ -166,6 +175,11 @@ describe("Modal Meu perfil", () => {
     montar("atleta");
     await abrir();
     expect(await screen.findByText("SC-T07")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: /Perfil de Ana Souza no World Sailing [(]abre em nova aba[)]/,
+      }),
+    ).toHaveAttribute("href", "https://www.sailing.org/sailor/?ref=BRAHV07");
     expect(screen.getByText("Florianópolis/SC")).toBeInTheDocument();
     expect(screen.getByText("Rui Lima")).toBeInTheDocument();
     expect(screen.getByText("Desativado")).toBeInTheDocument();
@@ -431,5 +445,176 @@ describe("lib/foto", () => {
   it("recorte quadrado centralizado", () => {
     expect(recorteQuadrado(400, 200)).toEqual({ x: 100, y: 0, lado: 200 });
     expect(recorteQuadrado(200, 300)).toEqual({ x: 0, y: 50, lado: 200 });
+  });
+});
+
+describe("Modal Meu perfil: contato e passaporte (D15)", () => {
+  it("atleta vê telefone, passaporte, a explicação de LGPD e a aptidão só leitura", async () => {
+    montar("atleta");
+    await abrir();
+    expect(await screen.findByLabelText("Telefone")).toHaveValue("+5521988887777");
+    expect(screen.getByLabelText("Passaporte válido até")).toHaveValue("2030-05");
+    expect(screen.getByLabelText("Passaporte válido até")).toHaveAttribute("type", "month");
+    expect(screen.getByText(/Não pedimos o número nem a cópia do passaporte/)).toBeInTheDocument();
+    expect(screen.getByText(/\+55 21 99999-0000/)).toBeInTheDocument();
+    expect(screen.getByText("Apto, conferido em 10/11/2026 por Carla Gestora")).toBeInTheDocument();
+  });
+
+  it("treinador não vê os campos de contato do atleta", async () => {
+    montar("treinador");
+    await abrir();
+    await screen.findByLabelText("Nome");
+    expect(screen.queryByLabelText("Telefone")).toBeNull();
+  });
+
+  it("edita o telefone e envia só ele", async () => {
+    montar("atleta");
+    await abrir();
+    fireEvent.change(await screen.findByLabelText("Telefone"), {
+      target: { value: "21 99999-0000" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar telefone" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/me/perfil", { body: { telefone: "21 99999-0000" } }),
+    );
+  });
+
+  it("mostra o 400 do telefone embaixo do campo", async () => {
+    montar("atleta");
+    await abrir();
+    PUT.mockResolvedValue({
+      error: {
+        erro: "requisicao_invalida",
+        mensagem: "Dados inválidos.",
+        campos: [{ campo: "telefone", mensagem: "Informe o telefone com DDD." }],
+      },
+      response: { status: 400 },
+    });
+    const campo = await screen.findByLabelText("Telefone");
+    fireEvent.change(campo, { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar telefone" }));
+    const msg = await screen.findByText("Informe o telefone com DDD.");
+    expect(campo).toHaveAttribute("aria-describedby", msg.id);
+    expect(campo).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("edita o passaporte (AAAA-MM) e apaga com null", async () => {
+    montar("atleta");
+    await abrir();
+    fireEvent.change(await screen.findByLabelText("Passaporte válido até"), {
+      target: { value: "2031-08" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar passaporte" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/me/perfil", { body: { passaporteValidoAte: "2031-08" } }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apagar passaporte" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenLastCalledWith("/me/perfil", { body: { passaporteValidoAte: null } }),
+    );
+  });
+
+  it("avisa quando o passaporte já venceu", async () => {
+    const base = perfil("atleta");
+    montar(
+      "atleta",
+      perfil("atleta", { atleta: { ...base.atleta!, passaporteValidoAte: "2020-01" } }),
+    );
+    await abrir();
+    expect(await screen.findByText("Passaporte vencido")).toBeInTheDocument();
+  });
+});
+
+describe("Mini bio (atleta, D14)", () => {
+  const bio = () => screen.findByRole("textbox", { name: "Mini bio" });
+
+  it("mostra a orientação sobre o que não escrever e o contador", async () => {
+    montar("atleta");
+    await abrir();
+    const campo = await bio();
+    expect(campo).toHaveAttribute("maxlength", "500");
+    expect(
+      screen.getByText(/Não escreva dados de saúde, da sua família nem contato/),
+    ).toBeVisible();
+    expect(screen.getByText("0 de 500 caracteres")).toBeVisible();
+    fireEvent.change(campo, { target: { value: "Velejo desde os 8 anos." } });
+    expect(screen.getByText("23 de 500 caracteres")).toBeVisible();
+    expect(campo).toHaveAccessibleDescription(/23 de 500 caracteres/);
+  });
+
+  it("anuncia o contador só perto do limite", async () => {
+    montar("atleta");
+    await abrir();
+    const campo = await bio();
+    const anuncio = () =>
+      screen.getAllByRole("status").find((e) => e.classList.contains("sr-only"))!;
+    fireEvent.change(campo, { target: { value: "a".repeat(100) } });
+    expect(anuncio()).toHaveTextContent("");
+    fireEvent.change(campo, { target: { value: "a".repeat(470) } });
+    expect(anuncio()).toHaveTextContent("Restam 30 caracteres.");
+    fireEvent.change(campo, { target: { value: "a".repeat(500) } });
+    expect(anuncio()).toHaveTextContent("Limite de 500 caracteres atingido.");
+  });
+
+  it("salva a bio sem os espaços das pontas", async () => {
+    montar("atleta");
+    await abrir();
+    fireEvent.change(await bio(), { target: { value: "  Velejo desde os 8 anos.  " } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar mini bio" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/me/perfil", { body: { bio: "Velejo desde os 8 anos." } }),
+    );
+  });
+
+  it("só habilita Salvar quando a bio muda", async () => {
+    montar("atleta");
+    await abrir();
+    const campo = await bio();
+    const salvar = screen.getByRole("button", { name: "Salvar mini bio" });
+    expect(salvar).toBeDisabled();
+    fireEvent.change(campo, { target: { value: "Nova bio" } });
+    expect(salvar).toBeEnabled();
+  });
+
+  it("apaga a bio com null, pelo botão e ao salvar o campo vazio", async () => {
+    const base = perfil("atleta");
+    montar("atleta", perfil("atleta", { atleta: { ...base.atleta!, bio: "Bio antiga" } }));
+    await abrir();
+    const campo = await bio();
+    expect(campo).toHaveValue("Bio antiga");
+    fireEvent.click(screen.getByRole("button", { name: "Apagar mini bio" }));
+    await waitFor(() => expect(PUT).toHaveBeenCalledWith("/me/perfil", { body: { bio: null } }));
+    await waitFor(() => expect(campo).toHaveValue(""));
+    PUT.mockClear();
+    fireEvent.change(campo, { target: { value: "Outra" } });
+    fireEvent.change(campo, { target: { value: "   " } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar mini bio" }));
+    await waitFor(() => expect(PUT).toHaveBeenCalledWith("/me/perfil", { body: { bio: null } }));
+  });
+
+  it("mostra o erro 400 embaixo do campo, ligado por aria-describedby", async () => {
+    montar("atleta");
+    await abrir();
+    PUT.mockResolvedValue({
+      error: {
+        erro: "requisicao_invalida",
+        mensagem: "Dados inválidos.",
+        campos: [{ campo: "bio", mensagem: "A bio não pode ter caracteres de controle." }],
+      },
+      response: { status: 400 },
+    });
+    const campo = await bio();
+    fireEvent.change(campo, { target: { value: "texto" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar mini bio" }));
+    const msg = await screen.findByText("A bio não pode ter caracteres de controle.");
+    expect(campo).toHaveAttribute("aria-invalid", "true");
+    expect(campo.getAttribute("aria-describedby")).toContain(msg.id);
+  });
+
+  it("gestor e treinador não têm o campo", async () => {
+    montar("treinador");
+    await abrir();
+    await screen.findByLabelText("Nome");
+    expect(screen.queryByRole("textbox", { name: "Mini bio" })).toBeNull();
   });
 });

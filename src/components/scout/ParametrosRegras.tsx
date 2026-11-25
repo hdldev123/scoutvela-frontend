@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { mensagemDeErro } from "@/lib/api/cliente";
 import { useSalvarParametros, type Parametros } from "@/lib/api/parametros";
+import { FormPerfResultados } from "./ParametrosResultados";
 import { formatarValor, lerNumero, MSG_SALVO } from "./parametros-util";
 
 type Campo = {
@@ -12,6 +13,8 @@ type Campo = {
   tipo: "dec" | "int" | "texto" | "status";
   min?: number;
   max?: number;
+  /** O mínimo não vale: o número precisa ser maior que `min` (ex.: limiar "maior que 0"). */
+  exclusivoMin?: boolean;
 };
 type Definicao = {
   titulo: string;
@@ -171,6 +174,53 @@ const DEFINICOES: Record<string, Definicao> = {
     resumo: "Status e motivo do gate conforme o perfil de suporte financeiro (A a D).",
     campos: perfisG4,
   },
+  META_EVOLUCAO: {
+    titulo: "Meta de evolução da turma",
+    resumo:
+      "Alta esperada da média do score da turma sobre o ciclo fechado anterior. Aparece no painel de investimento.",
+    campos: [
+      {
+        chave: "percentual",
+        rotulo: "Alta esperada (%)",
+        ajuda:
+          "Percentual de 0 a 1000. O padrão é 10, ou seja, +10% sobre a média do ciclo anterior.",
+        tipo: "dec",
+        min: 0,
+        max: 1000,
+      },
+    ],
+  },
+  MIN_GRUPO_AGREGADO: {
+    titulo: "Menor grupo em agregado",
+    resumo:
+      "Menor número de atletas que o IBVAR vê em um número agregado. Abaixo disso, o painel oculta a média para proteger quem não consentiu.",
+    campos: [
+      {
+        chave: "minimo",
+        rotulo: "Mínimo de atletas",
+        ajuda: "Inteiro de 1 a 1000. O padrão é 3.",
+        tipo: "int",
+        min: 1,
+        max: 1000,
+      },
+    ],
+  },
+  TENDENCIA: {
+    titulo: "Limiar da tendência",
+    resumo:
+      'Variação mínima de score entre os dois últimos ciclos fechados para a ficha mostrar "subindo" ou "caindo". Abaixo disso, a tendência é "estável".',
+    campos: [
+      {
+        chave: "limiar",
+        rotulo: "Limiar (pontos de score)",
+        ajuda: "Maior que 0 e até 100. O padrão é 2 pontos.",
+        tipo: "dec",
+        min: 0,
+        max: 100,
+        exclusivoMin: true,
+      },
+    ],
+  },
   RANKING_CBVELA: {
     titulo: "Ranking CBVela",
     resumo: "Janela dos resultados de regata que somam pontos na dimensão Performance.",
@@ -233,11 +283,13 @@ function montarRegra(
       if (
         n === null ||
         (c.tipo === "int" && !Number.isInteger(n)) ||
-        n < (c.min ?? 0) ||
+        (c.exclusivoMin ? n <= (c.min ?? 0) : n < (c.min ?? 0)) ||
         n > (c.max ?? 100)
       )
         return {
-          erro: `${c.rotulo}: informe ${c.tipo === "int" ? "um inteiro" : "um número"} entre ${String(c.min).replace(".", ",")} e ${c.max}.`,
+          erro: c.exclusivoMin
+            ? `${c.rotulo}: informe um número maior que ${String(c.min).replace(".", ",")} e até ${c.max}.`
+            : `${c.rotulo}: informe ${c.tipo === "int" ? "um inteiro" : "um número"} entre ${String(c.min).replace(".", ",")} e ${c.max}.`,
         };
       gravar(valor, c.chave, n);
     }
@@ -254,7 +306,6 @@ function dataBr(iso: string): string {
 }
 
 const NOMES_LEITURA: Record<string, string> = {
-  PERF_PONTOS: "Nota sugerida pelos pontos do Ranking CBVela",
   TERMO_EXIGE_REACEITE: "Exigir aceite da versão vigente do termo",
 };
 
@@ -274,11 +325,24 @@ function ValorLeitura({ valor }: { valor: unknown }) {
 }
 
 export function SecaoRegras({ dados }: { dados: Parametros }) {
-  const ORDEM = ["G1", "G2", "G3", "RANKING_CBVELA", "P3", "G4"];
+  const ORDEM = [
+    "G1",
+    "G2",
+    "G3",
+    "RANKING_CBVELA",
+    "P3",
+    "G4",
+    "META_EVOLUCAO",
+    "MIN_GRUPO_AGREGADO",
+    "TENDENCIA",
+  ];
   const editaveis = dados.regras
     .filter((r) => r.codigo in DEFINICOES)
     .sort((a, b) => ORDEM.indexOf(a.codigo) - ORDEM.indexOf(b.codigo));
-  const outras = dados.regras.filter((r) => !(r.codigo in DEFINICOES));
+  const resultados = dados.regras.find((r) => r.codigo === "PERF_RESULTADOS");
+  const outras = dados.regras.filter(
+    (r) => !(r.codigo in DEFINICOES) && r.codigo !== "PERF_RESULTADOS",
+  );
   return (
     <section className="panel">
       <div className="panel-head">
@@ -297,6 +361,13 @@ export function SecaoRegras({ dados }: { dados: Parametros }) {
             atualizadoEm={r.atualizadoEm}
           />
         ))}
+        {resultados && (
+          <FormPerfResultados
+            key={`${resultados.codigo}|${resultados.atualizadoEm}`}
+            valor={resultados.valor}
+            atualizadoEm={resultados.atualizadoEm}
+          />
+        )}
       </div>
       {outras.length > 0 && (
         <>

@@ -33,3 +33,23 @@ test("sair volta ao login e a rota protegida pede login de novo", async ({ page 
   await page.goto("/ranking");
   await expect(page).toHaveURL(/\/entrar/);
 });
+
+// Auditoria de 25/11/2026, A7: um link de convite ou de redefinição inválido, aberto num navegador
+// com outra conta logada, não pode mostrar o formulário (ele trocaria a senha da conta logada).
+test("link de senha já usado, com o gestor logado, não mostra o formulário", async ({ page }) => {
+  await entrar(page, "gestor");
+  await page.goto("/redefinir-senha#error=access_denied&error_code=otp_expired");
+  await expect(page.getByRole("heading", { level: 1, name: "Link inválido" })).toBeVisible();
+  await expect(page.locator('input[type="password"]')).toHaveCount(0);
+});
+
+test("link de senha de outra conta, com o gestor logado, não mostra o formulário", async ({
+  page,
+}) => {
+  await entrar(page, "gestor");
+  const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  const token = `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: "00000000-0000-4000-8000-000000000000" })}.x`;
+  await page.goto(`/redefinir-senha#access_token=${token}&refresh_token=x&type=invite`);
+  await expect(page.getByRole("heading", { level: 1, name: "Link inválido" })).toBeVisible();
+  await expect(page.locator('input[type="password"]')).toHaveCount(0);
+});

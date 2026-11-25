@@ -4,6 +4,7 @@ import { AvisoAmbiente } from "./AvisoAmbiente";
 import { Avatar } from "./Avatar";
 import { PerfilDialog } from "./PerfilDialog";
 import { PaletaDeAtletas } from "./PaletaDeAtletas";
+import { SinoAvisos } from "./SinoAvisos";
 import { useSobreposicao } from "./sobreposicoes";
 import { useNotificacoes } from "@/lib/api/notificacoes";
 import {
@@ -18,7 +19,7 @@ import {
 interface ShellProps {
   me: {
     usuario: { nome: string; papel: string; fotoUrl?: string | null };
-    atleta: { id: string; nome: string } | null;
+    atleta: { id: string; nome: string | null } | null;
     telas: string[];
   } | null;
   onSair: () => void;
@@ -51,10 +52,13 @@ function UsuarioDoShell({
   );
 }
 
+/** Quem recebe avisos (D8). O IBVAR não: a API devolve lista vazia e o sino nem aparece. */
+const PAPEIS_COM_AVISOS = new Set(["gestor", "treinador", "atleta"]);
+
 export function Shell({ me, onSair, children }: ShellProps) {
   const itens = me ? itensDeNavegacao(me) : [];
-  // Sem sessão (me nulo) ou como IBVAR não há balões; erro de rede só some com eles.
-  const notificacoes = useNotificacoes(!!me && me.usuario.papel !== "ibvar");
+  // Sem sessão (me nulo) não há balões; erro de rede só some com eles.
+  const notificacoes = useNotificacoes(!!me);
   const contagens = notificacoes.data?.contagens;
   const total = notificacoes.data?.total ?? 0;
   const [aberta, setAberta] = useState(false);
@@ -164,6 +168,11 @@ export function Shell({ me, onSair, children }: ShellProps) {
       {perfilAberto && <PerfilDialog aoFechar={() => setPerfilAberto(false)} />}
       {aberta && <div className="side-fundo" aria-hidden="true" onClick={() => setAberta(false)} />}
       <main className="wrap" id="app">
+        {me && PAPEIS_COM_AVISOS.has(me.usuario.papel) && (
+          <div className="topo-app">
+            <SinoAvisos naoLidos={contagens?.["avisos"] ?? 0} />
+          </div>
+        )}
         {children}
         <AvisoAmbiente />
       </main>

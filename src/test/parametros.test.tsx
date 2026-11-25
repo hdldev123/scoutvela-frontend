@@ -49,6 +49,7 @@ const params: Parametros = {
       alturaMediaCm: 187,
       alturaMaxCm: 192,
       ativa: true,
+      fonte: null,
     },
     {
       id: "c2",
@@ -62,6 +63,7 @@ const params: Parametros = {
       alturaMediaCm: null,
       alturaMaxCm: null,
       ativa: true,
+      fonte: null,
     },
   ],
   rubricas: [
@@ -91,6 +93,24 @@ const params: Parametros = {
         D: { status: "alerta", motivo: "Sem estrutura" },
       },
       atualizadoEm: "2026-11-03T12:00:00.000Z",
+    },
+    {
+      codigo: "META_EVOLUCAO",
+      descricao: "Meta de evolução da turma",
+      valor: { percentual: 10 },
+      atualizadoEm: "2026-11-04T12:00:00.000Z",
+    },
+    {
+      codigo: "MIN_GRUPO_AGREGADO",
+      descricao: "Menor grupo em agregado",
+      valor: { minimo: 3 },
+      atualizadoEm: "2026-11-04T12:00:00.000Z",
+    },
+    {
+      codigo: "TENDENCIA",
+      descricao: "Limiar da tendência",
+      valor: { limiar: 2 },
+      atualizadoEm: "2026-11-04T12:00:00.000Z",
     },
   ],
   componentesCusto: [{ id: "treinador", nome: "Treinador" }],
@@ -159,6 +179,211 @@ describe("TelaParametros", () => {
         "Parâmetros salvos. O ranking já usa os novos valores.",
       ),
     );
+  });
+
+  it("evidência por indicador: edita e envia só os indicadores alterados", async () => {
+    const comIndicadores: Parametros = {
+      ...params,
+      pilares: params.pilares.map((p) =>
+        p.id === "perf"
+          ? {
+              ...p,
+              indicadores: [
+                {
+                  id: "perf_nacional",
+                  nome: "Pódio nacional",
+                  tipo: "T" as const,
+                  calculado: false,
+                  evidencia: "obrigatoria" as const,
+                  exigeAnexo: false,
+                  autoavaliacao: true,
+                  orientacao: null,
+                },
+                {
+                  id: "tec_1",
+                  nome: "Leitura de vento",
+                  tipo: "T" as const,
+                  calculado: false,
+                  evidencia: "opcional" as const,
+                  exigeAnexo: false,
+                  autoavaliacao: true,
+                  orientacao: null,
+                },
+              ],
+            }
+          : p.id === "cf"
+            ? {
+                ...p,
+                indicadores: [
+                  {
+                    id: "cf_peso_kg",
+                    nome: "Peso",
+                    tipo: "T" as const,
+                    calculado: true,
+                    evidencia: "obrigatoria" as const,
+                    exigeAnexo: true,
+                    autoavaliacao: false,
+                    orientacao: null,
+                  },
+                ],
+              }
+            : p,
+      ),
+    };
+    GET.mockImplementation(async (caminho: string) => ({
+      data: caminho === "/termos" ? [] : comIndicadores,
+      response: { status: 200 },
+    }));
+    PUT.mockResolvedValue({ data: comIndicadores, response: { status: 200 } });
+    renderizar();
+    await screen.findByRole("tab", { name: "Evidência" });
+    irPara("Evidência");
+    expect(screen.getByRole("button", { name: "Salvar alterações" })).toBeDisabled();
+    expect(screen.getByLabelText("Evidência de Pódio nacional")).toHaveValue("obrigatoria");
+    expect(screen.getByLabelText("Evidência de Leitura de vento")).toHaveValue("opcional");
+    // O peso só mostra que exige anexo, sem seletor.
+    expect(screen.getByText(/Exige anexo: a nota depende de arquivo/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Evidência de Peso")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Evidência de Leitura de vento"), {
+      target: { value: "obrigatoria" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: { indicadores: [{ id: "tec_1", evidencia: "obrigatoria" }] },
+      }),
+    );
+  });
+
+  describe("autoavaliação por indicador (D9)", () => {
+    const base = (indicadores: Record<string, unknown>[]): Parametros => ({
+      ...params,
+      pilares: params.pilares.map((p) =>
+        p.id === "perf" ? ({ ...p, indicadores } as unknown as typeof p) : p,
+      ),
+    });
+    const T = {
+      tipo: "T" as const,
+      calculado: false,
+      exigeAnexo: false,
+      orientacao: null,
+    };
+
+    function abrir(dados: Parametros) {
+      GET.mockImplementation(async (caminho: string) => ({
+        data: caminho === "/termos" ? [] : dados,
+        response: { status: 200 },
+      }));
+      PUT.mockResolvedValue({ data: dados, response: { status: 200 } });
+      renderizar();
+    }
+
+    it("liga e desliga, e desabilita em indicadores A e calculados", async () => {
+      abrir(
+        base([
+          {
+            ...T,
+            id: "tec_1",
+            nome: "Leitura de vento",
+            evidencia: "obrigatoria",
+            autoavaliacao: true,
+          },
+          {
+            ...T,
+            id: "amb_apoio",
+            nome: "Apoio do clube",
+            tipo: "A",
+            evidencia: "obrigatoria",
+            autoavaliacao: false,
+          },
+          {
+            ...T,
+            id: "cf_peso_kg",
+            nome: "Peso",
+            calculado: true,
+            exigeAnexo: true,
+            evidencia: "obrigatoria",
+            autoavaliacao: false,
+          },
+        ]),
+      );
+      await screen.findByRole("tab", { name: "Evidência" });
+      irPara("Evidência");
+      const vento = screen.getByRole("switch", { name: "Autoavaliação de Leitura de vento" });
+      expect(vento).toHaveAttribute("aria-checked", "true");
+      for (const nome of ["Apoio do clube", "Peso"]) {
+        const chave = screen.getByRole("switch", { name: `Autoavaliação de ${nome}` });
+        expect(chave).toHaveAttribute("aria-disabled", "true");
+        fireEvent.click(chave);
+        expect(chave).toHaveAttribute("aria-checked", "false");
+      }
+      expect(screen.getByRole("button", { name: "Salvar alterações" })).toBeDisabled();
+      fireEvent.click(vento);
+      expect(vento).toHaveAttribute("aria-checked", "false");
+      fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+      await waitFor(() =>
+        expect(PUT).toHaveBeenCalledWith("/parametros", {
+          body: { indicadores: [{ id: "tec_1", autoavaliacao: false }] },
+        }),
+      );
+    });
+
+    it("envia evidência e autoavaliação do mesmo indicador no mesmo item", async () => {
+      abrir(
+        base([
+          {
+            ...T,
+            id: "tec_1",
+            nome: "Leitura de vento",
+            evidencia: "opcional",
+            autoavaliacao: true,
+          },
+        ]),
+      );
+      await screen.findByRole("tab", { name: "Evidência" });
+      irPara("Evidência");
+      fireEvent.change(screen.getByLabelText("Evidência de Leitura de vento"), {
+        target: { value: "obrigatoria" },
+      });
+      fireEvent.click(screen.getByRole("switch", { name: "Autoavaliação de Leitura de vento" }));
+      fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+      await waitFor(() =>
+        expect(PUT).toHaveBeenCalledWith("/parametros", {
+          body: {
+            indicadores: [{ id: "tec_1", evidencia: "obrigatoria", autoavaliacao: false }],
+          },
+        }),
+      );
+    });
+
+    it("mostra o 400 de autoavaliacao junto do interruptor", async () => {
+      abrir(
+        base([
+          {
+            ...T,
+            id: "tec_1",
+            nome: "Leitura de vento",
+            evidencia: "opcional",
+            autoavaliacao: true,
+          },
+        ]),
+      );
+      PUT.mockResolvedValue({
+        error: {
+          erro: "requisicao_invalida",
+          mensagem: "Dados inválidos.",
+          campos: [
+            { campo: "indicadores.0.autoavaliacao", mensagem: "Indicador sem autoavaliação." },
+          ],
+        },
+        response: { status: 400 },
+      });
+      await screen.findByRole("tab", { name: "Evidência" });
+      irPara("Evidência");
+      fireEvent.click(screen.getByRole("switch", { name: "Autoavaliação de Leitura de vento" }));
+      fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+      expect(await screen.findByText("Indicador sem autoavaliação.")).toBeInTheDocument();
+    });
   });
 
   it("aceita vírgula e envia só a classe alterada", async () => {
@@ -434,6 +659,59 @@ describe("TelaParametros", () => {
     );
   });
 
+  it("regras da evolução (D12): valida cada limite e salva META_EVOLUCAO, MIN_GRUPO_AGREGADO e TENDENCIA", async () => {
+    ok();
+    montar();
+    await screen.findByLabelText("Alta esperada (%)");
+    irPara("Regras provisórias");
+
+    const meta = screen.getByLabelText("Alta esperada (%)");
+    expect(meta).toHaveValue("10");
+    fireEvent.change(meta, { target: { value: "1001" } });
+    expect(
+      screen.getByText("Alta esperada (%): informe um número entre 0 e 1000."),
+    ).toBeInTheDocument();
+    const salvarMeta = screen.getByRole("button", { name: "Salvar Meta de evolução da turma" });
+    expect(salvarMeta).toBeDisabled();
+    fireEvent.change(meta, { target: { value: "12,5" } });
+    fireEvent.click(salvarMeta);
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: { regras: { META_EVOLUCAO: { percentual: 12.5 } } },
+      }),
+    );
+
+    const minimo = screen.getByLabelText("Mínimo de atletas");
+    fireEvent.change(minimo, { target: { value: "0" } });
+    expect(
+      screen.getByText("Mínimo de atletas: informe um inteiro entre 1 e 1000."),
+    ).toBeInTheDocument();
+    fireEvent.change(minimo, { target: { value: "2,5" } });
+    expect(screen.getByRole("button", { name: "Salvar Menor grupo em agregado" })).toBeDisabled();
+    fireEvent.change(minimo, { target: { value: "5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar Menor grupo em agregado" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: { regras: { MIN_GRUPO_AGREGADO: { minimo: 5 } } },
+      }),
+    );
+
+    const limiar = screen.getByLabelText("Limiar (pontos de score)");
+    fireEvent.change(limiar, { target: { value: "0" } });
+    expect(
+      screen.getByText("Limiar (pontos de score): informe um número maior que 0 e até 100."),
+    ).toBeInTheDocument();
+    fireEvent.change(limiar, { target: { value: "101" } });
+    expect(screen.getByRole("button", { name: "Salvar Limiar da tendência" })).toBeDisabled();
+    fireEvent.change(limiar, { target: { value: "1,5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar Limiar da tendência" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: { regras: { TENDENCIA: { limiar: 1.5 } } },
+      }),
+    );
+  });
+
   it("desativa uma classe e mostra o erro 400 da API", async () => {
     PUT.mockResolvedValue({
       error: { erro: "requisicao_invalida", mensagem: "A classe 470 tem atleta ativo." },
@@ -460,6 +738,7 @@ describe("TelaParametros", () => {
       "Pesos e faixas",
       "Class Fit",
       "Rubricas",
+      "Evidência",
       "Regras provisórias",
       "Termo de consentimento",
       "Componentes de custo",
@@ -630,5 +909,329 @@ describe("TelaParametros: ressincronização e erros do servidor", () => {
     const msgClasse = await screen.findByText("O valor máximo é 200.");
     expect(max).toHaveAttribute("aria-invalid", "true");
     expect(max).toHaveAttribute("aria-describedby", msgClasse.id);
+  });
+});
+
+describe("TelaParametros: nota dos resultados e orientação (D10)", () => {
+  const REGRA = {
+    edicoes_max: 4,
+    sem_resultado: 0,
+    niveis: {
+      mundial: [
+        { ate: 3, nota: 5 },
+        { ate: 10, nota: 4 },
+        { ate: 25, nota: 3 },
+        { ate: null, nota: 2 },
+      ],
+      continental: [
+        { ate: 3, nota: 5 },
+        { ate: null, nota: 2 },
+      ],
+      nacional: [
+        { ate: 1, nota: 5 },
+        { ate: 2, nota: 4 },
+        { ate: 3, nota: 3 },
+        { ate: null, nota: 0 },
+      ],
+    },
+  };
+  const comRegra: Parametros = {
+    ...params,
+    regras: [
+      ...params.regras,
+      {
+        codigo: "PERF_RESULTADOS",
+        descricao: "Nota dos resultados",
+        valor: REGRA,
+        atualizadoEm: "2026-11-24T12:00:00.000Z",
+      },
+    ],
+  };
+  const NOME_SALVAR = "Salvar PERF_RESULTADOS · Nota dos resultados";
+
+  function abrir(dados: Parametros) {
+    GET.mockImplementation(async (caminho: string) => ({
+      data: caminho === "/termos" ? [] : dados,
+      response: { status: 200 },
+    }));
+    PUT.mockResolvedValue({ data: dados, response: { status: 200 } });
+    renderizar();
+  }
+
+  beforeEach(() => {
+    GET.mockReset();
+    PUT.mockReset();
+    window.location.hash = "";
+    toastFn.success.mockReset();
+  });
+
+  it("mostra o editor com os valores atuais e o aviso de regra provisória (P12)", async () => {
+    abrir(comRegra);
+    await screen.findByRole("tab", { name: "Regras provisórias" });
+    irPara("Regras provisórias");
+    expect(await screen.findByLabelText("Edições máximas")).toHaveValue("4");
+    expect(screen.getByLabelText("Nota sem resultado validado")).toHaveValue("0");
+    expect(screen.getByText(/Valores provisórios \(P12\)/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Mundial, faixa 2, até a colocação")).toHaveValue("10");
+    expect(screen.getByLabelText("Mundial, faixa 2, nota")).toHaveValue("4");
+    // A última faixa vale para as demais colocações e não tem limite digitável.
+    expect(screen.queryByLabelText("Mundial, faixa 4, até a colocação")).toBeNull();
+    expect(screen.getAllByText("Demais colocações")).toHaveLength(3);
+    expect(screen.getByRole("button", { name: NOME_SALVAR })).toBeDisabled();
+  });
+
+  it("envia a regra em snake_case, com a última faixa sem limite", async () => {
+    abrir(comRegra);
+    await screen.findByRole("tab", { name: "Regras provisórias" });
+    irPara("Regras provisórias");
+    fireEvent.change(await screen.findByLabelText("Edições máximas"), { target: { value: "5" } });
+    fireEvent.change(screen.getByLabelText("Nacional, faixa 3, nota"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: NOME_SALVAR }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          regras: {
+            PERF_RESULTADOS: {
+              ...REGRA,
+              edicoes_max: 5,
+              niveis: {
+                ...REGRA.niveis,
+                nacional: [
+                  { ate: 1, nota: 5 },
+                  { ate: 2, nota: 4 },
+                  { ate: 3, nota: 2 },
+                  { ate: null, nota: 0 },
+                ],
+              },
+            },
+          },
+        },
+      }),
+    );
+  });
+
+  it("adiciona e remove faixa, e valida como o back", async () => {
+    abrir(comRegra);
+    await screen.findByRole("tab", { name: "Regras provisórias" });
+    irPara("Regras provisórias");
+    const salvar = await screen.findByRole("button", { name: NOME_SALVAR });
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar faixa em Continental" }));
+    // A faixa nova nasce sem limite: não dá para salvar.
+    expect(screen.getByLabelText("Continental, faixa 2, até a colocação")).toHaveValue("");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /Continental, faixa 2: informe a colocação limite/,
+    );
+    expect(salvar).toBeDisabled();
+    const ate = screen.getByLabelText("Continental, faixa 2, até a colocação");
+    fireEvent.change(ate, { target: { value: "3" } });
+    expect(screen.getByRole("alert")).toHaveTextContent(/maior que a da faixa anterior/);
+    fireEvent.change(ate, { target: { value: "10" } });
+    // A nova faixa copia a nota da última (2); a última faixa (nota 2) não pode ficar acima da anterior (1).
+    fireEvent.change(screen.getByLabelText("Continental, faixa 2, nota"), {
+      target: { value: "1" },
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent(/a nota não pode ser maior/);
+    fireEvent.change(screen.getByLabelText("Continental, faixa 2, nota"), {
+      target: { value: "3" },
+    });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(salvar).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Remover Continental, faixa 2" }));
+    // Sobram duas faixas: a segunda volta a ser a última, sem limite digitável.
+    expect(screen.queryByLabelText("Continental, faixa 2, até a colocação")).toBeNull();
+    expect(screen.queryByLabelText("Continental, faixa 3, nota")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Edições máximas"), { target: { value: "21" } });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /Edições máximas: informe um inteiro de 1 a 20/,
+    );
+    expect(salvar).toBeDisabled();
+    expect(PUT).not.toHaveBeenCalled();
+  });
+
+  it("orientação por indicador: edita, envia e apaga com null", async () => {
+    const dados: Parametros = {
+      ...comRegra,
+      pilares: params.pilares.map((p) =>
+        p.id === "perf"
+          ? {
+              ...p,
+              indicadores: [
+                {
+                  id: "perf_mundial",
+                  nome: "Resultados mundiais",
+                  tipo: "T" as const,
+                  calculado: true,
+                  evidencia: "obrigatoria" as const,
+                  exigeAnexo: false,
+                  autoavaliacao: false,
+                  orientacao: "Informe cada edição com a súmula.",
+                },
+                {
+                  id: "tec_1",
+                  nome: "Leitura de vento",
+                  tipo: "T" as const,
+                  calculado: false,
+                  evidencia: "opcional" as const,
+                  exigeAnexo: false,
+                  autoavaliacao: true,
+                  orientacao: null,
+                },
+              ],
+            }
+          : p,
+      ),
+    };
+    abrir(dados);
+    await screen.findByRole("tab", { name: "Evidência" });
+    irPara("Evidência");
+    const calc = screen.getByLabelText("Orientação de Resultados mundiais");
+    expect(calc).toHaveValue("Informe cada edição com a súmula.");
+    expect(calc).toHaveAttribute("maxlength", "1000");
+    expect(screen.getByRole("button", { name: "Salvar alterações" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Orientação de Leitura de vento"), {
+      target: { value: "  Descreva o teste de campo.  " },
+    });
+    fireEvent.change(calc, { target: { value: "   " } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar 2 indicadores" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          indicadores: [
+            { id: "perf_mundial", orientacao: null },
+            { id: "tec_1", orientacao: "Descreva o teste de campo." },
+          ],
+        },
+      }),
+    );
+  });
+});
+
+describe("TelaParametros: fonte da faixa de peso (D18)", () => {
+  beforeEach(() => {
+    GET.mockReset();
+    PUT.mockReset();
+    window.location.hash = "";
+    toastFn.success.mockReset();
+  });
+
+  const doc = (nome: string) =>
+    screen.getByLabelText(`Fonte da faixa, documento: ${nome}`) as HTMLInputElement;
+
+  it("explica que as faixas seguem o documento oficial e mostra os campos vazios", async () => {
+    montar();
+    await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+    irPara("Class Fit");
+    expect(screen.getByText(/devem seguir o documento oficial de cada classe/)).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Fonte da faixa" })).toBeInTheDocument();
+    expect(doc("ILCA 7, Individual")).toHaveValue("");
+    expect(screen.getByLabelText("Fonte da faixa, versão: ILCA 7, Individual")).toHaveValue("");
+    expect(screen.getByLabelText("Fonte da faixa, data: ILCA 7, Individual")).toHaveValue("");
+  });
+
+  it("envia a fonte (documento, versão e data) só da classe alterada", async () => {
+    PUT.mockResolvedValue({ data: params, response: { status: 200 } });
+    montar();
+    await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+    irPara("Class Fit");
+    fireEvent.change(doc("ILCA 7, Individual"), {
+      target: { value: "  Class Rules ILCA 7  " },
+    });
+    fireEvent.change(screen.getByLabelText("Fonte da faixa, versão: ILCA 7, Individual"), {
+      target: { value: "2026" },
+    });
+    fireEvent.change(screen.getByLabelText("Fonte da faixa, data: ILCA 7, Individual"), {
+      target: { value: "2026-03-01" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          classes: [
+            {
+              id: "c1",
+              fonte: { documento: "Class Rules ILCA 7", versao: "2026", data: "2026-03-01" },
+            },
+          ],
+        },
+      }),
+    );
+  });
+
+  it("só o documento envia versão e data nulas", async () => {
+    PUT.mockResolvedValue({ data: params, response: { status: 200 } });
+    montar();
+    await screen.findByLabelText("Máximo de 470, Timoneiro (kg)");
+    irPara("Class Fit");
+    fireEvent.change(doc("470, Timoneiro"), { target: { value: "Regulamento 470" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: {
+          classes: [
+            { id: "c2", fonte: { documento: "Regulamento 470", versao: null, data: null } },
+          ],
+        },
+      }),
+    );
+  });
+
+  it("versão ou data sem documento bloqueia o envio com a mensagem no cliente", async () => {
+    montar();
+    await screen.findByLabelText("Máximo de 470, Timoneiro (kg)");
+    irPara("Class Fit");
+    fireEvent.change(screen.getByLabelText("Fonte da faixa, versão: 470, Timoneiro"), {
+      target: { value: "v2" },
+    });
+    expect(screen.getByText("Informe o documento que traz a faixa.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Salvar faixas da classe" })).toBeDisabled();
+  });
+
+  it("limpar os três campos de uma fonte existente envia fonte nula", async () => {
+    const original = params.classes[1]!;
+    params.classes[1] = {
+      ...original,
+      fonte: { documento: "Regulamento 470", versao: "2025", data: "2025-01-10" },
+    };
+    try {
+      PUT.mockResolvedValue({ data: params, response: { status: 200 } });
+      montar();
+      await screen.findByLabelText("Máximo de 470, Timoneiro (kg)");
+      irPara("Class Fit");
+      expect(doc("470, Timoneiro")).toHaveValue("Regulamento 470");
+      expect(screen.getByLabelText("Fonte da faixa, data: 470, Timoneiro")).toHaveValue(
+        "2025-01-10",
+      );
+      expect(screen.getByRole("button", { name: "Salvar faixas da classe" })).toBeDisabled();
+      for (const campo of ["documento", "versão", "data"]) {
+        fireEvent.change(screen.getByLabelText(`Fonte da faixa, ${campo}: 470, Timoneiro`), {
+          target: { value: "" },
+        });
+      }
+      fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
+      await waitFor(() =>
+        expect(PUT).toHaveBeenCalledWith("/parametros", {
+          body: { classes: [{ id: "c2", fonte: null }] },
+        }),
+      );
+    } finally {
+      params.classes[1] = original;
+    }
+  });
+
+  it("mostra o erro 400 da fonte sob a classe", async () => {
+    PUT.mockResolvedValue({
+      error: {
+        erro: "requisicao_invalida",
+        mensagem: "Dados inválidos.",
+        campos: [{ campo: "classes.0.fonte.data", mensagem: "Data inválida." }],
+      },
+      response: { status: 400 },
+    });
+    montar();
+    await screen.findByLabelText("Máximo de ILCA 7, Individual (kg)");
+    irPara("Class Fit");
+    fireEvent.change(doc("ILCA 7, Individual"), { target: { value: "Class Rules" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar faixas da classe" }));
+    expect(await screen.findByText("Data inválida.")).toBeInTheDocument();
   });
 });

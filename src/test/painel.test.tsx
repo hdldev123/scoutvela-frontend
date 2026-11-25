@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const GET = vi.fn();
 const POST = vi.fn();
 const PUT = vi.fn();
-const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
+const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }));
 
 vi.mock("@/lib/api/cliente", async (importar) => ({
   ...(await importar<typeof import("@/lib/api/cliente")>()),
@@ -114,6 +114,15 @@ function revisao(extra: Record<string, unknown> = {}) {
     criadoEm: "2026-11-02T12:00:00.000Z",
     resposta: "Revisamos e mantivemos a nota.",
     respondidoEm: "2026-11-04T12:00:00.000Z",
+    instancia: 1,
+    primeiraResposta: {
+      texto: "Revisamos e mantivemos a nota.",
+      papel: "treinador",
+      respondidoEm: "2026-11-04T12:00:00.000Z",
+    },
+    recurso: null,
+    respostaFinal: null,
+    podeRecurso: false,
     ...extra,
   };
 }
@@ -126,6 +135,18 @@ const TERMO = {
 };
 
 let proximaDoTermo: unknown = null;
+let termoIncluiFotoBio = false;
+let avisosDoAtleta: unknown[] = [];
+
+const SEM_AUTOAVALIACAO = {
+  ciclo: null,
+  indicadores: [],
+  orientacoesResultados: [],
+  rubricas: [],
+  resumoPorPilar: null,
+};
+let autoavaliacao: unknown = SEM_AUTOAVALIACAO;
+let pesagens: unknown = { itens: [] };
 
 function montar(
   dados: PainelAtleta | { erro: number },
@@ -133,6 +154,12 @@ function montar(
   pedidos: unknown[] = [],
 ) {
   GET.mockImplementation((caminho: string) => {
+    if (caminho === "/atletas/{id}/autoavaliacao") {
+      return Promise.resolve({ data: autoavaliacao, response: { status: 200 } });
+    }
+    if (caminho === "/atletas/{id}/pesagens") {
+      return Promise.resolve({ data: pesagens, response: { status: 200 } });
+    }
     if (caminho === "/painel") {
       return Promise.resolve(
         "erro" in dados
@@ -143,11 +170,22 @@ function montar(
           : { data: dados, response: { status: 200 } },
       );
     }
+    if (caminho === "/me/avisos") {
+      return Promise.resolve({
+        data: { itens: avisosDoAtleta, proximoAntesDe: null, naoLidos: avisosDoAtleta.length },
+        response: { status: 200 },
+      });
+    }
     if (caminho === "/revisoes")
       return Promise.resolve({ data: revisoes, response: { status: 200 } });
     if (caminho === "/pedidos-titular")
       return Promise.resolve({ data: pedidos, response: { status: 200 } });
-    if (caminho === "/termo") return Promise.resolve({ data: TERMO, response: { status: 200 } });
+    if (caminho === "/termo") {
+      return Promise.resolve({
+        data: { ...TERMO, incluiFotoBio: termoIncluiFotoBio },
+        response: { status: 200 },
+      });
+    }
     if (caminho === "/termo/proxima") {
       return Promise.resolve(
         proximaDoTermo
@@ -176,6 +214,57 @@ describe("TelaPainel", () => {
     toastFn.mockReset();
     toastFn.error.mockReset();
     proximaDoTermo = null;
+    avisosDoAtleta = [];
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
+  });
+
+  it("destaca os pedidos de ajuste não lidos e marca como lido", async () => {
+    avisosDoAtleta = [
+      {
+        id: "7",
+        tipo: "pedido_ajuste",
+        criadoEm: "2026-11-24T12:00:00.000Z",
+        lidoEm: null,
+        atleta: { id: "a07", nome: "Helena Vasques" },
+        referencia: { pedidoAjusteId: "3" },
+        criadoPor: { nome: "Ana Ribeiro", papel: "treinador" },
+        mensagem: "Você preencheu <b>tática</b> diferente, revise.",
+        indicador: { id: "tat_leitura", nome: "Leitura de jogo" },
+      },
+      {
+        id: "8",
+        tipo: "atleta_respondeu",
+        criadoEm: "2026-11-24T12:00:00.000Z",
+        lidoEm: null,
+        atleta: null,
+        referencia: {},
+        criadoPor: null,
+        mensagem: null,
+        indicador: null,
+      },
+    ];
+    PUT.mockResolvedValue({ response: { status: 204 } });
+    montar(painel());
+    const secao = await screen.findByRole("region", { name: "Você tem um pedido de ajuste" });
+    expect(
+      within(secao).getByText("Pedido de ajuste de Ana Ribeiro em Leitura de jogo"),
+    ).toBeInTheDocument();
+    // Texto puro: as tags aparecem como texto, não viram elementos.
+    expect(
+      within(secao).getByText("Você preencheu <b>tática</b> diferente, revise."),
+    ).toBeInTheDocument();
+    expect(secao.querySelector("b")).toBeNull();
+    fireEvent.click(within(secao).getByRole("button", { name: /Marcar como lido/ }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/me/avisos/{id}/lido", { params: { path: { id: "7" } } }),
+    );
+  });
+
+  it("sem pedidos de ajuste não mostra o destaque", async () => {
+    montar(painel());
+    await screen.findByRole("heading", { level: 1, name: "Olá, Helena" });
+    expect(screen.queryByRole("region", { name: /pedido de ajuste/ })).not.toBeInTheDocument();
   });
 
   it("mostra o primeiro nome, score e ciclo, sem o botão da ficha", async () => {
@@ -262,11 +351,84 @@ describe("TelaPainel", () => {
   });
 
   it("lista os pedidos de revisão com status e resposta", async () => {
-    montar(painel(), [revisao(), revisao({ id: "r2", status: "aberto", resposta: null })]);
+    montar(painel(), [
+      revisao(),
+      revisao({ id: "r2", status: "aberto", resposta: null, primeiraResposta: null }),
+    ]);
     expect(await screen.findByText("Respondido")).toBeInTheDocument();
     expect(screen.getByText("Aberto")).toBeInTheDocument();
     expect(screen.getByText(/Revisamos e mantivemos a nota/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Pedir revisão de nota" })).toBeInTheDocument();
+  });
+
+  it("mostra o andamento de cada pedido e o botão só quando cabe recurso", async () => {
+    montar(painel(), [
+      revisao({ podeRecurso: true }),
+      revisao({
+        id: "r2",
+        status: "aberto",
+        instancia: 2,
+        resposta: null,
+        respondidoEm: null,
+        recurso: { texto: "Discordo da nota.", em: "2026-11-06T12:00:00.000Z" },
+      }),
+      revisao({
+        id: "r3",
+        instancia: 2,
+        resposta: "Mantida pela gestão.",
+        recurso: { texto: "Discordo.", em: "2026-11-06T12:00:00.000Z" },
+        respostaFinal: {
+          texto: "Mantida pela gestão.",
+          papel: "gestor",
+          respondidoEm: "2026-11-07T12:00:00.000Z",
+        },
+      }),
+    ]);
+    expect(await screen.findByText(/Respondido pelo treinador/)).toBeInTheDocument();
+    expect(screen.getByText(/Em análise pela gestão \(2ª instância\)/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Seu recurso:/)).toHaveLength(2);
+    expect(screen.getAllByText(/Resposta final da gestão/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Mantida pela gestão./)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Discordar da resposta" })).toHaveLength(1);
+  });
+
+  it("recurso: envia o texto e fecha o diálogo", async () => {
+    POST.mockResolvedValue({ data: revisao(), response: { status: 200 } });
+    montar(painel(), [revisao({ podeRecurso: true })]);
+    fireEvent.click(await screen.findByRole("button", { name: "Discordar da resposta" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Discordar da resposta" });
+    expect(within(dialogo).getByText(/gestão da CBVela/)).toBeInTheDocument();
+    expect(within(dialogo).getByText("0 de 1000 caracteres")).toBeInTheDocument();
+    const enviar = within(dialogo).getByRole("button", { name: "Enviar recurso" });
+    expect(enviar).toBeDisabled();
+    fireEvent.change(within(dialogo).getByLabelText(/Por que você discorda/), {
+      target: { value: "A nota não reflete a regata." },
+    });
+    expect(within(dialogo).getByText("28 de 1000 caracteres")).toBeInTheDocument();
+    fireEvent.click(enviar);
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith("/revisoes/{id}/recurso", {
+        params: { path: { id: "r1" } },
+        body: { texto: "A nota não reflete a regata." },
+      }),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("recurso: 409 mostra a mensagem da API e mantém o diálogo", async () => {
+    POST.mockResolvedValue({
+      error: { erro: "conflito", mensagem: "O recurso já foi feito." },
+      response: { status: 409 },
+    });
+    montar(painel(), [revisao({ podeRecurso: true })]);
+    fireEvent.click(await screen.findByRole("button", { name: "Discordar da resposta" }));
+    const dialogo = await screen.findByRole("dialog");
+    fireEvent.change(within(dialogo).getByLabelText(/Por que você discorda/), {
+      target: { value: "Discordo." },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar recurso" }));
+    expect(await within(dialogo).findByRole("alert")).toHaveTextContent("O recurso já foi feito.");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("mostra o termo e registra o aceite com a versão vigente", async () => {
@@ -282,6 +444,25 @@ describe("TelaPainel", () => {
     );
     // O aviso sai do hook, não do callback do mutate: o bloco some ao recarregar o painel.
     await waitFor(() => expect(toastFn).toHaveBeenCalledWith("Termo aceito"));
+  });
+
+  it("avisa no aceite quando a versão do termo inclui foto e mini bio para o IBVAR", async () => {
+    termoIncluiFotoBio = true;
+    const base = painel();
+    montar(painel({ consentimento: { ...base.consentimento, termoAceitoEm: null } }));
+    expect(
+      await screen.findByText(
+        /Esta versão inclui sua foto e sua mini bio entre o que o IBVAR pode ver/,
+      ),
+    ).toBeInTheDocument();
+    termoIncluiFotoBio = false;
+  });
+
+  it("sem a marca no termo, não mostra o aviso de foto e mini bio", async () => {
+    const base = painel();
+    montar(painel({ consentimento: { ...base.consentimento, termoAceitoEm: null } }));
+    await screen.findByRole("region", { name: "Texto do termo" });
+    expect(screen.queryByText(/inclui sua foto e sua mini bio/)).not.toBeInTheDocument();
   });
 
   it("mostra o termo e a nova versão quando o aceite está pendente", async () => {

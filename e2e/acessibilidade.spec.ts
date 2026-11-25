@@ -13,17 +13,23 @@ const TELAS = {
     "cadastro",
     "ciclos",
     "revisoes",
+    "mensagens",
     "investimento",
     "usuarios",
     "parametros",
     "auditoria",
   ],
-  treinadora: ["ranking", "avaliar", "revisoes"],
-  atleta: ["painel"],
+  treinadora: ["ranking", "avaliar", "revisoes", "mensagens"],
+  atleta: ["painel", "mensagens"],
   ibvar: ["investimento", "ranking"],
 } as const;
 
 const LARGURAS = [1280, 1024, 390] as const;
+
+// O axe mede o contraste do estado na tela. Um aviso (sonner) ainda entrando, com o texto
+// semitransparente, dava falso "color-contrast" no CI. Com "reduzir movimento" o sonner tira
+// as transições, e a varredura vê o estado final.
+test.use({ reducedMotion: "reduce" });
 
 async function varrer(page: Page, rotulo: string) {
   const r = await new AxeBuilder({ page }).withTags(TAGS).analyze();
@@ -71,6 +77,22 @@ for (const largura of LARGURAS) {
       await page.getByRole("button", { name: "Pedir revisão de nota" }).click();
       await expect(page.getByRole("dialog")).toBeVisible();
       await varrer(page, "diálogo Pedir revisão de nota");
+    });
+
+    test("mensagens: conversa aberta e diálogo Nova conversa (atleta)", async ({ page }) => {
+      await entrar(page, "atleta");
+      await page.goto("/mensagens");
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await page.getByRole("button", { name: /Nova conversa/ }).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await varrer(page, "diálogo Nova conversa");
+      await page.getByRole("dialog").getByRole("button", { name: "Abrir conversa" }).click();
+      await expect(page).toHaveURL(/\/mensagens\?c=/);
+      await expect(page.getByRole("log")).toBeVisible();
+      await page.waitForLoadState("networkidle");
+      await varrer(page, "conversa aberta");
+      const doc = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(doc, "conversa aberta sem rolagem horizontal").toBeLessThanOrEqual(largura);
     });
   });
 }

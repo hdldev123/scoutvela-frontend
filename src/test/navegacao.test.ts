@@ -4,11 +4,11 @@ import { iniciais, itensDeNavegacao, rotaDaTelaInicial } from "@/lib/auth/navega
 const gestor = {
   usuario: { papel: "gestor" },
   atleta: null,
-  telas: ["ranking", "avaliar", "cadastro", "investimento", "parametros"],
+  telas: ["ranking", "avaliar", "cadastro", "investimento", "parametros", "sugestoes"],
 };
 
 describe("navegação por papel", () => {
-  it("gestor vê as cinco telas com rótulo e rota", () => {
+  it("gestor vê as telas liberadas e Sugestões, com rótulo e rota", () => {
     const itens = itensDeNavegacao(gestor);
     expect(itens.map((i) => i.rotulo)).toEqual([
       "Ranking",
@@ -16,6 +16,7 @@ describe("navegação por papel", () => {
       "Cadastrar atleta",
       "Investimento",
       "Parâmetros",
+      "Sugestões",
     ]);
     expect(itens.map((i) => i.to)).toEqual([
       "/ranking",
@@ -23,16 +24,30 @@ describe("navegação por papel", () => {
       "/cadastro",
       "/investimento",
       "/parametros",
+      "/sugestoes",
     ]);
+  });
+
+  it("o menu só espelha as telas da API: Sugestões aparece quando o back libera", () => {
+    const tem = (papel: string, telas: string[]) =>
+      itensDeNavegacao({ usuario: { papel }, atleta: null, telas }).some(
+        (i) => i.tela === "sugestoes",
+      );
+    expect(tem("gestor", ["ranking", "sugestoes"])).toBe(true);
+    expect(tem("treinador", ["ranking", "sugestoes"])).toBe(true);
+    // Sem a tela em `telas`, o front não inventa o item, qualquer que seja o papel.
+    expect(tem("gestor", ["ranking"])).toBe(false);
+    expect(tem("atleta", ["painel"])).toBe(false);
+    expect(tem("ibvar", ["investimento"])).toBe(false);
   });
 
   it("treinador vê o ranking como Meus atletas", () => {
     const itens = itensDeNavegacao({
       usuario: { papel: "treinador" },
       atleta: null,
-      telas: ["ranking", "avaliar"],
+      telas: ["ranking", "avaliar", "sugestoes"],
     });
-    expect(itens.map((i) => i.rotulo)).toEqual(["Meus atletas", "Lançar avaliação"]);
+    expect(itens.map((i) => i.rotulo)).toEqual(["Meus atletas", "Lançar avaliação", "Sugestões"]);
     expect(itens[0]?.to).toBe("/ranking");
   });
 

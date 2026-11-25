@@ -4496,3 +4496,17 @@
   line-height: 1.35;
   color: var(--bad-ink);
 }
+
+/* Link do WS ID para o perfil no World Sailing (LinkWsId). */
+.scout .ws-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+.scout .ws-link:hover {
+  color: var(--sea);
+}

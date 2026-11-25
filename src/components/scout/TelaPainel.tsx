@@ -7,10 +7,18 @@ import { BigScore } from "./BigScore";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
 import { Interruptor } from "./Interruptor";
+import { MinhaAutoavaliacao } from "./MinhaAutoavaliacao";
 import { NotaRevisao } from "./NotaRevisao";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
+import { MeusResultados } from "./MeusResultados";
+import { MinhasConquistas } from "./MinhasConquistas";
+import { PesagemAtleta } from "./PesagemAtleta";
+import { RecursoRevisaoDialog } from "./RecursoRevisaoDialog";
+import { andamentoRevisao, rotuloPapelAtleta } from "./revisao-util";
+import { fraseDoAviso } from "./avisos-util";
 import { fmtData, fmtInstante, primeiroNome } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
+import { usePedidosDeAjuste, useMarcarAvisoLido } from "@/lib/api/avisos";
 import { useFicha } from "@/lib/api/consultas";
 import { invalidarNotificacoes, marcarPainelVisto } from "@/lib/api/notificacoes";
 import {
@@ -247,6 +255,17 @@ const TIPOS_PEDIDO: Record<TipoPedidoTitular, string> = {
   revogacao: "Revogação de consentimento",
 };
 
+/** Diz ao atleta, antes do aceite, que esta versão libera foto e mini bio para o IBVAR. */
+function AvisoFotoBio() {
+  return (
+    <p className="note" role="note">
+      Esta versão inclui sua foto e sua mini bio entre o que o IBVAR pode ver. Isso só vale se você
+      aceitar e mantiver o consentimento com o IBVAR ativo. Sem o aceite, o IBVAR continua sem ver
+      os dois.
+    </p>
+  );
+}
+
 /** Termo vigente e botão de aceite; some quando o atleta já aceitou a versão vigente. */
 function TermoAceite({ novaVersao }: { novaVersao?: string | undefined }) {
   const termo = useTermo();
@@ -273,6 +292,7 @@ function TermoAceite({ novaVersao }: { novaVersao?: string | undefined }) {
       )}
       {termo.data && (
         <>
+          {termo.data.incluiFotoBio && <AvisoFotoBio />}
           <div className="ped-termo" tabIndex={0} role="region" aria-label="Texto do termo">
             {termo.data.texto}
           </div>
@@ -369,6 +389,7 @@ function TermoProximo({ proxima }: { proxima: NonNullable<PainelAtleta["termoPro
               <p className="muted" style={{ marginTop: 0 }}>
                 Passa a valer em {fmtInstante(texto.data.vigenteDesde)}.
               </p>
+              {texto.data.incluiFotoBio && <AvisoFotoBio />}
               <div className="ped-termo" tabIndex={0} role="region" aria-label="Texto do termo">
                 {texto.data.texto}
               </div>
@@ -557,6 +578,7 @@ function DialogoRevisao({ atletaId, aoFechar }: { atletaId: string; aoFechar: ()
 function Revisoes({ atletaId }: { atletaId: string }) {
   const { data, error, isPending } = useRevisoes();
   const [pedindo, setPedindo] = useState(false);
+  const [recorrendo, setRecorrendo] = useState<string | null>(null);
   return (
     <section className="panel" aria-labelledby="painel-rev">
       <div className="panel-head">
@@ -604,15 +626,82 @@ function Revisoes({ atletaId }: { atletaId: string }) {
               <b>Nota:</b> <NotaRevisao notaAnterior={r.notaAnterior} notaNova={r.notaNova} />
             </p>
           )}
-          {r.resposta && (
+          <p>
+            <b>Andamento:</b> {andamentoRevisao(r)}
+          </p>
+          {r.primeiraResposta && (
             <p>
-              <b>Resposta do gestor:</b> {r.resposta}
-              {r.respondidoEm ? ` (${fmtInstante(r.respondidoEm)})` : ""}
+              <b>Resposta do {rotuloPapelAtleta(r.primeiraResposta.papel).toLowerCase()}:</b>{" "}
+              {r.primeiraResposta.texto} ({fmtInstante(r.primeiraResposta.respondidoEm)})
             </p>
+          )}
+          {r.recurso && (
+            <p>
+              <b>Seu recurso:</b> {r.recurso.texto} ({fmtInstante(r.recurso.em)})
+            </p>
+          )}
+          {r.respostaFinal && (
+            <p>
+              <b>Resposta final da gestão:</b> {r.respostaFinal.texto} (
+              {fmtInstante(r.respostaFinal.respondidoEm)})
+            </p>
+          )}
+          {r.podeRecurso && (
+            <div>
+              <button type="button" className="btn sm" onClick={() => setRecorrendo(r.id)}>
+                Discordar da resposta
+              </button>
+            </div>
           )}
         </div>
       ))}
+      {recorrendo && (
+        <RecursoRevisaoDialog revisaoId={recorrendo} aoFechar={() => setRecorrendo(null)} />
+      )}
       {pedindo && <DialogoRevisao atletaId={atletaId} aoFechar={() => setPedindo(false)} />}
+    </section>
+  );
+}
+
+/** Pedidos de ajuste não lidos do treinador ou do gestor, em destaque no topo do painel (D8). */
+function PedidosDeAjuste() {
+  const consulta = usePedidosDeAjuste();
+  const marcar = useMarcarAvisoLido();
+  const itens = consulta.data ?? [];
+  if (itens.length === 0) return null;
+  return (
+    <section className="panel aj-destaque" aria-labelledby="painel-ajuste">
+      <h2 id="painel-ajuste">
+        {itens.length === 1
+          ? "Você tem um pedido de ajuste"
+          : `Você tem ${itens.length} pedidos de ajuste`}
+      </h2>
+      <ul className="aj-lista">
+        {itens.map((a) => (
+          <li key={a.id} className="aj-item">
+            <strong>{fraseDoAviso(a)}</strong>
+            {/* Texto puro: nunca interpretado como HTML. */}
+            {a.mensagem && <p className="aj-msg">{a.mensagem}</p>}
+            <span className="muted">{fmtInstante(a.criadoEm)}</span>
+            <div className="btn-row">
+              <button
+                type="button"
+                className="btn sm"
+                disabled={marcar.isPending}
+                onClick={() => marcar.mutate(a.id)}
+              >
+                Marcar como lido
+                <span className="sr-only">: {fraseDoAviso(a)}</span>
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      {marcar.isError && (
+        <p className="note" role="alert">
+          {mensagemDeErro(marcar.error)}
+        </p>
+      )}
     </section>
   );
 }
@@ -620,6 +709,7 @@ function Revisoes({ atletaId }: { atletaId: string }) {
 function Conteudo({ painel }: { painel: PainelAtleta }) {
   const queryClient = useQueryClient();
   const [aberto, setAberto] = useState<string | null>(null);
+  const [pedindoRevisao, setPedindoRevisao] = useState(false);
   // Painel carregado: marca as respostas novas como vistas (uma vez por montagem; falha em silêncio).
   useEffect(() => {
     void marcarPainelVisto(queryClient);
@@ -647,6 +737,7 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
         <BigScore score={painel.score} faixa={painel.faixa} parcial={!painel.completo} />
       </div>
       <div className="stack">
+        <PedidosDeAjuste />
         {(!painel.consentimento.termoAceitoEm || painel.consentimento.termoPendente) && (
           <TermoAceite
             novaVersao={
@@ -680,10 +771,21 @@ function Conteudo({ painel }: { painel: PainelAtleta }) {
         {modulo && (
           <Questionario m={modulo} atletaId={painel.atleta.id} aoFechar={() => setAberto(null)} />
         )}
+        <MinhaAutoavaliacao
+          atletaId={painel.atleta.id}
+          pilares={painel.modulos.map((m) => ({ id: m.pilarId, nome: m.nome }))}
+          aoPedirRevisao={() => setPedindoRevisao(true)}
+        />
+        <MeusResultados atletaId={painel.atleta.id} />
+        <MinhasConquistas atletaId={painel.atleta.id} />
+        <PesagemAtleta atletaId={painel.atleta.id} />
         <Consentimento c={painel.consentimento} />
         <PedidosTitular />
         <Revisoes atletaId={painel.atleta.id} />
       </div>
+      {pedindoRevisao && (
+        <DialogoRevisao atletaId={painel.atleta.id} aoFechar={() => setPedindoRevisao(false)} />
+      )}
     </>
   );
 }

@@ -6,10 +6,12 @@ import { Abas, PainelAba } from "./Abas";
 import { atributosDoCampo } from "./campo-util";
 import { MensagemCampo } from "./MensagemCampo";
 import { fmt1 } from "./formato";
+import { SecaoEvidencia } from "./ParametrosEvidencia";
 import { SecaoFaixas, SecaoRubricas } from "./ParametrosFaixasRubricas";
 import { SecaoRegras } from "./ParametrosRegras";
 import { SecaoTermos } from "./ParametrosTermos";
-import { analisarAltura, MSG_SALVO } from "./parametros-util";
+import { SugestaoDialog } from "./SugestaoDialog";
+import { analisarAltura, MSG_SALVO, type PropostaClasse } from "./parametros-util";
 import { errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
 import { useParametros, useSalvarParametros, type Parametros } from "@/lib/api/parametros";
 
@@ -24,7 +26,14 @@ function lerKg(texto: string): number | null {
 }
 
 /** Tela de parâmetros da metodologia (gestor). Pesos e faixas de peso editáveis; o resto é leitura. */
-export function TelaParametros({ papel = "gestor" }: { papel?: string }) {
+export function TelaParametros({
+  papel = "gestor",
+  proposta,
+}: {
+  papel?: string;
+  /** Faixa proposta por uma sugestão aprovada (D7): preenche o Class Fit, sem salvar. */
+  proposta?: PropostaClasse;
+}) {
   const consulta = useParametros();
   return (
     <>
@@ -54,7 +63,7 @@ export function TelaParametros({ papel = "gestor" }: { papel?: string }) {
           {mensagemDeErro(consulta.error)}
         </div>
       ) : (
-        <ConteudoParametros dados={consulta.data} gestor={papel === "gestor"} />
+        <ConteudoParametros dados={consulta.data} gestor={papel === "gestor"} proposta={proposta} />
       )}
     </>
   );
@@ -64,6 +73,7 @@ const ABAS = [
   { id: "pesos", rotulo: "Pesos e faixas" },
   { id: "classes", rotulo: "Class Fit" },
   { id: "rubricas", rotulo: "Rubricas" },
+  { id: "evidencia", rotulo: "Evidência" },
   { id: "regras", rotulo: "Regras provisórias" },
   { id: "termo", rotulo: "Termo de consentimento" },
   { id: "custos", rotulo: "Componentes de custo" },
@@ -99,7 +109,15 @@ function useAbaNoHash(validas: string[]): [string, (id: string) => void] {
   return [ativa, mudar];
 }
 
-function ConteudoParametros({ dados, gestor }: { dados: Parametros; gestor: boolean }) {
+function ConteudoParametros({
+  dados,
+  gestor,
+  proposta,
+}: {
+  dados: Parametros;
+  gestor: boolean;
+  proposta: PropostaClasse | undefined;
+}) {
   const itens = ABAS.filter((a) => gestor || a.id !== "termo");
   const [ativa, mudar] = useAbaNoHash(itens.map((i) => i.id));
   return (
@@ -113,18 +131,28 @@ function ConteudoParametros({ dados, gestor }: { dados: Parametros; gestor: bool
       </PainelAba>
       <PainelAba id="classes" ativa={ativa === "classes"} manter>
         <SecaoClasses
-          key={dados.classes
+          key={`${proposta ? JSON.stringify(proposta) : ""}|${dados.classes
             .map(
               (c) =>
-                `${c.pesoMinKg}/${c.pesoMedioKg}/${c.pesoMaxKg}/${c.alturaMinCm}/${c.alturaMediaCm}/${c.alturaMaxCm}/${c.ativa}`,
+                `${c.pesoMinKg}/${c.pesoMedioKg}/${c.pesoMaxKg}/${c.alturaMinCm}/${c.alturaMediaCm}/${c.alturaMaxCm}/${c.ativa}/${JSON.stringify(c.fonte)}`,
             )
-            .join(",")}
+            .join(",")}`}
           dados={dados}
+          gestor={gestor}
+          proposta={proposta}
         />
       </PainelAba>
       <PainelAba id="rubricas" ativa={ativa === "rubricas"} manter>
         <SecaoRubricas
           key={JSON.stringify([dados.rubricas, dados.pilares.map((p) => p.id)])}
+          dados={dados}
+        />
+      </PainelAba>
+      <PainelAba id="evidencia" ativa={ativa === "evidencia"} manter>
+        <SecaoEvidencia
+          key={JSON.stringify(
+            dados.pilares.flatMap((p) => p.indicadores.map((i) => [i.id, i.evidencia])),
+          )}
           dados={dados}
         />
       </PainelAba>
@@ -214,23 +242,69 @@ function SecaoPesos({ dados }: { dados: Parametros }) {
 }
 
 type Campo = "min" | "med" | "max" | "aMin" | "aMed" | "aMax";
-type Linha = Record<Campo, string> & { ativa: boolean };
+type CampoFonte = "fDoc" | "fVer" | "fData";
+type Linha = Record<Campo | CampoFonte, string> & { ativa: boolean };
+
+const DOC_MAX = 200;
+const VERSAO_MAX = 40;
+
+/** Fonte da faixa como a API espera: tudo vazio limpa (`null`); com algo, o documento é obrigatório. */
+function analisarFonte(l: Pick<Linha, CampoFonte>) {
+  const documento = l.fDoc.trim();
+  const versao = l.fVer.trim();
+  const data = l.fData.trim();
+  if (!documento && !versao && !data) return { fonte: null, erro: null };
+  if (!documento) return { fonte: null, erro: "Informe o documento que traz a faixa." };
+  if (documento.length > DOC_MAX) {
+    return { fonte: null, erro: `O documento pode ter até ${DOC_MAX} caracteres.` };
+  }
+  if (versao.length > VERSAO_MAX) {
+    return { fonte: null, erro: `A versão pode ter até ${VERSAO_MAX} caracteres.` };
+  }
+  if (data && !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    return { fonte: null, erro: "Informe a data do documento no formato AAAA-MM-DD." };
+  }
+  return { fonte: { documento, versao: versao || null, data: data || null }, erro: null };
+}
+
+const mesmaFonte = (
+  a: { documento: string | null; versao: string | null; data: string | null } | null,
+  b: { documento: string | null; versao: string | null; data: string | null } | null,
+) =>
+  (a?.documento ?? null) === (b?.documento ?? null) &&
+  (a?.versao ?? null) === (b?.versao ?? null) &&
+  (a?.data ?? null) === (b?.data ?? null);
 
 const txtAltura = (v: number | null) => (v == null ? "" : String(v).replace(".", ","));
 
-function SecaoClasses({ dados }: { dados: Parametros }) {
+function SecaoClasses({
+  dados,
+  gestor,
+  proposta,
+}: {
+  dados: Parametros;
+  gestor: boolean;
+  proposta: PropostaClasse | undefined;
+}) {
   const salvar = useSalvarParametros();
+  const [sugerindo, setSugerindo] = useState<string | null>(null);
+  const classeDaProposta = proposta
+    ? dados.classes.find((c) => c.id === proposta.classe)
+    : undefined;
   const [linhas, setLinhas] = useState<Record<string, Linha>>(() =>
     Object.fromEntries(
       dados.classes.map((c) => [
         c.id,
         {
-          min: fmt1(c.pesoMinKg),
-          med: fmt1(c.pesoMedioKg),
-          max: fmt1(c.pesoMaxKg),
+          min: fmt1(proposta && c.id === proposta.classe ? proposta.min : c.pesoMinKg),
+          med: fmt1(proposta && c.id === proposta.classe ? proposta.med : c.pesoMedioKg),
+          max: fmt1(proposta && c.id === proposta.classe ? proposta.max : c.pesoMaxKg),
           aMin: txtAltura(c.alturaMinCm),
           aMed: txtAltura(c.alturaMediaCm),
           aMax: txtAltura(c.alturaMaxCm),
+          fDoc: c.fonte?.documento ?? "",
+          fVer: c.fonte?.versao ?? "",
+          fData: c.fonte?.data ?? "",
           ativa: c.ativa,
         },
       ]),
@@ -246,7 +320,7 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
     if (min === null || med === null || max === null) erro = "Informe os três valores em kg.";
     else if (min > med) erro = "O mínimo não pode passar da média.";
     else if (med > max) erro = "A média não pode passar do máximo.";
-    return { min, med, max, erro, h: analisarAltura(l.aMin, l.aMed, l.aMax) };
+    return { min, med, max, erro, h: analisarAltura(l.aMin, l.aMed, l.aMax), f: analisarFonte(l) };
   };
 
   const resultado = dados.classes.map((c) => {
@@ -259,18 +333,23 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
       h.med !== c.alturaMediaCm ||
       h.max !== c.alturaMaxCm;
     const ativaAlterada = linhas[c.id]!.ativa !== c.ativa;
+    const fonteAlterada = a.f.erro !== null || !mesmaFonte(a.f.fonte, c.fonte);
     return {
       c,
       a,
       pesoAlterado,
       alturaAlterada,
       ativaAlterada,
-      alterada: pesoAlterado || alturaAlterada || ativaAlterada,
+      fonteAlterada,
+      alterada: pesoAlterado || alturaAlterada || ativaAlterada || fonteAlterada,
     };
   });
   const alteradas = resultado.filter((r) => r.alterada);
   const comErro = alteradas.some(
-    (r) => (r.pesoAlterado && r.a.erro) || (r.alturaAlterada && r.a.h.erro),
+    (r) =>
+      (r.pesoAlterado && r.a.erro) ||
+      (r.alturaAlterada && r.a.h.erro) ||
+      (r.fonteAlterada && r.a.f.erro),
   );
 
   // Erros do 400: "classes.N.<campo>" aponta para a N-ésima classe enviada (as alteradas).
@@ -292,8 +371,9 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
     aMed: "alturaMediaCm",
     aMax: "alturaMaxCm",
   };
+  const CAMPOS_FONTE_API = ["fonte", "fonte.documento", "fonte.versao", "fonte.data"];
 
-  const mudar = (id: string, campo: Campo, valor: string) => {
+  const mudar = (id: string, campo: Campo | CampoFonte, valor: string) => {
     if (salvar.isError) salvar.reset();
     setLinhas((ls) => ({ ...ls, [id]: { ...ls[id]!, [campo]: valor } }));
   };
@@ -301,14 +381,17 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
   const enviar = (e: FormEvent) => {
     e.preventDefault();
     if (alteradas.length === 0 || comErro) return;
-    const classes = alteradas.map(({ c, a, pesoAlterado, alturaAlterada, ativaAlterada }) => ({
-      id: c.id,
-      ...(pesoAlterado ? { pesoMinKg: a.min!, pesoMedioKg: a.med!, pesoMaxKg: a.max! } : {}),
-      ...(alturaAlterada
-        ? { alturaMinCm: a.h.min, alturaMediaCm: a.h.med, alturaMaxCm: a.h.max }
-        : {}),
-      ...(ativaAlterada ? { ativa: linhas[c.id]!.ativa } : {}),
-    }));
+    const classes = alteradas.map(
+      ({ c, a, pesoAlterado, alturaAlterada, ativaAlterada, fonteAlterada }) => ({
+        id: c.id,
+        ...(pesoAlterado ? { pesoMinKg: a.min!, pesoMedioKg: a.med!, pesoMaxKg: a.max! } : {}),
+        ...(alturaAlterada
+          ? { alturaMinCm: a.h.min, alturaMediaCm: a.h.med, alturaMaxCm: a.h.max }
+          : {}),
+        ...(ativaAlterada ? { ativa: linhas[c.id]!.ativa } : {}),
+        ...(fonteAlterada ? { fonte: a.f.fonte } : {}),
+      }),
+    );
     salvar.mutate({ classes }, { onSuccess: () => toast.success(MSG_SALVO) });
   };
 
@@ -326,6 +409,28 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
         ? atributosDoCampo(`classe-erro-${c.id}`, erroServidorDaClasse(c.id, [CAMPOS_API[k]]))
         : { "aria-invalid": erro })}
       value={linhas[c.id]![k]}
+      readOnly={!gestor}
+      onChange={(e) => mudar(c.id, k, e.target.value)}
+    />
+  );
+
+  const campoFonte = (
+    c: Parametros["classes"][number],
+    k: CampoFonte,
+    rotulo: string,
+    max?: number,
+    tipo: "text" | "date" = "text",
+  ) => (
+    <input
+      className={`par-fonte par-fonte-${k}`}
+      type={tipo}
+      aria-label={`Fonte da faixa, ${rotulo.toLowerCase()}: ${c.nome}, ${POSICAO[c.posicao]}`}
+      {...(max ? { maxLength: max } : {})}
+      {...(erroServidorDaClasse(c.id, CAMPOS_FONTE_API)
+        ? atributosDoCampo(`classe-erro-${c.id}`, erroServidorDaClasse(c.id, CAMPOS_FONTE_API))
+        : {})}
+      value={linhas[c.id]![k]}
+      readOnly={!gestor}
       onChange={(e) => mudar(c.id, k, e.target.value)}
     />
   );
@@ -340,6 +445,27 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
           </span>
         </div>
         <p className="panel-dica">A altura é informativa (não entra no score nem nos gates).</p>
+        <p className="panel-dica">
+          As faixas de peso devem seguir o documento oficial de cada classe. Registre em "Fonte da
+          faixa" o documento, a versão e a data de onde a faixa foi tirada; a ficha do atleta mostra
+          essa fonte abaixo do gráfico de Class Fit. A fonte é só informativa e não muda o cálculo.
+        </p>
+        {classeDaProposta && proposta && (
+          <p className="par-proposta" role="note">
+            <i className="ph ph-lightbulb" aria-hidden="true" />
+            <span>
+              Proposta de uma sugestão aprovada preenchida em {classeDaProposta.nome}:{" "}
+              {fmt1(proposta.min)} / {fmt1(proposta.med)} / {fmt1(proposta.max)} kg. A faixa só muda
+              quando você salvar; se não concordar, ajuste os valores ou saia sem salvar.
+            </span>
+          </p>
+        )}
+        {!gestor && (
+          <p className="panel-dica">
+            Você vê as faixas em leitura. Para propor uma mudança, use "Sugerir mudança": o gestor
+            aprova ou recusa.
+          </p>
+        )}
         <div
           className="table-scroll"
           tabIndex={0}
@@ -356,6 +482,9 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
                 <th className="num par-grupo-col" colSpan={3} scope="colgroup">
                   Altura (cm)
                 </th>
+                <th className="par-grupo-col" colSpan={3} scope="colgroup">
+                  Fonte da faixa
+                </th>
                 <th className="par-col-ativa" rowSpan={2}>
                   Ativa
                 </th>
@@ -367,10 +496,13 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
                 <th className="num">Mín.</th>
                 <th className="num">Média</th>
                 <th className="num">Máx.</th>
+                <th>Documento</th>
+                <th>Versão</th>
+                <th>Data</th>
               </tr>
             </thead>
             <tbody>
-              {resultado.map(({ c, a, alterada, pesoAlterado, alturaAlterada }) => (
+              {resultado.map(({ c, a, alterada, pesoAlterado, alturaAlterada, fonteAlterada }) => (
                 <tr key={c.id} data-alterada={alterada || undefined}>
                   <td className="nw par-classe">
                     <span className="par-classe-nome">{c.nome}</span>
@@ -387,10 +519,26 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
                         {a.h.erro}
                       </div>
                     )}
+                    {a.f.erro && fonteAlterada && (
+                      <div className="par-erro" role="alert">
+                        {a.f.erro}
+                      </div>
+                    )}
                     <MensagemCampo
                       id={`classe-erro-${c.id}`}
-                      texto={erroServidorDaClasse(c.id, Object.values(CAMPOS_API))}
+                      texto={erroServidorDaClasse(c.id, [
+                        ...Object.values(CAMPOS_API),
+                        ...CAMPOS_FONTE_API,
+                      ])}
                     />
+                    {!gestor && (
+                      <button type="button" className="btn sm" onClick={() => setSugerindo(c.id)}>
+                        Sugerir mudança{" "}
+                        <span className="sr-only">
+                          em {c.nome}, {POSICAO[c.posicao]}
+                        </span>
+                      </button>
+                    )}
                   </td>
                   <td className="num">{campo(c, "min", "Mínimo", !!a.erro)}</td>
                   <td className="num">{campo(c, "med", "Média", !!a.erro)}</td>
@@ -398,6 +546,9 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
                   <td className="num">{campo(c, "aMin", "mínima", !!a.h.erro)}</td>
                   <td className="num">{campo(c, "aMed", "média", !!a.h.erro)}</td>
                   <td className="num">{campo(c, "aMax", "máxima", !!a.h.erro)}</td>
+                  <td>{campoFonte(c, "fDoc", "Documento", DOC_MAX)}</td>
+                  <td>{campoFonte(c, "fVer", "Versão", VERSAO_MAX)}</td>
+                  <td>{campoFonte(c, "fData", "Data", undefined, "date")}</td>
                   <td className="par-col-ativa">
                     <input
                       type="checkbox"
@@ -423,20 +574,29 @@ function SecaoClasses({ dados }: { dados: Parametros }) {
             {mensagemDeErro(salvar.error)}
           </p>
         )}
-        <div className="btn-row" style={{ marginTop: 14 }}>
-          <button
-            className="btn primary"
-            type="submit"
-            disabled={alteradas.length === 0 || comErro || salvar.isPending}
-          >
-            {salvar.isPending
-              ? "Salvando…"
-              : alteradas.length > 1
-                ? `Salvar ${alteradas.length} classes`
-                : "Salvar faixas da classe"}
-          </button>
-        </div>
+        {gestor && (
+          <div className="btn-row" style={{ marginTop: 14 }}>
+            <button
+              className="btn primary"
+              type="submit"
+              disabled={alteradas.length === 0 || comErro || salvar.isPending}
+            >
+              {salvar.isPending
+                ? "Salvando…"
+                : alteradas.length > 1
+                  ? `Salvar ${alteradas.length} classes`
+                  : "Salvar faixas da classe"}
+            </button>
+          </div>
+        )}
       </form>
+      {sugerindo && (
+        <SugestaoDialog
+          modo="class_fit"
+          classeInicial={sugerindo}
+          aoFechar={() => setSugerindo(null)}
+        />
+      )}
     </section>
   );
 }

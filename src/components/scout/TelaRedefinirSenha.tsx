@@ -1,19 +1,12 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import heroPhoto from "@/assets/olympic-dinghy-sailing.jpg";
+import { lerLinkDeSenha } from "@/lib/auth/link-senha";
 import { useSessao } from "@/lib/auth/sessao";
 import { getSupabase } from "@/lib/auth/supabase";
 import "@/styles/contas.css";
 
 export const SENHA_MINIMA = 10;
-
-type Tipo = "convite" | "recuperacao";
-
-function tipoDoLink(): Tipo {
-  if (typeof window === "undefined") return "recuperacao";
-  const t = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("type");
-  return t === "invite" ? "convite" : "recuperacao";
-}
 
 /** Casca visual das telas de conta fora do layout autenticado (mesma cena do login). */
 export function CascaConta({ children }: { children: React.ReactNode }) {
@@ -31,22 +24,18 @@ export function CascaConta({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Destino do link do e-mail de convite ou de redefinição. O supabase-js lê o hash da URL e
- * cria a sessão (eventos PASSWORD_RECOVERY e SIGNED_IN); sem sessão, o link é inválido ou expirou.
+ * Destino do link do e-mail de convite ou de redefinição. O supabase-js lê o hash da URL e cria a
+ * sessão da conta do link. A tela só deixa trocar a senha se a sessão ativa for exatamente a conta
+ * que o link autenticou: link com erro (inválido, expirado ou já usado), sem token ou de outra conta
+ * nunca troca a senha da sessão que já estava aberta no navegador (auditoria A7).
  */
 export function TelaRedefinirSenha() {
   const { carregando, sessao } = useSessao();
   const navigate = useNavigate();
-  const [tipo, setTipo] = useState<Tipo>(tipoDoLink);
+  const [link] = useState(lerLinkDeSenha);
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
-
-  useEffect(() => {
-    const { data } = getSupabase().auth.onAuthStateChange((evento) => {
-      if (evento === "PASSWORD_RECOVERY") setTipo("recuperacao");
-    });
-    return () => data.subscription.unsubscribe();
-  }, []);
+  const tipo = link.tipo;
 
   const titulo = tipo === "convite" ? "Definir senha" : "Redefinir senha";
 
@@ -65,6 +54,13 @@ export function TelaRedefinirSenha() {
     }
     setErro("");
     setEnviando(true);
+    // Confere de novo na hora de salvar: a senha só muda na conta que o link autenticou.
+    const { data } = await getSupabase().auth.getSession();
+    if (!link.sub || data.session?.user.id !== link.sub) {
+      setErro("Este link não vale para a conta aberta neste navegador. Peça um novo link.");
+      setEnviando(false);
+      return;
+    }
     const { error } = await getSupabase().auth.updateUser({ password: senha });
     if (error) {
       setErro("Não foi possível salvar a senha. Peça um novo link e tente de novo.");
@@ -84,14 +80,32 @@ export function TelaRedefinirSenha() {
     );
   }
 
-  if (!sessao) {
+  if (!link.erro && !link.sub) {
+    return (
+      <CascaConta>
+        <h1 className="entry-title" style={{ fontSize: "2.2rem" }}>
+          Abra pelo link do e-mail
+        </h1>
+        <p className="entry-lead" role="alert">
+          Esta página só funciona pelo link de convite ou de redefinição enviado por e-mail. Para
+          trocar a senha da conta em uso, abra “Meu perfil”.
+        </p>
+        <Link className="auth-link" to="/entrar">
+          Ir para o login
+        </Link>
+      </CascaConta>
+    );
+  }
+
+  if (link.erro || !sessao || sessao.user.id !== link.sub) {
     return (
       <CascaConta>
         <h1 className="entry-title" style={{ fontSize: "2.2rem" }}>
           Link inválido
         </h1>
         <p className="entry-lead" role="alert">
-          Este link é inválido ou expirou. Peça outro pela opção “Esqueci a senha” no login.
+          Este link é inválido, expirou ou já foi usado. Peça outro pela opção “Esqueci a senha” no
+          login ou um novo convite à gestão.
         </p>
         <Link className="auth-link" to="/entrar">
           Ir para o login

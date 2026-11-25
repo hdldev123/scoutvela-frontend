@@ -9,15 +9,20 @@ const criarRevisao = vi.fn();
 const registrarPlano = vi.fn();
 const atualizarFinanceiro = vi.fn();
 const lancarResultado = vi.fn();
+const registrarAptidao = vi.fn();
 const POST = vi.fn();
+const PUT = vi.fn();
+const DELETE = vi.fn();
 const linkEvidencia = vi.hoisted(() => ({ url: "https://storage.exemplo.com/a.pdf?assinatura=1" }));
-const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
+const toastFn = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }));
 
 vi.mock("@/lib/api/cliente", async (importar) => ({
   ...(await importar<typeof import("@/lib/api/cliente")>()),
   api: {
     GET: (...args: unknown[]) => GET(...args),
     POST: (...args: unknown[]) => POST(...args),
+    PUT: (...args: unknown[]) => PUT(...args),
+    DELETE: (...args: unknown[]) => DELETE(...args),
   },
 }));
 vi.mock("@/lib/api/mutacoes-ficha", () => ({
@@ -26,6 +31,7 @@ vi.mock("@/lib/api/mutacoes-ficha", () => ({
   registrarPlano: (...a: unknown[]) => registrarPlano(...a),
   atualizarFinanceiro: (...a: unknown[]) => atualizarFinanceiro(...a),
   lancarResultado: (...a: unknown[]) => lancarResultado(...a),
+  registrarAptidao: (...a: unknown[]) => registrarAptidao(...a),
 }));
 vi.mock("sonner", () => ({ toast: toastFn }));
 vi.mock("@tanstack/react-router", () => ({
@@ -81,12 +87,15 @@ function pilar(
         calculado: false,
         nota,
         evidencia: nota == null ? null : "Teste de campo",
+        link: null,
         origem: nota == null ? null : ("avaliacao" as const),
         avaliador: nota == null ? null : { id: "u1", nome: "Ana Ribeiro" },
         lancadoEm: nota == null ? null : "2026-11-05T12:00:00.000Z",
         resposta: null,
         sugestaoPendente: null,
-        sugestaoPontos: null,
+        justificativa: null,
+        explicacao: null,
+        resultado: null,
         anexo: null,
       },
     ],
@@ -94,11 +103,20 @@ function pilar(
   };
 }
 
+const RES_BASE = {
+  status: "validado" as const,
+  motivo: null,
+  anexo: null,
+  validadoPor: null,
+  validadoEm: null,
+};
+
 function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
   return {
     atleta: {
       id: "a07",
       nome: "Helena Vasques",
+      wsId: "BRAHV07",
       velaid: "SC-T07",
       numeroVela: "BRA 123",
       genero: "F",
@@ -108,11 +126,19 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
       cidade: "Florianópolis",
       uf: "SC",
       fotoUrl: null,
+      bio: null,
       termoAceito: true,
       classe: { id: "c1", nome: "ILCA 6", evento: "ILCA 6", posicao: "ind" },
     },
-    contato: { email: null, treinador: { id: "t1", nome: "Ana Ribeiro" } },
+    contato: {
+      email: null,
+      treinador: { id: "t1", nome: "Ana Ribeiro" },
+      telefone: null,
+      passaporteValidoAte: null,
+      aptidao: null,
+    },
     ciclo: { nome: "Novembro de 2026", prazo: "2026-11-30" },
+    dadosAtualizadosEm: null,
     score: 71.5,
     faixa: { id: "f3", nome: "Em desenvolvimento", nomeCurto: "Em desenvolvimento" },
     completo: false,
@@ -121,6 +147,9 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
     pontosCbvela: 900,
     plano: null,
     sugestaoPlano: null,
+    mediaTurmaPorCiclo: [],
+    comparacaoTurma: null,
+    tendencia: null,
     historicoScore: [
       { ciclo: "Setembro de 2026", score: 60 },
       { ciclo: "Outubro de 2026", score: 66 },
@@ -176,9 +205,14 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
       pesoMaxKg: 65,
       deltaKg: 2,
       distanciaRelativa: 0.4,
+      fonte: null,
     },
+    conquistas: [],
     resultados: [
       {
+        ...RES_BASE,
+        id: "r1",
+        edicao: 2026,
         data: "2026-03-10",
         nivel: "Brasileiro",
         evento: "Brasileiro ILCA",
@@ -190,6 +224,9 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
         linkOficial: null,
       },
       {
+        ...RES_BASE,
+        id: "r2",
+        edicao: 2026,
         data: "2026-06-01",
         nivel: "Sul-Americano",
         evento: "Sul-Americano",
@@ -228,13 +265,72 @@ const ANEXOS = {
       tipoMime: "application/pdf",
       tamanhoBytes: 1000,
       indicadorId: "perf_1",
+      categoria: "evidencia" as const,
+      enviadoPor: { papel: "treinador" as const },
       enviadoEm: "2026-11-05T12:00:00.000Z",
+      removidoEm: null,
+    },
+    {
+      id: "e2",
+      nomeArquivo: "sumula-brasileiro.pdf",
+      tipoMime: "application/pdf",
+      tamanhoBytes: 2 * 1024 * 1024,
+      indicadorId: null,
+      categoria: "sumula" as const,
+      enviadoPor: { papel: "atleta" as const },
+      enviadoEm: "2026-11-06T12:00:00.000Z",
+      removidoEm: null,
+    },
+    {
+      id: "e3",
+      nomeArquivo: "balanca.jpg",
+      tipoMime: "image/jpeg",
+      tamanhoBytes: 500 * 1024,
+      indicadorId: null,
+      categoria: "balanca" as const,
+      enviadoPor: { papel: "gestor" as const },
+      enviadoEm: "2026-11-07T12:00:00.000Z",
+      removidoEm: null,
     },
   ],
+  usoBytes: 2 * 1024 * 1024 + 1000 + 500 * 1024,
+  cotaBytes: 200 * 1024 * 1024,
+};
+
+const SEM_AUTOAVALIACAO = {
+  ciclo: null,
+  indicadores: [],
+  orientacoesResultados: [],
+  rubricas: [],
+  resumoPorPilar: null,
+};
+let autoavaliacao: unknown = SEM_AUTOAVALIACAO;
+let pesagens: unknown = { itens: [] };
+let resultadosApi: ({ status: string } & Record<string, unknown>)[] = [];
+let conquistasApi: { automaticas: unknown[]; manuais: unknown[] } = {
+  automaticas: [],
+  manuais: [],
 };
 
 function montar(papel: string, dados: FichaAtleta | { erro: number }) {
-  GET.mockImplementation((caminho: string) => {
+  GET.mockImplementation((caminho: string, opcoes?: unknown) => {
+    if (caminho === "/atletas/{id}/autoavaliacao") {
+      return Promise.resolve({ data: autoavaliacao, response: { status: 200 } });
+    }
+    if (caminho === "/atletas/{id}/pesagens") {
+      return Promise.resolve({ data: pesagens, response: { status: 200 } });
+    }
+    if (caminho === "/atletas/{id}/resultados") {
+      const status = (opcoes as { params?: { query?: { status?: string } } } | undefined)?.params
+        ?.query?.status;
+      return Promise.resolve({
+        data: { itens: resultadosApi.filter((x) => !status || x.status === status) },
+        response: { status: 200 },
+      });
+    }
+    if (caminho === "/atletas/{id}/conquistas") {
+      return Promise.resolve({ data: conquistasApi, response: { status: 200 } });
+    }
     if (caminho === "/parametros") {
       return Promise.resolve({ data: PARAMETROS, response: { status: 200 } });
     }
@@ -284,6 +380,10 @@ const PLANO = {
 
 describe("TelaFicha", () => {
   beforeEach(() => {
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
+    resultadosApi = [];
+    conquistasApi = { automaticas: [], manuais: [] };
     GET.mockReset();
     atualizarGate.mockReset();
     criarRevisao.mockReset();
@@ -291,6 +391,7 @@ describe("TelaFicha", () => {
     atualizarFinanceiro.mockReset();
     lancarResultado.mockReset();
     POST.mockReset();
+    DELETE.mockReset();
     toastFn.mockReset();
     toastFn.error.mockReset();
   });
@@ -298,12 +399,37 @@ describe("TelaFicha", () => {
   it("mostra cabeçalho, score e pill Parcial", async () => {
     montar("gestor", ficha());
     expect(await screen.findByRole("heading", { name: "Helena Vasques" })).toBeInTheDocument();
+    const ws = screen.getByRole("link", {
+      name: /Perfil de Helena Vasques no World Sailing [(]abre em nova aba[)]/,
+    });
+    expect(ws).toHaveAttribute("href", "https://www.sailing.org/sailor/?ref=BRAHV07");
+    expect(ws).toHaveAttribute("target", "_blank");
+    // D2: o número de vela é informação secundária, depois do WS ID e da classe.
+    const fatos = ws.closest("ul")!;
+    const itens = Array.from(fatos.querySelectorAll(":scope > li")).map((li) => li.textContent);
+    const iVela = itens.findIndex((t) => t?.includes("Nº de vela BRA 123"));
+    const iWs = itens.findIndex((t) => t?.includes("ID World Sailing"));
+    expect(iVela).toBeGreaterThan(iWs);
+    expect(iWs).toBe(0);
     expect(screen.getByText("71,5")).toBeInTheDocument();
     expect(screen.getByText("Parcial")).toBeInTheDocument();
     expect(screen.getByText("Ana Ribeiro", { exact: false, selector: "li" })).toBeInTheDocument();
     expect(
       screen.getByRole("img", { name: /Score nos últimos ciclos: 60,0, 66,0, 71,5/ }),
     ).toBeInTheDocument();
+  });
+
+  it("mostra a data da última atualização dos dados só quando a API a devolve", async () => {
+    montar("ibvar", ficha({ dadosAtualizadosEm: "2026-11-07T02:30:00.000Z" }));
+    expect(
+      await screen.findByText("Dados deste atleta atualizados em 06/11/2026"),
+    ).toBeInTheDocument();
+  });
+
+  it("sem dadosAtualizadosEm não mostra a linha de atualização", async () => {
+    montar("gestor", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByText(/Dados deste atleta atualizados/)).not.toBeInTheDocument();
   });
 
   it("mostra a foto do atleta só quando fotoUrl vem preenchida", async () => {
@@ -373,7 +499,7 @@ describe("TelaFicha", () => {
     montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
     await screen.findByRole("heading", { name: "Helena Vasques" });
     expect(screen.queryByRole("heading", { name: "Plano individual" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Evidências anexadas" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Documentos" })).not.toBeInTheDocument();
     expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/evidencias", expect.anything());
   });
 
@@ -588,12 +714,12 @@ describe("TelaFicha", () => {
     const aba = { opener: {} as unknown, location: { href: "" }, close: vi.fn() };
     const abrir = vi.spyOn(window, "open").mockReturnValue(aba as unknown as Window);
     montar("atleta", ficha());
-    const secao = (await screen.findByRole("heading", { name: "Evidências anexadas" })).closest(
-      "section",
-    )!;
+    const secao = (await screen.findByRole("heading", { name: "Documentos" })).closest("section")!;
     expect(await within(secao).findByText("teste-de-campo.pdf")).toBeInTheDocument();
-    expect(within(secao).getByText(/Indicador de Performance · 05\/11\/2026/)).toBeInTheDocument();
-    expect(within(secao).queryByRole("button", { name: "Anexar arquivo" })).not.toBeInTheDocument();
+    expect(
+      within(secao).getByText(/Indicador de Performance · enviado por o treinador · 05\/11\/2026/),
+    ).toBeInTheDocument();
+    expect(within(secao).getByRole("button", { name: "Anexar arquivo" })).toBeInTheDocument();
 
     fireEvent.click(within(secao).getByRole("button", { name: "Abrir teste-de-campo.pdf" }));
     expect(abrir).toHaveBeenCalledTimes(1);
@@ -656,6 +782,7 @@ describe("TelaFicha", () => {
           tipoMime: "image/png",
           conteudoBase64: "YWJj",
           indicadorId: "perf_1",
+          categoria: "evidencia",
         },
       }),
     );
@@ -686,6 +813,7 @@ describe("TelaFicha", () => {
                 valor: 4,
                 pesoKg: null,
                 evidencia: "Brasileiro 2026",
+                link: "https://youtu.be/regata",
                 origem: "avaliacao",
                 pendente: false,
                 avaliador: { id: "u1", nome: "Ana Ribeiro" },
@@ -726,7 +854,42 @@ describe("TelaFicha", () => {
     expect(itens[0]).toHaveTextContent("Avaliação · Ana Ribeiro");
     expect(within(itens[0]!).getByRole("button", { name: "sumula.pdf" })).toBeInTheDocument();
     expect(itens[1]).toHaveTextContent("Sugestão do atleta, aguardando avaliador");
-    expect(itens[1]).not.toHaveTextContent("Evidência");
+    expect(itens[1]).not.toHaveTextContent("Evidência:");
+    expect(itens[1]).toHaveTextContent("Sem evidência registrada");
+    const video = within(itens[0]!).getByRole("link", { name: "Ver vídeo (abre em nova aba)" });
+    expect(video).toHaveAttribute("href", "https://youtu.be/regata");
+    expect(video).toHaveAttribute("target", "_blank");
+    expect(video).toHaveAttribute("rel", "noopener noreferrer");
+    expect(within(itens[1]!).queryByRole("link", { name: /Ver vídeo/ })).toBeNull();
+  });
+
+  it("indicador com link mostra Ver vídeo em nova aba e sem evidência mostra o aviso", async () => {
+    const f = ficha();
+    const base = f.pilares[0]!.indicadores![0]!;
+    f.pilares[0] = {
+      ...f.pilares[0]!,
+      indicadores: [{ ...base, evidencia: null, link: "https://vimeo.com/123" }],
+    };
+    montar("treinador", f);
+    fireEvent.click(await screen.findByRole("button", { name: /^Performance/ }));
+    const video = screen.getByRole("link", { name: "Ver vídeo (abre em nova aba)" });
+    expect(video).toHaveAttribute("href", "https://vimeo.com/123");
+    expect(video).toHaveAttribute("target", "_blank");
+    expect(video).toHaveAttribute("rel", "noopener noreferrer");
+    expect(screen.getByText(/Sem evidência registrada/)).toBeInTheDocument();
+  });
+
+  it("IBVAR não vê o aviso de evidência ausente nem link", async () => {
+    const f = ficha();
+    const base = f.pilares[0]!.indicadores![0]!;
+    f.pilares[0] = {
+      ...f.pilares[0]!,
+      indicadores: [{ ...base, evidencia: null, link: null }],
+    };
+    montar("ibvar", f);
+    fireEvent.click(await screen.findByRole("button", { name: /^Performance/ }));
+    expect(screen.queryByText(/Sem evidência registrada/)).toBeNull();
+    expect(screen.queryByRole("link", { name: /Ver vídeo/ })).toBeNull();
   });
 
   it("Ver histórico mostra a mensagem da API quando o papel não tem acesso", async () => {
@@ -919,8 +1082,14 @@ describe("TelaFicha: ordem dos blocos e selos do financeiro", () => {
     expect(selos2[1]).toHaveClass("st-neutro");
     // Duas colunas reais: a esquerda inteira, depois a direita. A sequência do DOM é a ordem de
     // leitura e de foco no celular.
-    const esquerda = ["ordem-pilares", "ordem-gates", "ordem-historico"];
-    const direita = ["ordem-classfit", "ordem-financeiro", "ordem-plano", "ordem-evidencias"];
+    const esquerda = ["ordem-pilares", "ordem-gates", "ordem-historico", "ordem-comparacao"];
+    const direita = [
+      "ordem-classfit",
+      "ordem-contato",
+      "ordem-financeiro",
+      "ordem-plano",
+      "ordem-evidencias",
+    ];
     const classesDe = (col: Element, ordem: string[]) =>
       Array.from(col.children).map((el) => ordem.find((c) => el.classList.contains(c)) ?? "");
     const grade = document.querySelector(".ficha-grid")!;
@@ -934,5 +1103,875 @@ describe("TelaFicha: ordem dos blocos e selos do financeiro", () => {
       (el) => leitura.find((c) => el.classList.contains(c)) ?? "",
     );
     expect(noDom).toEqual(leitura);
+  });
+});
+
+describe("TelaFicha: documentos do atleta (D11)", () => {
+  beforeEach(() => {
+    GET.mockReset();
+    POST.mockReset();
+    DELETE.mockReset();
+    toastFn.mockReset();
+    toastFn.error.mockReset();
+  });
+
+  const secao = async () =>
+    (await screen.findByRole("heading", { name: "Documentos" })).closest("section")!;
+
+  it("agrupa por categoria, mostra quem enviou e a cota", async () => {
+    montar("gestor", ficha());
+    const s = await secao();
+    expect(await within(s).findByText("teste-de-campo.pdf")).toBeInTheDocument();
+    expect(within(s).getByText("Cota de anexos: 2,5 MB de 200 MB")).toBeInTheDocument();
+    const grupos = within(s)
+      .getAllByRole("heading", { level: 3 })
+      .map((h) => h.textContent);
+    expect(grupos).toEqual(["Evidência (1)", "Súmula (1)", "Foto da balança (1)"]);
+    expect(within(s).getByText(/enviado por o treinador/)).toBeInTheDocument();
+    expect(within(s).getByText(/enviado por o atleta/)).toBeInTheDocument();
+    expect(within(s).getByText(/enviado por o gestor/)).toBeInTheDocument();
+    // Gestor não remove: só o atleta remove o que ele mesmo enviou.
+    expect(within(s).queryByRole("button", { name: /^Remover/ })).toBeNull();
+  });
+
+  it("atleta anexa com categoria escolhida", async () => {
+    POST.mockResolvedValue({ data: { ...ANEXOS.anexos[1], id: "e9" }, response: { status: 201 } });
+    montar("atleta", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: "Anexar arquivo" }));
+    const dialogo = screen.getByRole("dialog");
+    fireEvent.change(within(dialogo).getByLabelText("Arquivo"), {
+      target: { files: [new File(["abc"], "sumula.pdf", { type: "application/pdf" })] },
+    });
+    fireEvent.change(within(dialogo).getByLabelText("Categoria"), { target: { value: "sumula" } });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar arquivo" }));
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith("/atletas/{id}/evidencias", {
+        params: { path: { id: "a07" } },
+        body: {
+          nomeArquivo: "sumula.pdf",
+          tipoMime: "application/pdf",
+          conteudoBase64: "YWJj",
+          categoria: "sumula",
+        },
+      }),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("cota excedida (413) mostra mensagem clara e mantém o diálogo", async () => {
+    POST.mockResolvedValue({
+      error: { erro: "cota_excedida", mensagem: "Cota excedida." },
+      response: { status: 413 },
+    });
+    montar("atleta", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: "Anexar arquivo" }));
+    const dialogo = screen.getByRole("dialog");
+    fireEvent.change(within(dialogo).getByLabelText("Arquivo"), {
+      target: { files: [new File(["abc"], "a.pdf", { type: "application/pdf" })] },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Enviar arquivo" }));
+    expect(await within(dialogo).findByRole("alert")).toHaveTextContent(
+      "A cota de 200 MB de anexos foi atingida",
+    );
+  });
+
+  it("atleta remove só o que enviou (204)", async () => {
+    DELETE.mockResolvedValue({ response: { status: 204, ok: true } });
+    montar("atleta", ficha());
+    const s = await secao();
+    await within(s).findByText("sumula-brasileiro.pdf");
+    expect(within(s).getAllByRole("button", { name: /^Remover/ })).toHaveLength(1);
+    expect(within(s).getByText(/enviado por você/)).toBeInTheDocument();
+    fireEvent.click(within(s).getByRole("button", { name: "Remover sumula-brasileiro.pdf" }));
+    const dialogo = screen.getByRole("dialog", { name: "Remover anexo" });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Remover anexo" }));
+    await waitFor(() =>
+      expect(DELETE).toHaveBeenCalledWith("/evidencias/{id}", { params: { path: { id: "e2" } } }),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(toastFn).toHaveBeenCalledWith("Anexo removido");
+  });
+
+  it("remoção de anexo ligado a uma nota (409) explica o motivo", async () => {
+    DELETE.mockResolvedValue({
+      error: { erro: "requisicao_invalida", mensagem: "Anexo em uso." },
+      response: { status: 409, ok: false },
+    });
+    montar("atleta", ficha());
+    const s = await secao();
+    await within(s).findByText("sumula-brasileiro.pdf");
+    fireEvent.click(within(s).getByRole("button", { name: "Remover sumula-brasileiro.pdf" }));
+    const dialogo = screen.getByRole("dialog", { name: "Remover anexo" });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Remover anexo" }));
+    expect(await within(dialogo).findByRole("alert")).toHaveTextContent(
+      "Este anexo está ligado a uma nota e não pode ser removido.",
+    );
+  });
+
+  it("IBVAR não monta o bloco nem consulta os anexos", async () => {
+    montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Documentos" })).not.toBeInTheDocument();
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/evidencias", expect.anything());
+  });
+});
+
+describe("TelaFicha: contato, passaporte e aptidão (D15)", () => {
+  const APTIDAO = {
+    apto: true,
+    conferidoEm: "2026-11-10T15:00:00.000Z",
+    conferidoPor: { nome: "Carla Gestora" },
+  };
+  const contato = (extra: Record<string, unknown> = {}) => ({
+    email: null,
+    treinador: { id: "t1", nome: "Ana Ribeiro" },
+    telefone: "+5521999990000",
+    passaporteValidoAte: "2030-05",
+    aptidao: APTIDAO,
+    ...extra,
+  });
+
+  it("mostra telefone, validade do passaporte e o selo de aptidão", async () => {
+    montar("treinador", ficha({ contato: contato() }));
+    expect(await screen.findByRole("heading", { name: "Contato e viagens" })).toBeInTheDocument();
+    expect(screen.getByText("+5521999990000")).toBeInTheDocument();
+    expect(screen.getByText("válido até 05/2030")).toBeInTheDocument();
+    expect(screen.getByText("Apto, conferido em 10/11/2026 por Carla Gestora")).toBeInTheDocument();
+    expect(screen.queryByText(/Passaporte vence/)).not.toBeInTheDocument();
+  });
+
+  it("avisa quando o passaporte vence em menos de 6 meses", async () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 2);
+    const em2Meses = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    montar("gestor", ficha({ contato: contato({ passaporteValidoAte: em2Meses }) }));
+    expect(await screen.findByText("Passaporte vence em menos de 6 meses")).toBeInTheDocument();
+  });
+
+  it("avisa passaporte vencido e mostra sem registro de aptidão", async () => {
+    montar(
+      "atleta",
+      ficha({ contato: contato({ passaporteValidoAte: "2020-01", aptidao: null }) }),
+    );
+    expect(await screen.findByText("Passaporte vencido")).toBeInTheDocument();
+    expect(screen.getByText("Sem registro")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Registrar aptidão" })).not.toBeInTheDocument();
+  });
+
+  it("gestor registra a aptidão com o aviso de que o atestado não é guardado", async () => {
+    registrarAptidao.mockResolvedValue(APTIDAO);
+    montar("gestor", ficha({ contato: contato({ aptidao: null }) }));
+    fireEvent.click(await screen.findByRole("button", { name: "Registrar aptidão" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Registrar aptidão" });
+    expect(within(dialogo).getByText(/fora do sistema/)).toBeInTheDocument();
+    expect(within(dialogo).getByText(/não guarda o atestado/)).toBeInTheDocument();
+    const registrar = within(dialogo).getByRole("button", { name: "Registrar" });
+    expect(registrar).toBeDisabled();
+    fireEvent.click(within(dialogo).getByLabelText("Não apto"));
+    fireEvent.click(registrar);
+    await waitFor(() => expect(registrarAptidao).toHaveBeenCalledWith("a07", false));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("treinador não tem o botão Registrar aptidão", async () => {
+    montar("treinador", ficha({ contato: contato() }));
+    await screen.findByRole("heading", { name: "Contato e viagens" });
+    expect(screen.queryByRole("button", { name: "Registrar aptidão" })).not.toBeInTheDocument();
+  });
+
+  it("IBVAR não recebe contato e não vê o bloco", async () => {
+    montar("ibvar", ficha({ contato: null, classFit: null, financeiro: { perfilSuporte: "D" } }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Contato e viagens" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Passaporte/)).not.toBeInTheDocument();
+  });
+});
+
+describe("TelaFicha: atleta × treinador e pesagem (D9)", () => {
+  beforeEach(() => {
+    GET.mockReset();
+  });
+
+  const AUTO = {
+    ciclo: { id: "c1", nome: "Novembro de 2026", status: "aberto" },
+    indicadores: [
+      {
+        indicadorId: "perf_nacional",
+        nome: "Indicador de Performance",
+        pilarId: "perf",
+        sugestao: {
+          valor: 5,
+          evidencia: null,
+          link: null,
+          anexo: null,
+          em: "2026-11-10T12:00:00.000Z",
+        },
+        treinador: {
+          valor: 3,
+          origem: "avaliacao",
+          justificativa: "Resultados abaixo do esperado",
+          avaliador: { nome: "Ana Ribeiro" },
+          em: "2026-11-12T12:00:00.000Z",
+        },
+        diferenca: -2,
+      },
+    ],
+    resumoPorPilar: [{ pilarId: "perf", nomeCurto: "Performance", diferencaMedia: -2 }],
+  };
+
+  const PESAGEM_PENDENTE = {
+    id: "p1",
+    pesoKg: 71.4,
+    status: "pendente",
+    enviadoEm: "2026-11-20T12:00:00.000Z",
+    motivo: null,
+    decididoPor: null,
+    decididoEm: null,
+    anexoId: "anx9",
+  };
+
+  it("gestor vê a comparação com o resumo por pilar", async () => {
+    autoavaliacao = AUTO;
+    montar("gestor", ficha());
+    expect(await screen.findByRole("heading", { name: "Atleta × treinador" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Diferença média por pilar" }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Resultados abaixo do esperado")).toBeInTheDocument();
+    expect(GET).toHaveBeenCalledWith("/atletas/{id}/autoavaliacao", expect.anything());
+  });
+
+  it("treinador vê a comparação sem o resumo por pilar", async () => {
+    autoavaliacao = { ...AUTO, resumoPorPilar: null };
+    montar("treinador", ficha());
+    expect(await screen.findByText("Resultados abaixo do esperado")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Diferença média por pilar" })).toBeNull();
+  });
+
+  it("IBVAR não monta o bloco nem consulta a autoavaliação e as pesagens", async () => {
+    montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Atleta × treinador" })).toBeNull();
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/autoavaliacao", expect.anything());
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/pesagens", expect.anything());
+  });
+
+  it("treinador vê a pesagem pendente para validar", async () => {
+    pesagens = { itens: [PESAGEM_PENDENTE] };
+    montar("treinador", ficha());
+    expect(
+      await screen.findByRole("heading", { name: "Pesagem para validar" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Validar pesagem de 71,4 kg" })).toBeInTheDocument();
+  });
+
+  it("o atleta não vê a lista de pesagens para validar", async () => {
+    pesagens = { itens: [{ ...PESAGEM_PENDENTE, anexoId: null }] };
+    montar("atleta", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Pesagem para validar" })).toBeNull();
+  });
+
+  it("o histórico do indicador mostra a justificativa e a origem da autoavaliação", async () => {
+    montar("gestor", ficha());
+    const anterior = GET.getMockImplementation()!;
+    GET.mockImplementation((caminho: string, opcoes: unknown) =>
+      caminho === "/atletas/{id}/indicadores/{indicadorId}/historico"
+        ? Promise.resolve({
+            data: [
+              {
+                valor: 3,
+                pesoKg: null,
+                evidencia: null,
+                link: null,
+                origem: "avaliacao",
+                justificativa: "Largadas irregulares",
+                pendente: false,
+                avaliador: { id: "u1", nome: "Ana Ribeiro" },
+                lancadoEm: "2026-11-12T12:00:00.000Z",
+                cicloNome: "Novembro de 2026",
+                anexo: null,
+              },
+              {
+                valor: 5,
+                pesoKg: null,
+                evidencia: null,
+                link: null,
+                origem: "autoavaliacao",
+                justificativa: null,
+                pendente: true,
+                avaliador: null,
+                lancadoEm: "2026-11-10T12:00:00.000Z",
+                cicloNome: "Novembro de 2026",
+                anexo: null,
+              },
+            ],
+            response: { status: 200 },
+          })
+        : anterior(caminho, opcoes),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /^Performance/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ver histórico de Indicador de Performance" }),
+    );
+    expect(await screen.findByText("Justificativa: Largadas irregulares")).toBeInTheDocument();
+    expect(screen.getByText(/Autoavaliação do atleta, aguardando avaliador/)).toBeInTheDocument();
+  });
+});
+
+describe("TelaFicha: resultados por evento (D10)", () => {
+  beforeEach(() => {
+    GET.mockReset();
+    PUT.mockReset();
+    toastFn.mockReset();
+    toastFn.error.mockReset();
+    toastFn.success.mockReset();
+    resultadosApi = [];
+  });
+
+  const RESULTADO = {
+    id: "r9",
+    data: "2025-12-31",
+    nivel: "mundial",
+    evento: "Mundial ILCA 6",
+    edicao: 2025,
+    posicao: 5,
+    tamanhoFrota: null,
+    internacional: true,
+    pontosCbvela: null,
+    fonte: "atleta" as const,
+    linkOficial: "https://oficial.exemplo.com/mundial",
+    status: "pendente" as const,
+    motivo: null,
+    anexo: { id: "anx7", nomeArquivo: "sumula-mundial.pdf" },
+    validadoPor: null,
+    validadoEm: null,
+  };
+
+  const comCalculados = () => {
+    const base = ficha();
+    const [perf, ...resto] = base.pilares;
+    return ficha({
+      pilares: [
+        {
+          ...perf!,
+          indicadores: [
+            {
+              ...perf!.indicadores![0]!,
+              id: "perf_mundial",
+              nome: "Resultados mundiais",
+              calculado: true,
+              nota: 5,
+              origem: "calculado" as const,
+              evidencia: null,
+              avaliador: null,
+              lancadoEm: null,
+              explicacao: "Melhor colocação validada no Mundial: 5º em 2025 (Mundial ILCA 6)",
+              resultado: { nivel: "mundial", posicao: 5, edicao: 2025, evento: "Mundial ILCA 6" },
+            },
+            {
+              ...perf!.indicadores![0]!,
+              id: "perf_nacional",
+              nome: "Resultados nacionais",
+              calculado: true,
+              nota: 0,
+              origem: "calculado" as const,
+              evidencia: null,
+              avaliador: null,
+              lancadoEm: null,
+              explicacao: "Sem resultado validado no Nacional nas últimas 3 edições",
+              resultado: null,
+            },
+          ],
+        },
+        ...resto,
+      ],
+    });
+  };
+
+  it("mostra a explicação da nota calculada, inclusive a nota 0 sem resultado", async () => {
+    montar("gestor", comCalculados());
+    fireEvent.click(await screen.findByRole("button", { name: /Performance/ }));
+    expect(
+      await screen.findByText(
+        /Melhor colocação validada no Mundial: 5º em 2025 \(Mundial ILCA 6\)/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Sem resultado validado no Nacional nas últimas 3 edições/),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/Calculado pelo resultado validado/).length).toBe(2);
+    expect(screen.queryByText(/Sem evidência registrada.*Resultados/)).toBeNull();
+  });
+
+  it("o histórico competitivo mostra edição, fonte, situação e quem validou", async () => {
+    montar(
+      "treinador",
+      ficha({
+        resultados: [
+          {
+            ...RESULTADO,
+            status: "validado",
+            validadoPor: { id: "u1", nome: "Ana Ribeiro" },
+            validadoEm: "2026-11-21T12:00:00.000Z",
+          },
+          {
+            ...RESULTADO,
+            id: "r10",
+            edicao: 2024,
+            data: "2024-12-31",
+            status: "recusado",
+            motivo: "Súmula ilegível",
+          },
+        ],
+      }),
+    );
+    const tabela = await screen
+      .findByRole("table", { name: /histórico competitivo/i })
+      .catch(() => null);
+    const alvo = tabela ?? screen.getAllByRole("table")[0]!;
+    expect(within(alvo).getByRole("columnheader", { name: "Situação" })).toBeInTheDocument();
+    expect(within(alvo).getByRole("columnheader", { name: "Edição" })).toBeInTheDocument();
+    expect(within(alvo).getByText("Validado")).toBeInTheDocument();
+    expect(within(alvo).getByText(/por Ana Ribeiro em/)).toBeInTheDocument();
+    expect(within(alvo).getByText("Recusado")).toBeInTheDocument();
+    expect(within(alvo).getByText("Motivo: Súmula ilegível")).toBeInTheDocument();
+    expect(within(alvo).getAllByText("Atleta").length).toBeGreaterThan(0);
+    // Frota ausente: só a colocação.
+    expect(within(alvo).getAllByText("5º").length).toBeGreaterThan(0);
+  });
+
+  it("IBVAR vê só o resultado, sem situação e sem consultar a lista de pendentes", async () => {
+    montar(
+      "ibvar",
+      ficha({
+        classFit: null,
+        financeiro: { perfilSuporte: "D" },
+        resultados: [{ ...RESULTADO, status: "validado", anexo: null, motivo: null }],
+      }),
+    );
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("columnheader", { name: "Situação" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Resultados para validar" })).toBeNull();
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/resultados", expect.anything());
+  });
+
+  it("o atleta não vê o bloco de validação", async () => {
+    resultadosApi = [RESULTADO];
+    montar("atleta", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Resultados para validar" })).toBeNull();
+  });
+
+  it("treinador vê só os pendentes, abre o link e valida", async () => {
+    resultadosApi = [RESULTADO, { ...RESULTADO, id: "r11", edicao: 2020, status: "validado" }];
+    PUT.mockResolvedValue({
+      data: { ...RESULTADO, status: "validado" },
+      response: { status: 200 },
+    });
+    montar("treinador", ficha());
+    expect(
+      await screen.findByRole("heading", { name: "Resultados para validar" }),
+    ).toBeInTheDocument();
+    expect(GET).toHaveBeenCalledWith("/atletas/{id}/resultados", {
+      params: { path: { id: "a07" }, query: { status: "pendente" } },
+    });
+    const lista = screen
+      .getByRole("heading", { name: "Resultados para validar" })
+      .closest("section")!;
+    expect(within(lista).getAllByRole("listitem")).toHaveLength(1);
+    const link = within(lista).getByRole("link", {
+      name: "Abrir link oficial de 5º em Mundial ILCA 6 2025",
+    });
+    expect(link.getAttribute("href")).toBe("https://oficial.exemplo.com/mundial");
+    expect(link.getAttribute("rel")).toContain("noopener");
+    expect(
+      within(lista).getByRole("button", { name: "Ver súmula de 5º em Mundial ILCA 6 2025" }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(lista).getByRole("button", { name: "Validar 5º em Mundial ILCA 6 2025" }),
+    );
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/resultados/{id}/validacao", {
+        params: { path: { id: "r9" } },
+        body: { decisao: "validar" },
+      }),
+    );
+    await waitFor(() => expect(toastFn.success).toHaveBeenCalled());
+  });
+
+  it("recusar exige motivo e envia a decisão com o motivo", async () => {
+    resultadosApi = [RESULTADO];
+    PUT.mockResolvedValue({
+      data: { ...RESULTADO, status: "recusado" },
+      response: { status: 200 },
+    });
+    montar("gestor", ficha());
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Recusar 5º em Mundial ILCA 6 2025" }),
+    );
+    const dialogo = await screen.findByRole("dialog");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Recusar resultado" }));
+    expect(
+      await within(dialogo).findByText("Explique o motivo da recusa para o atleta."),
+    ).toBeInTheDocument();
+    expect(PUT).not.toHaveBeenCalled();
+    fireEvent.change(within(dialogo).getByLabelText("Motivo (obrigatório)"), {
+      target: { value: "  A súmula não mostra a colocação.  " },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Recusar resultado" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/resultados/{id}/validacao", {
+        params: { path: { id: "r9" } },
+        body: { decisao: "recusar", motivo: "A súmula não mostra a colocação." },
+      }),
+    );
+  });
+
+  it("mostra o erro da API no diálogo de recusa e mantém o resultado na fila", async () => {
+    resultadosApi = [RESULTADO];
+    PUT.mockResolvedValue({
+      error: { erro: "conflito", mensagem: "O resultado já está recusado." },
+      response: { status: 409 },
+    });
+    montar("treinador", ficha());
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Recusar 5º em Mundial ILCA 6 2025" }),
+    );
+    const dialogo = await screen.findByRole("dialog");
+    fireEvent.change(within(dialogo).getByLabelText("Motivo (obrigatório)"), {
+      target: { value: "Ilegível" },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Recusar resultado" }));
+    expect(await within(dialogo).findByText("O resultado já está recusado.")).toBeInTheDocument();
+  });
+});
+
+describe("TelaFicha: comparação com a média da turma (D13)", () => {
+  const medias = [
+    { cicloId: "c-set", ciclo: "Setembro de 2026", media: 58.4, atletas: 10 },
+    { cicloId: "c-out", ciclo: "Outubro de 2026", media: 62.2, atletas: 10 },
+  ];
+  const comparacao = (
+    posicao: "acima" | "na_media" | "abaixo",
+    diferenca: number,
+    mediaTurma = 62.2,
+  ) => ({ scoreAtual: mediaTurma + diferenca, mediaTurma, diferenca, posicao });
+
+  it("desenha a linha da média da turma com os valores certos e a legenda", async () => {
+    montar(
+      "treinador",
+      ficha({
+        mediaTurmaPorCiclo: medias,
+        comparacaoTurma: comparacao("acima", 3.8),
+        tendencia: "subindo",
+      }),
+    );
+    const grafico = await screen.findByRole("img", { name: /Score nos últimos ciclos/ });
+    expect(grafico).toHaveAccessibleName(
+      "Score nos últimos ciclos: 60,0, 66,0, 71,5. Média da turma: Set 58,4, Out 62,2, Nov sem dado",
+    );
+    // Só os dois ciclos fechados têm ponto da média; o ciclo atual não.
+    expect(within(grafico).getAllByTestId("spark-media-ponto")).toHaveLength(2);
+    expect(screen.getByText("Média da turma", { selector: "figcaption span" })).toBeVisible();
+    expect(screen.getByText("Atleta", { selector: "figcaption span" })).toBeVisible();
+  });
+
+  it("mostra o selo acima da média com a diferença em pontos e a tendência por texto", async () => {
+    montar(
+      "atleta",
+      ficha({
+        mediaTurmaPorCiclo: medias,
+        comparacaoTurma: comparacao("acima", 3.8),
+        tendencia: "subindo",
+      }),
+    );
+    expect(await screen.findByTestId("comp-posicao")).toHaveTextContent("Acima da média");
+    expect(screen.getByTestId("comp-diferenca")).toHaveTextContent(
+      "+3,8 pontos em relação à média da turma",
+    );
+    expect(screen.getByTestId("comp-tendencia")).toHaveTextContent("Tendência: subindo");
+  });
+
+  it("abaixo da média e tendência caindo", async () => {
+    montar(
+      "gestor",
+      ficha({
+        mediaTurmaPorCiclo: medias,
+        comparacaoTurma: comparacao("abaixo", -2.5),
+        tendencia: "caindo",
+      }),
+    );
+    expect(await screen.findByTestId("comp-posicao")).toHaveTextContent("Abaixo da média");
+    expect(screen.getByTestId("comp-diferenca")).toHaveTextContent("−2,5 pontos");
+    expect(screen.getByTestId("comp-tendencia")).toHaveTextContent("Tendência: caindo");
+  });
+
+  it("na média e tendência estável", async () => {
+    montar(
+      "treinador",
+      ficha({
+        mediaTurmaPorCiclo: medias,
+        comparacaoTurma: comparacao("na_media", 0.4),
+        tendencia: "estavel",
+      }),
+    );
+    expect(await screen.findByTestId("comp-posicao")).toHaveTextContent("Na média");
+    expect(screen.getByTestId("comp-diferenca")).toHaveTextContent("+0,4 pontos");
+    expect(screen.getByTestId("comp-tendencia")).toHaveTextContent("Tendência: estável");
+  });
+
+  it("IBVAR com grupo pequeno: média nula não desenha ponto e não há selo", async () => {
+    montar(
+      "ibvar",
+      ficha({
+        mediaTurmaPorCiclo: medias.map((m) => ({ ...m, media: null })),
+        comparacaoTurma: null,
+        tendencia: "subindo",
+      }),
+    );
+    const grafico = await screen.findByRole("img", { name: /Score nos últimos ciclos/ });
+    expect(within(grafico).queryAllByTestId("spark-media-ponto")).toHaveLength(0);
+    expect(grafico).toHaveAccessibleName("Score nos últimos ciclos: 60,0, 66,0, 71,5");
+    expect(screen.queryByTestId("comp-posicao")).not.toBeInTheDocument();
+    // A tendência é do próprio atleta e continua visível.
+    expect(screen.getByTestId("comp-tendencia")).toHaveTextContent("Tendência: subindo");
+  });
+
+  it("sem ciclos fechados: o bloco não aparece", async () => {
+    montar("treinador", ficha({ historicoScore: [] }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByText("Comparação com a média da turma")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("comp-posicao")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("comp-tendencia")).not.toBeInTheDocument();
+    expect(screen.queryByText("Média da turma")).not.toBeInTheDocument();
+  });
+});
+
+describe("TelaFicha: cartão de perfil e conquistas (D14)", () => {
+  const PODIO = {
+    tipo: "resultado" as const,
+    titulo: "Mundial ILCA 6",
+    ano: 2025,
+    evento: "Mundial ILCA 6",
+    nivel: "mundial",
+    posicao: 2,
+  };
+  const MANUAL = { tipo: "manual" as const, titulo: "Campeã da Semana de Vela", ano: 2024 };
+  const MANUAL_PENDENTE = {
+    id: "q1",
+    titulo: "Campeã da Semana de Vela",
+    ano: 2024,
+    status: "pendente" as const,
+    motivo: null,
+    anexoId: "e9",
+    criadoEm: "2026-11-20T12:00:00.000Z",
+    decididoPor: null,
+    decididoEm: null,
+  };
+
+  beforeEach(() => {
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
+    resultadosApi = [];
+    conquistasApi = { automaticas: [], manuais: [] };
+    GET.mockReset();
+    PUT.mockReset();
+    toastFn.mockReset();
+    toastFn.success.mockReset();
+    toastFn.error.mockReset();
+  });
+
+  it("gestor vê o cartão completo: foto, identificação, bio e conquistas com texto", async () => {
+    const base = ficha();
+    montar(
+      "gestor",
+      ficha({
+        atleta: {
+          ...base.atleta,
+          fotoUrl: "https://x.test/f.jpg",
+          bio: "Velejo desde os 8 anos.\nSonho com 2032.",
+        },
+        conquistas: [PODIO, MANUAL],
+      }),
+    );
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    const cartao = document.querySelector(".cartao-perfil") as HTMLElement;
+    expect(cartao.querySelector("img")).toHaveAttribute("src", "https://x.test/f.jpg");
+    expect(within(cartao).getByRole("link", { name: /BRAHV07/ })).toBeInTheDocument();
+    expect(within(cartao).getByText("ILCA 6 · Timoneira")).toBeInTheDocument();
+    expect(within(cartao).getByText("21 anos")).toBeInTheDocument();
+    expect(within(cartao).getByText(/Florianópolis\/SC/)).toBeInTheDocument();
+    expect(within(cartao).getByText(/Velejo desde os 8 anos\./)).toBeInTheDocument();
+    const lista = within(cartao).getByRole("region", { name: "Conquistas" });
+    const itens = within(lista).getAllByRole("listitem");
+    expect(itens).toHaveLength(2);
+    expect(within(itens[0]!).getByText("2º lugar")).toBeInTheDocument();
+    expect(within(itens[0]!).getByText(/Mundial ILCA 6/)).toBeInTheDocument();
+    expect(within(itens[1]!).getByText("Conquista")).toBeInTheDocument();
+    expect(within(itens[1]!).getByText(/Campeã da Semana de Vela/)).toBeInTheDocument();
+  });
+
+  it("sem foto o cartão mostra as iniciais; sem bio nem conquistas, não mostra os blocos", async () => {
+    montar("gestor", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    const cartao = document.querySelector(".cartao-perfil") as HTMLElement;
+    expect(cartao.querySelector("img")).toBeNull();
+    expect(cartao.querySelector(".avatar")?.textContent).toBe("HV");
+    expect(cartao.querySelector(".cartao-bio")).toBeNull();
+    expect(screen.queryByRole("region", { name: "Conquistas" })).toBeNull();
+  });
+
+  it("IBVAR com foto, bio e conquistas liberadas pela API vê tudo isso no cartão", async () => {
+    const base = ficha();
+    montar(
+      "ibvar",
+      ficha({
+        classFit: null,
+        financeiro: { perfilSuporte: "D" },
+        contato: null,
+        atleta: { ...base.atleta, fotoUrl: "https://x.test/f.jpg", bio: "Bio liberada." },
+        conquistas: [PODIO],
+      }),
+    );
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    const cartao = document.querySelector(".cartao-perfil") as HTMLElement;
+    expect(cartao.querySelector("img")).toHaveAttribute("src", "https://x.test/f.jpg");
+    expect(within(cartao).getByText("Bio liberada.")).toBeInTheDocument();
+    expect(within(cartao).getByText("2º lugar")).toBeInTheDocument();
+    // O IBVAR não consulta a lista de conquistas (403): só lê o que veio na ficha.
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/conquistas", expect.anything());
+  });
+
+  it("IBVAR sem o aceite do termo (foto e bio nulas) vê o cartão sem bio e sem foto", async () => {
+    montar(
+      "ibvar",
+      ficha({
+        classFit: null,
+        financeiro: { perfilSuporte: "D" },
+        contato: null,
+        conquistas: [PODIO],
+      }),
+    );
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    const cartao = document.querySelector(".cartao-perfil") as HTMLElement;
+    expect(cartao.querySelector("img")).toBeNull();
+    expect(cartao.querySelector(".cartao-bio")).toBeNull();
+    expect(within(cartao).getByText("2º lugar")).toBeInTheDocument();
+  });
+
+  it("treinador vê as conquistas pendentes, abre o comprovante e valida", async () => {
+    conquistasApi = {
+      automaticas: [],
+      manuais: [MANUAL_PENDENTE, { ...MANUAL_PENDENTE, id: "q2", status: "validada" }],
+    };
+    PUT.mockResolvedValue({
+      data: { ...MANUAL_PENDENTE, status: "validada" },
+      response: { status: 200 },
+    });
+    montar("treinador", ficha());
+    const bloco = (await screen.findByRole("heading", { name: "Conquistas para validar" })).closest(
+      "section",
+    )!;
+    expect(within(bloco).getAllByRole("listitem")).toHaveLength(1);
+    expect(
+      within(bloco).getByRole("button", {
+        name: "Ver comprovante de Campeã da Semana de Vela (2024)",
+      }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(bloco).getByRole("button", { name: "Validar Campeã da Semana de Vela (2024)" }),
+    );
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/conquistas/{id}/validacao", {
+        params: { path: { id: "q1" } },
+        body: { decisao: "validar" },
+      }),
+    );
+    await waitFor(() => expect(toastFn.success).toHaveBeenCalledWith("Conquista validada."));
+  });
+
+  it("recusar exige motivo e envia a decisão com o motivo", async () => {
+    conquistasApi = { automaticas: [], manuais: [MANUAL_PENDENTE] };
+    PUT.mockResolvedValue({
+      data: { ...MANUAL_PENDENTE, status: "recusada" },
+      response: { status: 200 },
+    });
+    montar("gestor", ficha());
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Recusar Campeã da Semana de Vela (2024)" }),
+    );
+    const dialogo = await screen.findByRole("dialog");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Recusar conquista" }));
+    expect(
+      await within(dialogo).findByText("Explique o motivo da recusa para o atleta."),
+    ).toBeInTheDocument();
+    expect(PUT).not.toHaveBeenCalled();
+    fireEvent.change(within(dialogo).getByLabelText("Motivo (obrigatório)"), {
+      target: { value: "  Comprovante ilegível.  " },
+    });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Recusar conquista" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/conquistas/{id}/validacao", {
+        params: { path: { id: "q1" } },
+        body: { decisao: "recusar", motivo: "Comprovante ilegível." },
+      }),
+    );
+  });
+
+  it("o atleta não vê o bloco de validação", async () => {
+    conquistasApi = { automaticas: [], manuais: [MANUAL_PENDENTE] };
+    montar("atleta", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByRole("heading", { name: "Conquistas para validar" })).toBeNull();
+  });
+});
+
+describe("TelaFicha: fonte da faixa de Class Fit (D18)", () => {
+  const comFonte = (fonte: NonNullable<FichaAtleta["classFit"]>["fonte"]) => {
+    const base = ficha();
+    return ficha({ classFit: { ...base.classFit!, fonte } });
+  };
+
+  beforeEach(() => {
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
+    resultadosApi = [];
+    conquistasApi = { automaticas: [], manuais: [] };
+    GET.mockReset();
+  });
+
+  it("mostra documento, versão e data abaixo do gráfico", async () => {
+    montar(
+      "gestor",
+      comFonte({ documento: "Class Rules ILCA 6", versao: "2026", data: "2026-03-01" }),
+    );
+    expect(
+      await screen.findByText("Fonte da faixa: Class Rules ILCA 6, versão 2026 (01/03/2026)"),
+    ).toBeInTheDocument();
+  });
+
+  it("omite versão e data quando não foram informadas", async () => {
+    montar("treinador", comFonte({ documento: "Regulamento 470", versao: null, data: null }));
+    expect(await screen.findByText("Fonte da faixa: Regulamento 470")).toBeInTheDocument();
+  });
+
+  it("o atleta também vê a fonte", async () => {
+    montar("atleta", comFonte({ documento: "Regulamento 470", versao: "3", data: null }));
+    expect(
+      await screen.findByText("Fonte da faixa: Regulamento 470, versão 3"),
+    ).toBeInTheDocument();
+  });
+
+  it("sem fonte não mostra a linha", async () => {
+    montar("gestor", ficha());
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByText(/Fonte da faixa/)).not.toBeInTheDocument();
+  });
+
+  it("IBVAR (classFit nulo) não vê fonte", async () => {
+    montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
+    await screen.findByRole("heading", { name: "Helena Vasques" });
+    expect(screen.queryByText(/Fonte da faixa/)).not.toBeInTheDocument();
   });
 });

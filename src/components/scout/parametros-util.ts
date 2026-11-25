@@ -25,6 +25,30 @@ export function formatarValor(v: unknown): string {
   return String(v);
 }
 
+/** Proposta de faixa de peso de uma sugestão aprovada (D7), vinda dos search params de /parametros. */
+export interface PropostaClasse {
+  classe: string;
+  min: number;
+  med: number;
+  max: number;
+}
+
+/** Lê `?classe=&min=&med=&max=`; qualquer valor inválido descarta a proposta inteira. */
+export function lerProposta(busca: Record<string, unknown>): PropostaClasse | undefined {
+  const { classe } = busca;
+  const num = (v: unknown) => {
+    const n = typeof v === "string" ? Number(v.replace(",", ".")) : v;
+    return typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 400 ? n : null;
+  };
+  const min = num(busca["min"]);
+  const med = num(busca["med"]);
+  const max = num(busca["max"]);
+  if (typeof classe !== "string" || !classe || min === null || med === null || max === null) {
+    return undefined;
+  }
+  return { classe, min, med, max };
+}
+
 const ALTURA_MIN = 120;
 const ALTURA_MAX = 230;
 

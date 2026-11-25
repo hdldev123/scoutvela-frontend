@@ -5,7 +5,7 @@ import { api, paraErroApi } from "./cliente";
 export const CHAVE_NOTIFICACOES = ["notificacoes"] as const;
 
 /**
- * Atualiza a cada 60 s e ao voltar o foco. `habilitado` fica falso para o IBVAR e sem sessão.
+ * Atualiza a cada 60 s e ao voltar o foco. `habilitado` fica falso sem sessão.
  * Erro de rede não aparece: sem dados, os balões só somem.
  */
 export function useNotificacoes(habilitado: boolean) {
@@ -32,6 +32,16 @@ export function invalidarNotificacoes(qc: QueryClient): Promise<void> {
 export async function marcarPainelVisto(qc: QueryClient): Promise<void> {
   try {
     await api.PUT("/me/notificacoes/vistas", { body: { chave: "painel" } });
+  } catch {
+    return;
+  }
+  await invalidarNotificacoes(qc);
+}
+
+/** Marca o painel de investimento como visto (zera o aviso de ciclo fechado). Falha em silêncio. */
+export async function marcarInvestimentoVisto(qc: QueryClient): Promise<void> {
+  try {
+    await api.PUT("/me/notificacoes/vistas", { body: { chave: "investimento" } });
   } catch {
     return;
   }

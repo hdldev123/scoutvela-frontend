@@ -107,3 +107,22 @@ export function useResponderPedidoTitular() {
       ]),
   });
 }
+
+/** `POST /revisoes/{id}/recurso`: o atleta discorda da resposta do treinador (2ª instância). */
+export async function pedirRecurso(id: string, texto: string): Promise<Revisao> {
+  const { data, error, response } = await api.POST("/revisoes/{id}/recurso", {
+    params: { path: { id } },
+    body: { texto },
+  });
+  if (error || !data) throw paraErroApi(response.status, error);
+  return data;
+}
+
+export function usePedirRecurso() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { id: string; texto: string }) => pedirRecurso(v.id, v.texto),
+    onSuccess: () =>
+      Promise.all([qc.invalidateQueries({ queryKey: ["revisoes"] }), invalidarNotificacoes(qc)]),
+  });
+}

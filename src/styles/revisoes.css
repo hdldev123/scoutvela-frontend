@@ -6,3 +6,13 @@
   margin: 0 0 12px;
   overflow-wrap: anywhere;
 }
+.rev-fluxo {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 6px 0 6px 10px;
+  border-left: 2px solid var(--line);
+}
+.rev-fluxo p {
+  margin: 0;
+}

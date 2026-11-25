@@ -44,7 +44,8 @@ const ind = (id: string, nome: string, extra: Record<string, unknown> = {}) => (
   lancadoEm: "2026-11-05T12:00:00.000Z",
   resposta: null,
   sugestaoPendente: null,
-  sugestaoPontos: null,
+  explicacao: null,
+  resultado: null,
   ...extra,
 });
 
@@ -163,8 +164,24 @@ const PREVIA = {
   },
 };
 
+const SEM_AUTOAVALIACAO = {
+  ciclo: null,
+  indicadores: [],
+  orientacoesResultados: [],
+  rubricas: [],
+  resumoPorPilar: null,
+};
+let autoavaliacao: unknown = SEM_AUTOAVALIACAO;
+let pesagens: unknown = { itens: [] };
+
 function preparar(extra: { ranking?: unknown; ficha?: unknown } = {}) {
   GET.mockImplementation((caminho: string) => {
+    if (caminho === "/atletas/{id}/autoavaliacao") {
+      return Promise.resolve({ data: autoavaliacao, response: { status: 200 } });
+    }
+    if (caminho === "/atletas/{id}/pesagens") {
+      return Promise.resolve({ data: pesagens, response: { status: 200 } });
+    }
     if (caminho === "/ranking") {
       return Promise.resolve({ data: extra.ranking ?? RANKING, response: { status: 200 } });
     }
@@ -209,6 +226,8 @@ const nota = (indicador: string, n: number) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  autoavaliacao = SEM_AUTOAVALIACAO;
+  pesagens = { itens: [] };
   preparar();
   DELETE.mockResolvedValue({ response: { status: 204 } });
 });
@@ -373,14 +392,21 @@ describe("TelaAvaliar", () => {
     expect(quatro.checked).toBe(true);
   });
 
-  it("sugestão do Ranking CBVela em resultados nacionais: usa a nota e a evidência continua obrigatória", async () => {
+  it("indicadores de resultado são calculados: explicação da API, sem escala nem sugestão de pontos", async () => {
     preparar({
       ficha: {
         ...FICHA,
         pilares: [
           pilarFicha("perf", "Performance", 20, [
             ind("perf_nacional", "Resultados nacionais", {
-              sugestaoPontos: { nota: 4, pontos: 310.03 },
+              calculado: true,
+              nota: 5,
+              explicacao: "Melhor colocação validada no Nacional: 2º em 2025 (Brasileiro ILCA 6)",
+            }),
+            ind("perf_mundial", "Resultados mundiais", {
+              calculado: true,
+              nota: 0,
+              explicacao: "Sem resultado validado no Mundial nas últimas 3 edições",
             }),
           ]),
           ...FICHA.pilares,
@@ -388,37 +414,16 @@ describe("TelaAvaliar", () => {
       },
     });
     montar("a07");
-    expect(await screen.findByText("Sugerido pelo Ranking CBVela: nota 4 (310 pts)")).toBeTruthy();
-    // Sem sugestão nos outros indicadores.
-    expect(screen.getAllByText(/Sugerido pelo Ranking CBVela/)).toHaveLength(1);
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Usar sugestão do Ranking CBVela (nota 4) em Resultados nacionais",
-      }),
-    );
-    const quatro = within(
-      screen.getByRole("radiogroup", { name: "Nota de Resultados nacionais" }),
-    ).getByRole("radio", { name: "4" }) as HTMLInputElement;
-    expect(quatro.checked).toBe(true);
-
-    const ev = screen.getByLabelText("Evidência (obrigatória)", {
-      selector: "#ev-perf_nacional",
-    }) as HTMLInputElement;
-    await waitFor(() => expect(ev.getAttribute("aria-invalid")).toBe("true"));
-    expect(POST).not.toHaveBeenCalledWith("/atletas/{id}/avaliacoes/previa", expect.anything());
-
-    fireEvent.change(ev, { target: { value: "Ranking CBVela 2026" } });
-    await waitFor(
-      () =>
-        expect(POST).toHaveBeenCalledWith("/atletas/{id}/avaliacoes/previa", {
-          params: { path: { id: "a07" } },
-          body: {
-            notas: [{ indicadorId: "perf_nacional", valor: 4, evidencia: "Ranking CBVela 2026" }],
-          },
-        }),
-      { timeout: 2000 },
-    );
+    expect(
+      await screen.findByText(/Melhor colocação validada no Nacional: 2º em 2025/),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/Sem resultado validado no Mundial nas últimas 3 edições/),
+    ).toBeTruthy();
+    expect(screen.queryByRole("radiogroup", { name: "Nota de Resultados nacionais" })).toBeNull();
+    expect(screen.queryByRole("radiogroup", { name: "Nota de Resultados mundiais" })).toBeNull();
+    expect(screen.queryByText(/Sugerido pelo Ranking CBVela/)).toBeNull();
+    expect(screen.queryByRole("button", { name: /Usar sugestão do Ranking CBVela/ })).toBeNull();
   });
 
   it("indicador calculado não recebe nota e envia peso e altura em medida", async () => {
@@ -869,5 +874,254 @@ describe("TelaAvaliar: confirmação ao sair com rascunho", () => {
     expect(evento()).toBe(false);
     await router.navigate({ to: "/fora" as "/" });
     await screen.findByText("Fora");
+  });
+});
+
+describe("TelaAvaliar: evidência opcional e link do vídeo (D5)", () => {
+  const comOpcional = () => {
+    const base = GET.getMockImplementation()!;
+    const params = {
+      ...PARAMETROS,
+      pilares: PARAMETROS.pilares.map((p) =>
+        p.id === "tec"
+          ? {
+              ...p,
+              indicadores: [
+                {
+                  id: "tec_1",
+                  nome: "Leitura de vento",
+                  tipo: "T",
+                  calculado: false,
+                  evidencia: "opcional",
+                  exigeAnexo: false,
+                  autoavaliacao: true,
+                },
+              ],
+            }
+          : p,
+      ),
+    };
+    GET.mockImplementation((caminho: string, ...r: unknown[]) =>
+      caminho === "/parametros"
+        ? Promise.resolve({ data: params, response: { status: 200 } })
+        : base(caminho, ...r),
+    );
+  };
+  const corpoGravado = () =>
+    POST.mock.calls.find((c) => c[0] === "/atletas/{id}/avaliacoes")?.[1] as
+      { body: unknown } | undefined;
+
+  it("indicador opcional: rótulo muda e a nota segue sem evidência", async () => {
+    comOpcional();
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    expect(screen.getByLabelText("Evidência (opcional)")).toBeTruthy();
+    expect(screen.queryByLabelText("Evidência (obrigatória)")).toBeNull();
+    const salvar = screen.getByRole("button", { name: "Salvar avaliação" });
+    await waitFor(() => expect(salvar.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(salvar);
+    await waitFor(() =>
+      expect(corpoGravado()?.body).toEqual({ notas: [{ indicadorId: "tec_1", valor: 4 }] }),
+    );
+  });
+
+  it("indicador obrigatório sem evidência bloqueia o envio", async () => {
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    expect(screen.getByLabelText("Evidência (obrigatória)")).toBeTruthy();
+    const salvar = screen.getByRole("button", { name: "Salvar avaliação" });
+    expect(salvar.hasAttribute("disabled")).toBe(true);
+    expect(corpoGravado()).toBeUndefined();
+  });
+
+  it("link com http:// bloqueia e https:// vai no corpo", async () => {
+    comOpcional();
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    const campo = screen.getByLabelText("Link do vídeo (opcional)") as HTMLInputElement;
+    fireEvent.change(campo, { target: { value: "http://exemplo.com/v" } });
+    expect(await screen.findByText(/comece com https:\/\//)).toBeTruthy();
+    expect(campo.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByRole("button", { name: "Salvar avaliação" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+    fireEvent.change(campo, { target: { value: "https://youtu.be/abc" } });
+    const salvar = screen.getByRole("button", { name: "Salvar avaliação" });
+    await waitFor(() => expect(salvar.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(salvar);
+    await waitFor(() =>
+      expect(corpoGravado()?.body).toEqual({
+        notas: [{ indicadorId: "tec_1", valor: 4, link: "https://youtu.be/abc" }],
+      }),
+    );
+  });
+
+  it("mostra sob o campo do link o 400 da API (notas.0.link)", async () => {
+    comOpcional();
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    nota("Leitura de vento", 4);
+    fireEvent.change(screen.getByLabelText("Link do vídeo (opcional)"), {
+      target: { value: "https://exemplo.com/v" },
+    });
+    const base = POST.getMockImplementation()!;
+    POST.mockImplementation((caminho: string, ...r: unknown[]) =>
+      caminho === "/atletas/{id}/avaliacoes"
+        ? Promise.resolve({
+            error: {
+              erro: "requisicao_invalida",
+              mensagem: "Dados inválidos.",
+              campos: [{ campo: "notas.0.link", mensagem: "Link não aceito." }],
+            },
+            response: { status: 400 },
+          })
+        : base(caminho, ...r),
+    );
+    const salvar = screen.getByRole("button", { name: "Salvar avaliação" });
+    await waitFor(() => expect(salvar.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(salvar);
+    const msg = await screen.findByText("Link não aceito.");
+    const campo = screen.getByLabelText("Link do vídeo (opcional)");
+    expect(campo.getAttribute("aria-invalid")).toBe("true");
+    expect(campo.getAttribute("aria-describedby")).toBe(msg.id);
+  });
+});
+
+describe("TelaAvaliar: sugestão do atleta (D9)", () => {
+  const AUTO_ABERTA = {
+    ciclo: { id: "c1", nome: "Novembro de 2026", status: "aberto" },
+    indicadores: [
+      {
+        indicadorId: "tec_1",
+        nome: "Leitura de vento",
+        pilarId: "tec",
+        sugestao: {
+          valor: 4,
+          evidencia: "Treino de vento forte",
+          link: null,
+          anexo: null,
+          em: "2026-11-10T12:00:00.000Z",
+        },
+        treinador: null,
+        diferenca: null,
+      },
+    ],
+    resumoPorPilar: null,
+  };
+  const corpoGravado = () =>
+    POST.mock.calls.find((c) => c[0] === "/atletas/{id}/avaliacoes")?.[1] as
+      { body: unknown } | undefined;
+  const botaoSalvar = () => screen.getByRole("button", { name: "Salvar avaliação" });
+
+  beforeEach(() => {
+    autoavaliacao = AUTO_ABERTA;
+  });
+
+  it("mostra a sugestão do atleta ao lado do indicador", async () => {
+    montar("a07");
+    expect(await screen.findByText("Sugestão do atleta: 4")).toBeTruthy();
+    expect(screen.getByText("Evidência do atleta: Treino de vento forte")).toBeTruthy();
+  });
+
+  it("não oferece Aprovar quando o ciclo da autoavaliação está fechado", async () => {
+    autoavaliacao = { ...AUTO_ABERTA, ciclo: { ...AUTO_ABERTA.ciclo, status: "fechado" } };
+    montar("a07");
+    await screen.findByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    expect(screen.queryByText("Sugestão do atleta: 4")).toBeNull();
+  });
+
+  it("Aprovar preenche a nota igual e grava sem justificativa", async () => {
+    montar("a07");
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Aprovar sugestão 4 do atleta em Leitura de vento",
+      }),
+    );
+    const grupo = screen.getByRole("radiogroup", { name: "Nota de Leitura de vento" });
+    expect((within(grupo).getByRole("radio", { name: "4" }) as HTMLInputElement).checked).toBe(
+      true,
+    );
+    expect((screen.getByLabelText("Evidência (obrigatória)") as HTMLInputElement).value).toBe(
+      "Treino de vento forte",
+    );
+    expect(screen.queryByLabelText(/Justificativa da correção/)).toBeNull();
+    await waitFor(() => expect(botaoSalvar().hasAttribute("disabled")).toBe(false));
+    fireEvent.click(botaoSalvar());
+    await waitFor(() =>
+      expect(corpoGravado()?.body).toEqual({
+        notas: [{ indicadorId: "tec_1", valor: 4, evidencia: "Treino de vento forte" }],
+      }),
+    );
+  });
+
+  it("Corrigir exige justificativa quando a nota difere da sugestão", async () => {
+    montar("a07");
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Corrigir sugestão do atleta em Leitura de vento",
+      }),
+    );
+    const just = screen.getByLabelText(/Justificativa da correção/) as HTMLTextAreaElement;
+    expect(document.activeElement).toBe(just);
+    nota("Leitura de vento", 3);
+    fireEvent.change(evidencia(), { target: { value: "Regata de seleção" } });
+    expect(
+      await screen.findByText("Explique por que a nota difere da sugestão do atleta."),
+    ).toBeTruthy();
+    expect(just.getAttribute("aria-invalid")).toBe("true");
+    expect(botaoSalvar().hasAttribute("disabled")).toBe(true);
+    expect(corpoGravado()).toBeUndefined();
+
+    fireEvent.change(just, { target: { value: "Largadas ainda irregulares" } });
+    await waitFor(() => expect(botaoSalvar().hasAttribute("disabled")).toBe(false));
+    fireEvent.click(botaoSalvar());
+    await waitFor(() =>
+      expect(corpoGravado()?.body).toEqual({
+        notas: [
+          {
+            indicadorId: "tec_1",
+            valor: 3,
+            evidencia: "Regata de seleção",
+            justificativa: "Largadas ainda irregulares",
+          },
+        ],
+      }),
+    );
+  });
+
+  it("mostra sob o campo o 400 da API em notas.0.justificativa", async () => {
+    montar("a07");
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Corrigir sugestão do atleta em Leitura de vento",
+      }),
+    );
+    nota("Leitura de vento", 3);
+    fireEvent.change(evidencia(), { target: { value: "Regata de seleção" } });
+    fireEvent.change(screen.getByLabelText(/Justificativa da correção/), {
+      target: { value: "Largadas irregulares" },
+    });
+    const base = POST.getMockImplementation()!;
+    POST.mockImplementation((caminho: string, ...r: unknown[]) =>
+      caminho === "/atletas/{id}/avaliacoes"
+        ? Promise.resolve({
+            error: {
+              erro: "requisicao_invalida",
+              mensagem: "Dados inválidos.",
+              campos: [{ campo: "notas.0.justificativa", mensagem: "Justificativa recusada." }],
+            },
+            response: { status: 400 },
+          })
+        : base(caminho, ...r),
+    );
+    await waitFor(() => expect(botaoSalvar().hasAttribute("disabled")).toBe(false));
+    fireEvent.click(botaoSalvar());
+    const msg = await screen.findByText("Justificativa recusada.");
+    const campo = screen.getByLabelText(/Justificativa da correção/);
+    expect(campo.getAttribute("aria-invalid")).toBe("true");
+    expect(campo.getAttribute("aria-describedby")).toBe(msg.id);
   });
 });

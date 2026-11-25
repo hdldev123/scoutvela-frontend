@@ -1,6 +1,6 @@
 type Me = {
   usuario: { papel: string };
-  atleta: { id: string; nome: string } | null;
+  atleta: { id: string; nome: string | null } | null;
   telas: string[];
 };
 
@@ -25,19 +25,31 @@ const ITENS: Record<string, { rotulo: string; icone: string; to: string }> = {
   avaliar: { rotulo: "Lançar avaliação", icone: "clipboard-text", to: "/avaliar" },
   cadastro: { rotulo: "Cadastrar atleta", icone: "user-plus", to: "/cadastro" },
   ciclos: { rotulo: "Ciclos", icone: "calendar-check", to: "/ciclos" },
+  mensagens: { rotulo: "Mensagens", icone: "chats-circle", to: "/mensagens" },
   revisoes: { rotulo: "Revisões", icone: "chat-circle-text", to: "/revisoes" },
   investimento: { rotulo: "Investimento", icone: "chart-line-up", to: "/investimento" },
   usuarios: { rotulo: "Contas", icone: "users-three", to: "/usuarios" },
   parametros: { rotulo: "Parâmetros", icone: "sliders-horizontal", to: "/parametros" },
+  sugestoes: { rotulo: "Sugestões", icone: "lightbulb", to: "/sugestoes" },
   auditoria: { rotulo: "Auditoria", icone: "list-magnifying-glass", to: "/auditoria" },
   painel: { rotulo: "Meu painel", icone: "gauge", to: "/painel" },
   ficha: { rotulo: "Minha ficha", icone: "identification-card", to: "/atletas/$id" },
 };
 
+/** O menu só espelha as telas liberadas pela API em `/me` (a API decide o acesso). */
+function telasDoMenu(me: Me): string[] {
+  return me.telas;
+}
+
+/** O papel tem esta tela (liberada pela API em `/me`)? */
+export function temTela(me: Me, tela: string): boolean {
+  return telasDoMenu(me).includes(tela);
+}
+
 /** Itens de navegação a partir das telas liberadas pela API (`/me`). */
 export function itensDeNavegacao(me: Me): ItemNav[] {
   const itens: ItemNav[] = [];
-  for (const tela of me.telas) {
+  for (const tela of telasDoMenu(me)) {
     const base = ITENS[tela];
     if (!base) continue;
     if (tela === "ficha") {
@@ -66,7 +78,18 @@ export function rotaDaTelaInicial(telaInicial: string): string {
 }
 
 /** Telas do menu que têm balão; a chave de `/me/notificacoes` tem o mesmo nome da tela. */
-const TELAS_COM_BALAO = new Set(["revisoes", "cadastro", "avaliar", "painel"]);
+const TELAS_COM_BALAO = new Set([
+  "mensagens",
+  "revisoes",
+  "cadastro",
+  "avaliar",
+  "painel",
+  "investimento",
+  "sugestoes",
+]);
+
+/** Telas cuja chave em `/me/notificacoes` tem outro nome: Mensagens conta `conversas`. */
+const CHAVE_DO_BALAO: Record<string, string> = { mensagens: "conversas" };
 
 /** Contagem do balão de uma tela (0 quando a tela não tem balão ou nada pede atenção). */
 export function contagemDaTela(
@@ -74,7 +97,7 @@ export function contagemDaTela(
   contagens: Record<string, number> | undefined,
 ): number {
   if (!TELAS_COM_BALAO.has(tela)) return 0;
-  const n = contagens?.[tela] ?? 0;
+  const n = contagens?.[CHAVE_DO_BALAO[tela] ?? tela] ?? 0;
   return n > 0 ? n : 0;
 }
 

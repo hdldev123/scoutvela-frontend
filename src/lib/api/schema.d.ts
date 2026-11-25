@@ -78,7 +78,21 @@ export interface paths {
                             };
                             atleta: {
                                 id: string;
-                                nome: string;
+                                /** @description Nulo até o atleta completar o cadastro */
+                                nome: string | null;
+                            } | null;
+                            /** @description Só para o atleta que ainda não completou o cadastro: ele informa nome, gênero e data de nascimento em PUT /me/cadastro antes do painel. Nulo nos demais casos. */
+                            cadastroPendente: {
+                                wsId: string;
+                                velaid: string | null;
+                                /** @description Dados do VelaID para o atleta confirmar; nula sem VelaID */
+                                sugestao: {
+                                    nome: string;
+                                    /** @enum {string} */
+                                    genero: "F" | "M";
+                                    /** @description AAAA-MM-DD */
+                                    dataNascimento: string;
+                                } | null;
                             } | null;
                             telas: string[];
                             telaInicial: string;
@@ -93,7 +107,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -110,7 +124,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -129,6 +143,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/cadastro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * O atleta completa o cadastro: nome, gênero e data de nascimento (uma vez)
+         * @description Só o atleta, e só uma vez: depois de completo, a segunda chamada devolve 409 (a correção é pelo pedido do titular). Os dados sugeridos do VelaID vêm em GET /me (cadastroPendente.sugestao). Menor de 18 anos: a API recusa com 400 sem gravar a data, o nome nem o gênero, inativa o atleta e a conta, abre um pedido de exclusão para o gestor anonimizar e soma no balão `cadastro` do gestor; a auditoria não guarda a data. Data futura ou de mais de 100 anos: 400. Ao completar, o atleta passa a entrar no ranking depois do aceite do termo.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        nome: string;
+                        /** @enum {string} */
+                        genero: "F" | "M";
+                        /**
+                         * Format: date
+                         * @description AAAA-MM-DD
+                         */
+                        dataNascimento: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            nome: string;
+                            /** @enum {string} */
+                            genero: "F" | "M";
+                            dataNascimento: string;
+                            /** @enum {boolean} */
+                            cadastroCompleto: true;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/notificacoes": {
         parameters: {
             query?: never;
@@ -138,7 +296,7 @@ export interface paths {
         };
         /**
          * Contagens dos balões do menu lateral (itens que pedem atenção)
-         * @description Só as chaves do papel, sempre presentes (0 quando nada pede atenção). Gestor: `revisoes` (pedidos de revisão e do titular abertos) e `cadastro` (atletas ativos sem aceite da versão vigente do termo). Treinador: `revisoes` (pedidos de revisão abertos dos próprios atletas) e `avaliar` (próprios atletas com indicadores pendentes no ciclo aberto; 0 sem ciclo aberto). Atleta: `painel` (perguntas ainda sem resposta, hoje contadas só com ciclo aberto, + 1 se o termo vigente está pendente + respostas a pedidos de revisão e do titular dadas depois da última marcação de visto). IBVAR: objeto vazio. `total` é a soma. Feito para consulta a cada 60 s.
+         * @description Só as chaves do papel, sempre presentes (0 quando nada pede atenção). Gestor: `revisoes` (pedidos de revisão e do titular abertos), `cadastro` (atletas ativos sem aceite da versão vigente do termo), `investimento`, `sugestoes` (sugestões dos treinadores ainda abertas), `avisos` (avisos não lidos, D8, sem os de mensagem nova, que já contam em `conversas`) e `conversas` (mensagens não lidas das caixas compartilhadas da gestão, D16). Treinador: `revisoes` (pedidos de revisão abertos dos próprios atletas), `avaliar` (próprios atletas com indicadores pendentes no ciclo aberto; 0 sem ciclo aberto), `avisos` e `conversas` (mensagens não lidas, D16). Atleta: `avisos`, `conversas` (mensagens não lidas) e `painel` (perguntas ainda sem resposta, hoje contadas só com ciclo aberto, + 1 se o termo vigente está pendente + respostas a pedidos de revisão e do titular dadas depois da última marcação de visto). IBVAR: só `investimento`. `investimento` (gestor e IBVAR) vale 1 quando há ciclo fechado depois da última vez que a pessoa marcou a tela como vista (PUT /me/notificacoes/vistas com chave `investimento`), senão 0. `total` é a soma. Feito para consulta a cada 60 s.
          */
         get: {
             parameters: {
@@ -171,7 +329,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -188,7 +346,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -217,7 +375,7 @@ export interface paths {
         get?: never;
         /**
          * Marca uma tela como vista (zera as respostas novas do balão)
-         * @description Grava o instante atual como última visita à tela. Por enquanto só o atleta marca `painel`; qualquer outra combinação de papel e chave responde 400. Não gera auditoria: é dado de interface, não de decisão.
+         * @description Grava o instante atual como última visita à tela. O atleta marca `painel`; gestor e IBVAR marcam `investimento` (zera o aviso de ciclo fechado); qualquer outra combinação de papel e chave responde 400. Não gera auditoria: é dado de interface, não de decisão.
          */
         put: {
             parameters: {
@@ -230,7 +388,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        chave: "painel" | "revisoes" | "cadastro" | "avaliar";
+                        chave: "painel" | "revisoes" | "cadastro" | "avaliar" | "investimento";
                     };
                 };
             };
@@ -252,7 +410,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -269,7 +427,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -286,7 +444,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -341,14 +499,19 @@ export interface paths {
                             /** @description A sessão atual passou pelo segundo fator (aal2) */
                             mfaAtivo: boolean;
                             atleta: {
-                                velaid: string;
+                                /** @description ID World Sailing (a chave do atleta) */
+                                wsId: string;
+                                /** @description Nulo se o atleta não tem VelaID */
+                                velaid: string | null;
+                                /** @description Falso até o atleta informar nome, gênero e data de nascimento (PUT /me/cadastro) */
+                                cadastroCompleto: boolean;
                                 classe: {
                                     id: string;
                                     nome: string;
                                 };
                                 numeroVela: string | null;
-                                /** @description AAAA-MM-DD */
-                                dataNascimento: string;
+                                /** @description AAAA-MM-DD; nula com o cadastro incompleto */
+                                dataNascimento: string | null;
                                 clube: string | null;
                                 cidade: string | null;
                                 uf: string | null;
@@ -360,6 +523,21 @@ export interface paths {
                                 /** @description Instante ISO do aceite do termo do piloto */
                                 termoAceitoEm: string | null;
                                 compartilharIbvar: boolean;
+                                /** @description E.164 (+5511999998888); nulo se não informado */
+                                telefone: string | null;
+                                /** @description AAAA-MM (último dia do mês); sem número nem cópia do passaporte */
+                                passaporteValidoAte: string | null;
+                                /** @description Última aptidão conferida pelo gestor; nulo se nunca conferida */
+                                aptidao: {
+                                    apto: boolean;
+                                    /** @description Instante ISO em que o gestor conferiu */
+                                    conferidoEm: string;
+                                    conferidoPor: {
+                                        nome: string;
+                                    };
+                                } | null;
+                                /** @description Mini bio (texto simples, até 500 caracteres); nula se não escreveu */
+                                bio: string | null;
                             } | null;
                             treinador: {
                                 quantidadeAtletas: number;
@@ -375,7 +553,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -392,7 +570,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -404,8 +582,8 @@ export interface paths {
             };
         };
         /**
-         * Edita o perfil: nome (treinador e gestor) ou e-mail de contato (atleta)
-         * @description Os dados vindos do VelaID não são editáveis aqui: a correção é pelo pedido do titular (tipo `correcao`). A auditoria guarda só os nomes dos campos.
+         * Edita o perfil: nome (treinador e gestor) ou e-mail, telefone e validade do passaporte (atleta)
+         * @description Nome, gênero e data de nascimento do atleta (informados em PUT /me/cadastro) e o ID World Sailing não são editáveis aqui: a correção é pelo pedido do titular (tipo `correcao`); só o gestor troca o WS ID. `telefone` (atleta): E.164; aceita espaços, parênteses, traços e pontos, que são removidos; sem `+` só com DDD brasileiro (10 ou 11 dígitos), e então vira `+55...`; outro formato é 400. `passaporteValidoAte` (atleta): `AAAA-MM`, gravado como o último dia do mês; data passada é aceita (serve para avisar que venceu); não guardamos número nem cópia do passaporte. `telefone` e `passaporteValidoAte` aceitam `null` para apagar. `bio` (atleta): texto simples de até 500 caracteres (espaços nas pontas saem; vazio ou `null` apaga). A auditoria guarda só os nomes dos campos (nunca o texto da bio).
          */
         put: {
             parameters: {
@@ -420,6 +598,12 @@ export interface paths {
                         nome?: string;
                         /** Format: email */
                         emailContato?: string | null;
+                        /** @description E.164, ou só com DDD brasileiro (vira +55...); null apaga */
+                        telefone?: string | null;
+                        /** @description AAAA-MM; null apaga */
+                        passaporteValidoAte?: string | null;
+                        /** @description Mini bio do atleta (texto simples, até 500 caracteres; vazio ou null apaga). Texto livre visto pelo gestor, pelo treinador e, com o aceite do termo que inclui foto e bio, pelo IBVAR: não cite saúde, família nem contato */
+                        bio?: string | null;
                     };
                 };
             };
@@ -441,14 +625,19 @@ export interface paths {
                             /** @description A sessão atual passou pelo segundo fator (aal2) */
                             mfaAtivo: boolean;
                             atleta: {
-                                velaid: string;
+                                /** @description ID World Sailing (a chave do atleta) */
+                                wsId: string;
+                                /** @description Nulo se o atleta não tem VelaID */
+                                velaid: string | null;
+                                /** @description Falso até o atleta informar nome, gênero e data de nascimento (PUT /me/cadastro) */
+                                cadastroCompleto: boolean;
                                 classe: {
                                     id: string;
                                     nome: string;
                                 };
                                 numeroVela: string | null;
-                                /** @description AAAA-MM-DD */
-                                dataNascimento: string;
+                                /** @description AAAA-MM-DD; nula com o cadastro incompleto */
+                                dataNascimento: string | null;
                                 clube: string | null;
                                 cidade: string | null;
                                 uf: string | null;
@@ -460,6 +649,21 @@ export interface paths {
                                 /** @description Instante ISO do aceite do termo do piloto */
                                 termoAceitoEm: string | null;
                                 compartilharIbvar: boolean;
+                                /** @description E.164 (+5511999998888); nulo se não informado */
+                                telefone: string | null;
+                                /** @description AAAA-MM (último dia do mês); sem número nem cópia do passaporte */
+                                passaporteValidoAte: string | null;
+                                /** @description Última aptidão conferida pelo gestor; nulo se nunca conferida */
+                                aptidao: {
+                                    apto: boolean;
+                                    /** @description Instante ISO em que o gestor conferiu */
+                                    conferidoEm: string;
+                                    conferidoPor: {
+                                        nome: string;
+                                    };
+                                } | null;
+                                /** @description Mini bio (texto simples, até 500 caracteres); nula se não escreveu */
+                                bio: string | null;
                             } | null;
                             treinador: {
                                 quantidadeAtletas: number;
@@ -475,7 +679,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -492,7 +696,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -509,7 +713,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -576,7 +780,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -593,7 +797,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -610,7 +814,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -627,7 +831,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -644,7 +848,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -685,7 +889,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -702,7 +906,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -719,7 +923,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -744,7 +948,7 @@ export interface paths {
         };
         /**
          * Ranking de atletas do piloto, conforme a matriz de acesso do papel
-         * @description Gestor vê todos; treinador, os próprios; IBVAR, só atletas com consentimento (os demais entram apenas na contagem).
+         * @description Gestor vê todos; treinador, os próprios; IBVAR, só atletas com consentimento (os demais entram apenas na contagem). Atleta com cadastro incompleto não entra.
          */
         get: {
             parameters: {
@@ -778,7 +982,10 @@ export interface paths {
                                 atleta: {
                                     id: string;
                                     nome: string;
-                                    velaid: string;
+                                    /** @description ID World Sailing; para o IBVAR só de quem consentiu (como o item) */
+                                    wsId: string;
+                                    /** @description Nulo se o atleta não tem VelaID */
+                                    velaid: string | null;
                                     numeroVela: string | null;
                                     uf: string | null;
                                     idade: number;
@@ -789,7 +996,7 @@ export interface paths {
                                         nome: string;
                                         evento: string;
                                     };
-                                    /** @description Link assinado curto da foto da conta do atleta; sempre nulo para o IBVAR */
+                                    /** @description Link assinado curto da foto da conta do atleta. Para o IBVAR, só de quem consentiu com ele e aceitou uma versão do termo que inclui foto e bio (D14); nulo nos demais casos */
                                     fotoUrl: string | null;
                                 };
                                 score: number;
@@ -824,7 +1031,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -841,7 +1048,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -858,7 +1065,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -886,7 +1093,7 @@ export interface paths {
         };
         /**
          * Ficha do atleta, conforme a matriz de acesso do papel
-         * @description Atleta fora do acesso do usuário e atleta inexistente dão o mesmo 404. IBVAR: só vê quem consentiu E está dentro do piloto (mesma regra do ranking: aceite do termo, que segue TERMO_EXIGE_REACEITE); fora do piloto dá 404, também no histórico do indicador. Gestor, treinador e o próprio atleta mantêm o acesso. IBVAR: sem indicadores sensíveis, Class Fit, contato, financeiro detalhado nem texto de evidência; o motivo do gate G1 vem genérico, sem a diferença em kg.
+         * @description `dadosAtualizadosEm` é o último lançamento do próprio atleta; o IBVAR só chega à ficha de quem consentiu. Atleta fora do acesso do usuário e atleta inexistente dão o mesmo 404; atleta com cadastro incompleto também dá 404 (o próprio atleta lê a sugestão em GET /me). IBVAR: só vê quem consentiu E está dentro do piloto (mesma regra do ranking: aceite do termo, que segue TERMO_EXIGE_REACEITE); fora do piloto dá 404, também no histórico do indicador. Gestor, treinador e o próprio atleta mantêm o acesso. IBVAR: sem indicadores sensíveis, Class Fit, contato, financeiro detalhado nem texto de evidência; o motivo do gate G1 vem genérico, sem a diferença em kg.
          */
         get: {
             parameters: {
@@ -909,7 +1116,10 @@ export interface paths {
                             atleta: {
                                 id: string;
                                 nome: string;
-                                velaid: string;
+                                /** @description ID World Sailing; o IBVAR só vê atleta que consentiu */
+                                wsId: string;
+                                /** @description Nulo se o atleta não tem VelaID */
+                                velaid: string | null;
                                 numeroVela: string | null;
                                 /** @enum {string} */
                                 genero: "F" | "M";
@@ -918,8 +1128,10 @@ export interface paths {
                                 clube: string | null;
                                 cidade: string | null;
                                 uf: string | null;
-                                /** @description Link assinado curto da foto da conta do atleta; sempre nulo para o IBVAR */
+                                /** @description Link assinado curto da foto da conta do atleta. Para o IBVAR, só se o atleta consentiu com ele e aceitou uma versão do termo que inclui foto e bio (D14); nulo nos demais casos */
                                 fotoUrl: string | null;
+                                /** @description Mini bio escrita pelo atleta (texto simples, até 500 caracteres); nula se não escreveu. Mesma regra da foto para o IBVAR */
+                                bio: string | null;
                                 termoAceito: boolean;
                                 classe: {
                                     id: string;
@@ -929,17 +1141,50 @@ export interface paths {
                                     posicao: "helm" | "crew" | "ind";
                                 };
                             };
+                            /** @description Nulo para o IBVAR: contato, passaporte e aptidão não são dele (matriz de acesso) */
                             contato: {
                                 email: string | null;
                                 treinador: {
                                     id: string;
                                     nome: string;
                                 } | null;
+                                /** @description E.164 (+5511999998888); nulo se não informado */
+                                telefone: string | null;
+                                /** @description AAAA-MM (último dia do mês); sem número nem cópia do passaporte */
+                                passaporteValidoAte: string | null;
+                                /** @description Última aptidão conferida pelo gestor (dado de saúde; cada leitura de gestor ou treinador é auditada); nulo se nunca conferida */
+                                aptidao: {
+                                    apto: boolean;
+                                    /** @description Instante ISO em que o gestor conferiu */
+                                    conferidoEm: string;
+                                    conferidoPor: {
+                                        nome: string;
+                                    };
+                                } | null;
                             } | null;
+                            /** @description Só as validadas, do ano mais novo ao mais antigo: pódios (1º a 3º) dos resultados validados e as conquistas manuais validadas pelo treinador ou pelo gestor. O IBVAR recebe os pódios de quem consentiu (são resultados que ele já vê) e as manuais só se o aceite do atleta inclui foto e bio */
+                            conquistas: {
+                                /**
+                                 * @description resultado: pódio de um resultado validado (calculado); manual: informada pelo atleta, com anexo, e validada
+                                 * @enum {string}
+                                 */
+                                tipo: "resultado" | "manual";
+                                titulo: string;
+                                /** @description Ano da edição (resultado) ou da conquista (manual) */
+                                ano: number;
+                                /** @description Só nas conquistas de resultado */
+                                evento?: string;
+                                /** @description Só nas conquistas de resultado */
+                                nivel?: string;
+                                /** @description Só nas conquistas de resultado (1 a 3) */
+                                posicao?: number;
+                            }[];
                             ciclo: {
                                 nome: string;
                                 prazo: string;
                             } | null;
+                            /** @description Instante ISO do último lançamento deste atleta que muda score ou gates (avaliações, medidas, resultados, decisões de gate e financeiro); nulo se não houver */
+                            dadosAtualizadosEm: string | null;
                             score: number;
                             faixa: {
                                 id: string;
@@ -954,6 +1199,29 @@ export interface paths {
                                 ciclo: string;
                                 score: number;
                             }[];
+                            /** @description Um item por ciclo fechado, do mais antigo ao mais recente, alinhado com historicoScore */
+                            mediaTurmaPorCiclo: {
+                                /** Format: uuid */
+                                cicloId: string;
+                                ciclo: string;
+                                /** @description Média do score de todo o piloto no ciclo; nula para o IBVAR se o grupo for pequeno */
+                                media: number | null;
+                                atletas: number;
+                            }[];
+                            /** @description Último ciclo fechado em que o atleta tem score; na_media quando a diferença absoluta é menor que TENDENCIA.limiar. Nulo sem ciclo fechado com score, ou se a média foi suprimida para o IBVAR */
+                            comparacaoTurma: {
+                                scoreAtual: number;
+                                mediaTurma: number;
+                                /** @description scoreAtual menos mediaTurma */
+                                diferenca: number;
+                                /** @enum {string} */
+                                posicao: "acima" | "na_media" | "abaixo";
+                            } | null;
+                            /**
+                             * @description Dois últimos ciclos fechados do atleta contra TENDENCIA.limiar; nula com menos de dois
+                             * @enum {string|null}
+                             */
+                            tendencia: "subindo" | "estavel" | "caindo" | null;
                             pilares: {
                                 id: string;
                                 nome: string;
@@ -972,9 +1240,17 @@ export interface paths {
                                     tipo: "T" | "A" | "R";
                                     calculado: boolean;
                                     nota: number | null;
+                                    /** @description Texto da evidência; nulo se a nota não tem (indicador com evidência opcional) e sempre nulo para o IBVAR */
                                     evidencia: string | null;
-                                    /** @enum {string|null} */
-                                    origem: "avaliacao" | "resposta_confirmada" | "calculado" | null;
+                                    /** @description Link https de vídeo ou outro conteúdo externo da nota; nulo para o IBVAR */
+                                    link: string | null;
+                                    /**
+                                     * @description autoavaliacao_aprovada: o treinador manteve a nota sugerida pelo atleta. Para o IBVAR vem sempre `avaliacao` (nada de autoavaliação)
+                                     * @enum {string|null}
+                                     */
+                                    origem: "avaliacao" | "resposta_confirmada" | "autoavaliacao_aprovada" | "calculado" | null;
+                                    /** @description Justificativa do treinador ao corrigir a sugestão do atleta; sempre nula para o IBVAR */
+                                    justificativa: string | null;
                                     avaliador: {
                                         id: string;
                                         nome: string;
@@ -982,15 +1258,22 @@ export interface paths {
                                     /** @description Instante ISO */
                                     lancadoEm: string | null;
                                     resposta: string | null;
+                                    /** @description Sugestão do atleta (resposta do questionário ou autoavaliação) ainda sem nota do treinador; nula para o IBVAR. O detalhe da autoavaliação vem em GET /atletas/:id/autoavaliacao */
                                     sugestaoPendente: {
                                         valor: number;
                                         lancadoEm: string;
                                     } | null;
-                                    /** @description Nota sugerida pelos pontos do Ranking CBVela (regra PERF_PONTOS). Só em perf_nacional e com a regra ativa; não entra no score até o avaliador lançar a nota. */
-                                    sugestaoPontos: {
-                                        nota: number;
-                                        /** @description Pontos do Ranking CBVela na janela */
-                                        pontos: number;
+                                    /** @description Só nos indicadores de resultado (perf_mundial, perf_continental, perf_nacional): de onde veio a nota calculada, em texto. Sem resultado validado no nível, a nota vale `sem_resultado` (0) e o texto diz isso */
+                                    explicacao: string | null;
+                                    /** @description Os dados de `explicacao`, para a tela montar o texto; nulo fora dos indicadores de resultado */
+                                    resultado: {
+                                        /** @enum {string} */
+                                        nivel: "mundial" | "continental" | "nacional";
+                                        /** @description Melhor colocação validada que definiu a nota */
+                                        posicao: number;
+                                        /** @description Ano da edição dessa colocação */
+                                        edicao: number;
+                                        evento: string;
                                     } | null;
                                     anexo: {
                                         id: string;
@@ -1020,6 +1303,15 @@ export interface paths {
                                 pesoMaxKg: number;
                                 deltaKg: number;
                                 distanciaRelativa: number;
+                                /** @description De onde vem a faixa de peso da classe (documento, versão e data); nula se não informada. Vai junto com a faixa: o IBVAR não recebe (classFit inteiro nulo) */
+                                fonte: {
+                                    /** @description Documento que traz a faixa de peso */
+                                    documento: string | null;
+                                    /** @description Versão do documento, como ele a informa */
+                                    versao: string | null;
+                                    /** @description Data do documento (AAAA-MM-DD) */
+                                    data: string | null;
+                                } | null;
                                 /** @description Altura de referência da classe. O IBVAR não recebe (classFit inteiro nulo) */
                                 altura: {
                                     /** @description Altura do atleta; nula se não medida */
@@ -1035,17 +1327,47 @@ export interface paths {
                                     situacao: "dentro" | "abaixo" | "acima" | null;
                                 };
                             } | null;
+                            /** @description Todos os resultados do atleta, com a situação de cada um. O IBVAR recebe só os validados, sem anexo, motivo nem quem validou. Só os validados entram na nota e nos gates */
                             resultados: {
+                                /** @description Identificador do resultado (PUT /resultados/:id/validacao) */
+                                id: string;
+                                /** @description AAAA-MM-DD */
                                 data: string;
                                 nivel: string;
                                 evento: string;
+                                /** @description Ano da edição (nos resultados lançados antes da D10, o ano da data) */
+                                edicao: number;
                                 posicao: number;
-                                tamanhoFrota: number;
+                                /** @description Nulo quando o atleta informou o resultado sem a frota; a nota não depende dela */
+                                tamanhoFrota: number | null;
                                 internacional: boolean;
+                                /** @description Só informação: não entra na nota */
                                 pontosCbvela: number | null;
-                                /** @enum {string} */
-                                fonte: "ranking_cbvela" | "manual";
+                                /**
+                                 * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                                 * @enum {string}
+                                 */
+                                fonte: "ranking_cbvela" | "manual" | "atleta";
                                 linkOficial: string | null;
+                                /**
+                                 * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                                 * @enum {string}
+                                 */
+                                status: "validado" | "pendente" | "recusado";
+                                /** @description Motivo da recusa; nulo para o IBVAR */
+                                motivo: string | null;
+                                /** @description Súmula anexada pelo atleta (GET /evidencias/:id/link); nula para o IBVAR */
+                                anexo: {
+                                    id: string;
+                                    nomeArquivo: string;
+                                } | null;
+                                /** @description Quem validou ou recusou por último; nulo para o IBVAR */
+                                validadoPor: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO; nulo para o IBVAR */
+                                validadoEm: string | null;
                             }[];
                             financeiro: ({
                                 /** @enum {string} */
@@ -1096,7 +1418,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1113,7 +1435,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1130,7 +1452,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1147,7 +1469,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1159,8 +1481,8 @@ export interface paths {
             };
         };
         /**
-         * Edita classe, treinador, número de vela ou situação do atleta
-         * @description Valida classe ativa e treinador ativo. numeroVela vazio limpa o campo. Atleta anonimizado não pode ser alterado nem reativado: 409.
+         * Edita WS ID, classe, treinador, número de vela ou situação do atleta
+         * @description Valida classe ativa e treinador ativo. numeroVela vazio limpa o campo. wsId (ID World Sailing, a chave do atleta): só o gestor troca; vira maiúsculas e sem espaços, segue ^[A-Z]{3}[A-Z0-9]{2,12}$ (400) e não pode repetir o de outro atleta (409); a auditoria guarda só o nome do campo. Atleta anonimizado não pode ser alterado nem reativado: 409.
          */
         put: {
             parameters: {
@@ -1174,6 +1496,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
+                        wsId?: string;
                         classeId?: string;
                         /** Format: uuid */
                         treinadorId?: string;
@@ -1191,6 +1514,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string;
+                            wsId: string;
                             classeId: string;
                             treinadorId: string | null;
                             numeroVela: string | null;
@@ -1206,7 +1530,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1223,7 +1547,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1240,7 +1564,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1257,7 +1581,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1274,7 +1598,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1301,7 +1625,7 @@ export interface paths {
         };
         /**
          * Histórico de lançamentos de um indicador, do mais novo para o mais antigo
-         * @description Mesma matriz de acesso da ficha: gestor vê todos, treinador só os próprios atletas, atleta só a si. Inclui a sugestão do atleta ainda pendente (pendente: true, origem resposta_sugerida). cf_peso_kg (calculado) traz as pesagens, com a nota pela regra P3 atual. IBVAR: pilar sensível dá 403; nos demais, sem evidência, avaliador, anexo nem sugestão pendente. Atleta fora do acesso ou indicador inexistente: 404.
+         * @description Mesma matriz de acesso da ficha: gestor vê todos, treinador só os próprios atletas, atleta só a si. Inclui a sugestão do atleta ainda pendente (pendente: true, origem resposta_sugerida ou autoavaliacao) e a justificativa da nota do treinador. cf_peso_kg (calculado) traz as pesagens, com a nota pela regra P3 atual; perf_mundial, perf_continental e perf_nacional (calculados) trazem um item por resultado validado do nível, com a nota que a colocação daria pela regra PERF_RESULTADOS atual (só as últimas `edicoes_max` edições entram na nota do indicador). IBVAR: pilar sensível dá 403; nos demais, sem evidência, avaliador, anexo, justificativa nem sugestão pendente (a aprovação aparece como `avaliacao`). Atleta fora do acesso ou indicador inexistente: 404.
          */
         get: {
             parameters: {
@@ -1327,8 +1651,12 @@ export interface paths {
                             /** @description Só em cf_peso_kg: o peso da pesagem */
                             pesoKg: number | null;
                             evidencia: string | null;
+                            /** @description Link https da nota; nulo para o IBVAR */
+                            link: string | null;
                             /** @enum {string} */
-                            origem: "avaliacao" | "resposta_confirmada" | "resposta_sugerida" | "calculado";
+                            origem: "avaliacao" | "resposta_confirmada" | "resposta_sugerida" | "autoavaliacao" | "autoavaliacao_aprovada" | "calculado";
+                            /** @description Justificativa do treinador ao corrigir a sugestão; nula para o IBVAR */
+                            justificativa: string | null;
                             /** @description Sugestão do atleta aguardando o avaliador */
                             pendente: boolean;
                             avaliador: {
@@ -1353,7 +1681,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1370,7 +1698,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1387,7 +1715,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1404,7 +1732,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1417,6 +1745,145 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/aptidao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registra a aptidão para a prática esportiva conferida pelo gestor
+         * @description Só o gestor, depois de conferir o atestado FORA do sistema: grava apenas `apto`, quem conferiu e quando (sem texto livre e sem arquivo). Cada registro é novo (só inserção); vale o mais recente. Dado de saúde: a auditoria guarda só os ids.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        apto: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            apto: boolean;
+                            /** @description Instante ISO em que o gestor conferiu */
+                            conferidoEm: string;
+                            conferidoPor: {
+                                nome: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1449,9 +1916,14 @@ export interface paths {
                         notas?: {
                             indicadorId: string;
                             valor: number;
-                            evidencia: string;
+                            /** @description Texto da evidência. Obrigatório nos indicadores com evidência `obrigatoria` (GET /parametros); opcional nos demais. Vazio vale como ausente */
+                            evidencia?: string;
+                            /** @description Link de vídeo ou outro conteúdo externo da nota: só https://, até 500 caracteres. A API não acessa o endereço. Vazio vale como ausente */
+                            link?: string;
                             /** Format: uuid */
                             anexoId?: string;
+                            /** @description Obrigatória quando o atleta sugeriu (autoavaliação) outra nota para o indicador no ciclo aberto; opcional nos demais. Vazio vale como ausente */
+                            justificativa?: string;
                         }[];
                         medida?: {
                             pesoKg?: number;
@@ -1495,13 +1967,20 @@ export interface paths {
                                 /** @enum {string} */
                                 statusGates: "apto" | "condicional" | "nao_prioritario";
                             };
-                            /** @description Nota sugerida para perf_nacional pelos pontos do Ranking CBVela (regra PERF_PONTOS). Nula com a regra desligada. Não entra na prévia nem no score: o avaliador confirma lançando a nota. */
-                            sugestaoPontos: {
+                            /** @description Sugestões do atleta (autoavaliação) no ciclo aberto, uma por indicador, para a tela mostrar ao lado da nota. Vazio sem sugestão ou sem ciclo aberto */
+                            sugestoesAtleta: {
                                 indicadorId: string;
-                                nota: number;
-                                /** @description Pontos do Ranking CBVela na janela */
-                                pontos: number;
-                            } | null;
+                                /** @description Nota sugerida pelo atleta, de 0 a 5 */
+                                valor: number;
+                                evidencia: string | null;
+                                link: string | null;
+                                anexo: {
+                                    id: string;
+                                    nomeArquivo: string;
+                                } | null;
+                                /** @description Instante ISO */
+                                em: string;
+                            }[];
                         };
                     };
                 };
@@ -1513,7 +1992,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1530,7 +2009,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1547,7 +2026,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1564,7 +2043,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1592,7 +2071,7 @@ export interface paths {
         put?: never;
         /**
          * Lança notas e/ou medida do atleta (série histórica: só insere)
-         * @description Origem da nota: resposta_confirmada se o atleta respondeu à pergunta do indicador, senão avaliacao. Indicador calculado (peso) ou tipo R é recusado.
+         * @description Origem da nota: se o atleta sugeriu a nota (autoavaliação) no ciclo aberto, nota igual grava `autoavaliacao_aprovada` e nota diferente grava a correção, com `justificativa` obrigatória (400 em `notas.N.justificativa`) e aviso `autoavaliacao_corrigida` ao atleta. Sem sugestão: resposta_confirmada se o atleta respondeu à pergunta do indicador, senão avaliacao (justificativa opcional). Indicador calculado (o peso e os de resultado: perf_mundial, perf_continental, perf_nacional) ou tipo R é recusado (400).
          */
         post: {
             parameters: {
@@ -1610,9 +2089,14 @@ export interface paths {
                         notas?: {
                             indicadorId: string;
                             valor: number;
-                            evidencia: string;
+                            /** @description Texto da evidência. Obrigatório nos indicadores com evidência `obrigatoria` (GET /parametros); opcional nos demais. Vazio vale como ausente */
+                            evidencia?: string;
+                            /** @description Link de vídeo ou outro conteúdo externo da nota: só https://, até 500 caracteres. A API não acessa o endereço. Vazio vale como ausente */
+                            link?: string;
                             /** Format: uuid */
                             anexoId?: string;
+                            /** @description Obrigatória quando o atleta sugeriu (autoavaliação) outra nota para o indicador no ciclo aberto; opcional nos demais. Vazio vale como ausente */
+                            justificativa?: string;
                         }[];
                         medida?: {
                             pesoKg?: number;
@@ -1659,7 +2143,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1676,7 +2160,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1693,7 +2177,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1710,7 +2194,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1727,7 +2211,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1803,7 +2287,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1820,7 +2304,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1837,7 +2321,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1854,7 +2338,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1871,7 +2355,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1883,6 +2367,2721 @@ export interface paths {
             };
         };
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/autoavaliacoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O atleta sugere a nota de seus indicadores (autoavaliação)
+         * @description Só o atleta, no próprio cadastro, com ciclo aberto (sem ciclo aberto: 409). Só indicadores com `autoavaliacao: true` em GET /parametros (outro: 400 em `notas.N.indicadorId`). A evidência segue a regra do indicador (`evidencia`; obrigatória ausente: 400 em `notas.N.evidencia`); `link` só https://; `anexoId` só de anexo do próprio atleta (400 em `notas.N.anexoId`). Grava em `avaliacoes` com origem `autoavaliacao`, sem avaliador. Pode reenviar: a sugestão mais recente do ciclo vale (a série só recebe inserções). A sugestão NUNCA entra no score, nos gates, no ranking nem no investimento: só a nota do treinador conta. Avisa o treinador (`atleta_autoavaliou`, `referencia: { quantidade }`). Auditoria `enviar_autoavaliacao` só com ids de indicador e contagens.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        notas: {
+                            indicadorId: string;
+                            valor: number;
+                            /** @description Texto da evidência. Obrigatório nos indicadores com evidência `obrigatoria` (GET /parametros); opcional nos demais. Vazio vale como ausente */
+                            evidencia?: string;
+                            /** @description Link de vídeo ou outro conteúdo externo da nota: só https://, até 500 caracteres. A API não acessa o endereço. Vazio vale como ausente */
+                            link?: string;
+                            /** Format: uuid */
+                            anexoId?: string;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cicloId: string;
+                            /** @description Quantidade de indicadores enviados */
+                            enviadas: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/autoavaliacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atleta × treinador: a sugestão do atleta e a nota do treinador por indicador
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). `?ciclo=<id>`; sem ele, o ciclo aberto ou, não havendo, o último fechado. Traz os indicadores com autoavaliação ligada e os que já têm sugestão no ciclo. `diferenca` = nota do treinador − nota do atleta. `resumoPorPilar` (diferença média por pilar) só vem para o gestor. Cada indicador traz `evidencia` (obrigatoria|opcional) e `orientacao`, e a resposta traz `rubricas` (escala geral com `pilarId` nulo e a de cada pilar com rubrica própria) e `orientacoesResultados` (orientação dos indicadores de resultado, de nota calculada), porque o atleta não lê GET /parametros.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    ciclo?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ciclo: {
+                                id: string;
+                                nome: string;
+                                /** @enum {string} */
+                                status: "aberto" | "fechado";
+                            } | null;
+                            indicadores: {
+                                indicadorId: string;
+                                nome: string;
+                                pilarId: string;
+                                /**
+                                 * @description Se a nota do indicador exige texto de evidência (regra do gestor)
+                                 * @enum {string}
+                                 */
+                                evidencia: "obrigatoria" | "opcional";
+                                /** @description Texto de ajuda do indicador, editável pelo gestor; nulo se não há */
+                                orientacao: string | null;
+                                /** @description Última sugestão do atleta no ciclo */
+                                sugestao: {
+                                    /** @description Nota sugerida pelo atleta, de 0 a 5 */
+                                    valor: number;
+                                    evidencia: string | null;
+                                    /** @description Link https de vídeo ou outro conteúdo externo */
+                                    link: string | null;
+                                    anexo: {
+                                        id: string;
+                                        nomeArquivo: string;
+                                    } | null;
+                                    /** @description Instante ISO */
+                                    em: string;
+                                } | null;
+                                /** @description Última nota do treinador no ciclo */
+                                treinador: {
+                                    /** @description Nota do treinador (ou do gestor), de 0 a 5 */
+                                    valor: number;
+                                    /**
+                                     * @description autoavaliacao_aprovada: o treinador manteve a nota sugerida pelo atleta
+                                     * @enum {string}
+                                     */
+                                    origem: "avaliacao" | "resposta_confirmada" | "autoavaliacao_aprovada";
+                                    /** @description Obrigatória quando a nota difere da sugestão */
+                                    justificativa: string | null;
+                                    avaliador: {
+                                        nome: string;
+                                    } | null;
+                                    /** @description Instante ISO */
+                                    em: string;
+                                } | null;
+                                /** @description Nota do treinador menos a do atleta; nulo se falta uma das duas */
+                                diferenca: number | null;
+                            }[];
+                            /** @description Orientação dos indicadores de resultado (nota calculada, sem autoavaliação), para a tela Meus resultados do atleta */
+                            orientacoesResultados: {
+                                /** @enum {string} */
+                                nivel: "mundial" | "continental" | "nacional";
+                                indicadorId: string;
+                                nome: string;
+                                orientacao: string | null;
+                            }[];
+                            /** @description Escala de 0 a 5: a geral (pilarId nulo) e a de cada pilar com rubrica própria. O atleta não lê GET /parametros, por isso a escala vem aqui */
+                            rubricas: {
+                                /** @description Nulo = escala geral de 0 a 5 */
+                                pilarId: string | null;
+                                notas: {
+                                    nota: number;
+                                    descricao: string;
+                                }[];
+                            }[];
+                            /** @description Só para o gestor (nulo para treinador e atleta) */
+                            resumoPorPilar: {
+                                pilarId: string;
+                                nomeCurto: string;
+                                /** @description Média de (treinador − atleta) nos indicadores com as duas notas; nulo se não há */
+                                diferencaMedia: number | null;
+                            }[] | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/pesagens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O atleta informa o peso com a foto do visor da balança
+         * @description Só o atleta, no próprio cadastro completo. `anexoId` é o anexo do próprio atleta com categoria `balanca` (POST /atletas/:id/evidencias): inexistente, removido, de outro atleta ou de outra categoria dá 400 em `anexoId`. Peso de 30 a 160 kg. Só uma pesagem pendente por atleta: nova com uma pendente dá 409. O peso só entra no Class Fit e no G1 depois que o treinador ou o gestor valida (PUT /pesagens/:id/validacao). Avisa o treinador (`atleta_enviou_pesagem`, `referencia: { pesagemId }`). Auditoria `enviar_pesagem` sem o peso.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        pesoKg: number;
+                        /** Format: uuid */
+                        anexoId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Peso informado pelo atleta (dado sensível: o IBVAR nunca recebe) */
+                            pesoKg: number;
+                            /** @enum {string} */
+                            status: "pendente" | "validada" | "recusada";
+                            /** @description Instante ISO */
+                            enviadoEm: string;
+                            /** @description Motivo da recusa; nulo nas demais */
+                            motivo: string | null;
+                            /** @description Quem validou ou recusou */
+                            decididoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            decididoEm: string | null;
+                            /** @description Foto do visor da balança, enquanto a pesagem está pendente (GET /evidencias/:id/link). Nula depois da decisão: a foto é removida */
+                            anexoId: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pesagens/{id}/validacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Valida ou recusa a pesagem informada pelo atleta
+         * @description Gestor ou treinador do atleta (outro treinador e pesagem inexistente: 404; atleta e IBVAR: 403). `validar` grava o peso em `medidas_corporais` (medido_em = envio, registrado_por = quem validou, evidência "Pesagem informada pelo atleta e validada") na mesma transação; a partir daí o peso entra no Class Fit e no G1. `recusar` exige `motivo` (até 300 caracteres; 400 em `motivo`). Pesagem já decidida: 409. Nos dois casos, depois da gravação, a foto sai do Storage e o anexo fica marcado como removido, e o atleta recebe o aviso `pesagem_validada` ou `pesagem_recusada` (`referencia: { pesagemId }`). Auditoria `decidir_pesagem` sem peso nem motivo.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decisao: "validar" | "recusar";
+                        motivo?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Peso informado pelo atleta (dado sensível: o IBVAR nunca recebe) */
+                            pesoKg: number;
+                            /** @enum {string} */
+                            status: "pendente" | "validada" | "recusada";
+                            /** @description Instante ISO */
+                            enviadoEm: string;
+                            /** @description Motivo da recusa; nulo nas demais */
+                            motivo: string | null;
+                            /** @description Quem validou ou recusou */
+                            decididoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            decididoEm: string | null;
+                            /** @description Foto do visor da balança, enquanto a pesagem está pendente (GET /evidencias/:id/link). Nula depois da decisão: a foto é removida */
+                            anexoId: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/pesagens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pesagens informadas pelo atleta, da mais nova para a mais antiga
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403, o peso é dado sensível; outro atleta ou treinador: 404). Cada item traz status, peso, datas, motivo da recusa e quem decidiu. Só a pesagem validada vira medida e entra no Class Fit.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                id: string;
+                                /** @description Peso informado pelo atleta (dado sensível: o IBVAR nunca recebe) */
+                                pesoKg: number;
+                                /** @enum {string} */
+                                status: "pendente" | "validada" | "recusada";
+                                /** @description Instante ISO */
+                                enviadoEm: string;
+                                /** @description Motivo da recusa; nulo nas demais */
+                                motivo: string | null;
+                                /** @description Quem validou ou recusou */
+                                decididoPor: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO */
+                                decididoEm: string | null;
+                                /** @description Foto do visor da balança, enquanto a pesagem está pendente (GET /evidencias/:id/link). Nula depois da decisão: a foto é removida */
+                                anexoId: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/conquistas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O atleta informa uma conquista, com o anexo que a prova
+         * @description Só o atleta, no próprio cadastro completo. `anexoId` é o anexo do próprio atleta com categoria `evidencia` (POST /atletas/:id/evidencias), obrigatório, ainda não ligado a outra conquista: inexistente, removido, de outro atleta, de outra categoria ou já usado dá 400 em `anexoId`. `ano` de 1950 ao ano atual. Nasce `pendente`: só aparece na ficha depois da validação do treinador ou do gestor (PUT /conquistas/:id/validacao). Os pódios dos resultados validados entram sozinhos, sem esta rota. O anexo fica ligado e não pode mais ser removido. Avisa o treinador (`atleta_registrou_conquista`, `referencia: { conquistaId }`). Auditoria `registrar_conquista` só com ids e nomes de campo (sem o título).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        titulo: string;
+                        ano: number;
+                        /** Format: uuid */
+                        anexoId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * Format: uuid
+                             * @description Identificador da conquista (PUT /conquistas/:id/validacao)
+                             */
+                            id: string;
+                            titulo: string;
+                            ano: number;
+                            /** @enum {string} */
+                            status: "pendente" | "validada" | "recusada";
+                            /** @description Motivo da recusa; nulo nas demais */
+                            motivo: string | null;
+                            /**
+                             * Format: uuid
+                             * @description Prova anexada (GET /evidencias/:id/link)
+                             */
+                            anexoId: string;
+                            /** @description Instante ISO */
+                            criadoEm: string;
+                            /** @description Quem validou ou recusou */
+                            decididoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            decididoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conquistas/{id}/validacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Valida ou recusa uma conquista informada pelo atleta
+         * @description Gestor ou treinador do atleta (outro treinador e conquista inexistente: 404; atleta e IBVAR: 403). `recusar` exige `motivo` (até 300 caracteres; 400 em `motivo`). A decisão é definitiva: conquista já decidida dá 409 (o atleta informa outra). Só a validada aparece na ficha. Avisa o atleta (`conquista_validada` ou `conquista_recusada`, `referencia: { conquistaId }`). Auditoria `decidir_conquista` sem o título nem o motivo.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decisao: "validar" | "recusar";
+                        motivo?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * Format: uuid
+                             * @description Identificador da conquista (PUT /conquistas/:id/validacao)
+                             */
+                            id: string;
+                            titulo: string;
+                            ano: number;
+                            /** @enum {string} */
+                            status: "pendente" | "validada" | "recusada";
+                            /** @description Motivo da recusa; nulo nas demais */
+                            motivo: string | null;
+                            /**
+                             * Format: uuid
+                             * @description Prova anexada (GET /evidencias/:id/link)
+                             */
+                            anexoId: string;
+                            /** @description Instante ISO */
+                            criadoEm: string;
+                            /** @description Quem validou ou recusou */
+                            decididoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            decididoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/conquistas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Conquistas do atleta: automáticas (pódios) e manuais, de qualquer situação
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). `automaticas`: pódios (1º a 3º) dos resultados validados, calculados na leitura. `manuais`: as informadas pelo atleta, da mais nova para a mais antiga, com a situação, o motivo da recusa, quem decidiu e o anexo. A ficha (GET /atletas/:id) traz só as validadas.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            automaticas: {
+                                /**
+                                 * @description resultado: pódio de um resultado validado (calculado); manual: informada pelo atleta, com anexo, e validada
+                                 * @enum {string}
+                                 */
+                                tipo: "resultado" | "manual";
+                                titulo: string;
+                                /** @description Ano da edição (resultado) ou da conquista (manual) */
+                                ano: number;
+                                /** @description Só nas conquistas de resultado */
+                                evento?: string;
+                                /** @description Só nas conquistas de resultado */
+                                nivel?: string;
+                                /** @description Só nas conquistas de resultado (1 a 3) */
+                                posicao?: number;
+                            }[];
+                            manuais: {
+                                /**
+                                 * Format: uuid
+                                 * @description Identificador da conquista (PUT /conquistas/:id/validacao)
+                                 */
+                                id: string;
+                                titulo: string;
+                                ano: number;
+                                /** @enum {string} */
+                                status: "pendente" | "validada" | "recusada";
+                                /** @description Motivo da recusa; nulo nas demais */
+                                motivo: string | null;
+                                /**
+                                 * Format: uuid
+                                 * @description Prova anexada (GET /evidencias/:id/link)
+                                 */
+                                anexoId: string;
+                                /** @description Instante ISO */
+                                criadoEm: string;
+                                /** @description Quem validou ou recusou */
+                                decididoPor: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO */
+                                decididoEm: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Minhas conversas (chat), da mais recente para a mais antiga
+         * @description Gestor, treinador e atleta; IBVAR: 403. Atleta: a conversa com o treinador atual, as de treinadores antigos (somente leitura) e a com a gestão. Treinador: as com os próprios atletas, as de pares antigos (somente leitura) e a com a gestão. Gestor: as caixas compartilhadas `gestao_atleta` e `gestao_treinador` (todos os gestores ativos veem e respondem; `naoLidas` é por gestor). `naoLidas` conta as mensagens de outras pessoas depois de PUT /conversas/{id}/lidas. Com `?supervisao=true` (só gestor; outros 403): as conversas `treinador_atleta` só com metadados (participantes e datas; `naoLidas` sempre 0, sem trecho nem contagem de mensagens), para o gestor saber que existem; a leitura exige POST /conversas/{id}/acesso-supervisao.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    supervisao?: "true" | "false";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                /** Format: uuid */
+                                id: string;
+                                /** @enum {string} */
+                                tipo: "treinador_atleta" | "gestao_atleta" | "gestao_treinador";
+                                /** @description Com quem a pessoa conversa: o outro lado (nome e papel) ou `{ gestao: true }` (caixa compartilhada da gestão da CBVela) */
+                                com: {
+                                    nome: string;
+                                    /** @enum {string} */
+                                    papel: "atleta" | "treinador";
+                                } | {
+                                    /** @enum {boolean} */
+                                    gestao: true;
+                                };
+                                atleta: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Treinador do par (tipos `treinador_atleta` e `gestao_treinador`) */
+                                treinador: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO */
+                                criadaEm: string;
+                                /** @description Instante ISO; nulo = ainda sem mensagens */
+                                ultimaMensagemEm: string | null;
+                                naoLidas: number;
+                                /** @description Verdadeiro quando não dá para enviar: par antigo (troca de treinador), conta desativada ou gestor lendo por supervisão */
+                                somenteLeitura: boolean;
+                                /** @description Só para o gestor: até quando vale o acesso de supervisão dele; nulo = sem acesso */
+                                supervisaoAte: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Abre uma conversa (ou devolve a que já existe)
+         * @description `tipo`: `treinador_atleta`, `gestao_atleta` ou `gestao_treinador`. Quem pode abrir com quem (regra no SQL): o atleta abre `treinador_atleta` com o próprio treinador atual e `gestao_atleta` (`atletaId` e `treinadorId` são dispensáveis; apontar outra pessoa dá 403); o treinador abre `treinador_atleta` com atleta próprio e ativo (`atletaId` obrigatório; de outro treinador, 404) e `gestao_treinador`; o gestor abre `gestao_atleta` com qualquer atleta ativo (`atletaId`) e `gestao_treinador` com qualquer treinador ativo (`treinadorId`), e não abre `treinador_atleta` (403). Atleta com atleta não existe; IBVAR: 403. Há uma conversa por par, uma `gestao_atleta` por atleta e uma `gestao_treinador` por treinador: se já existe, devolve a existente com 200; se criou, 201. Auditoria `abrir_conversa` só com ids e tipo.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        tipo: "treinador_atleta" | "gestao_atleta" | "gestao_treinador";
+                        /** Format: uuid */
+                        atletaId?: string;
+                        /** Format: uuid */
+                        treinadorId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** @enum {string} */
+                            tipo: "treinador_atleta" | "gestao_atleta" | "gestao_treinador";
+                            /** @description Com quem a pessoa conversa: o outro lado (nome e papel) ou `{ gestao: true }` (caixa compartilhada da gestão da CBVela) */
+                            com: {
+                                nome: string;
+                                /** @enum {string} */
+                                papel: "atleta" | "treinador";
+                            } | {
+                                /** @enum {boolean} */
+                                gestao: true;
+                            };
+                            atleta: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Treinador do par (tipos `treinador_atleta` e `gestao_treinador`) */
+                            treinador: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            criadaEm: string;
+                            /** @description Instante ISO; nulo = ainda sem mensagens */
+                            ultimaMensagemEm: string | null;
+                            naoLidas: number;
+                            /** @description Verdadeiro quando não dá para enviar: par antigo (troca de treinador), conta desativada ou gestor lendo por supervisão */
+                            somenteLeitura: boolean;
+                            /** @description Só para o gestor: até quando vale o acesso de supervisão dele; nulo = sem acesso */
+                            supervisaoAte: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** @enum {string} */
+                            tipo: "treinador_atleta" | "gestao_atleta" | "gestao_treinador";
+                            /** @description Com quem a pessoa conversa: o outro lado (nome e papel) ou `{ gestao: true }` (caixa compartilhada da gestão da CBVela) */
+                            com: {
+                                nome: string;
+                                /** @enum {string} */
+                                papel: "atleta" | "treinador";
+                            } | {
+                                /** @enum {boolean} */
+                                gestao: true;
+                            };
+                            atleta: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Treinador do par (tipos `treinador_atleta` e `gestao_treinador`) */
+                            treinador: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            criadaEm: string;
+                            /** @description Instante ISO; nulo = ainda sem mensagens */
+                            ultimaMensagemEm: string | null;
+                            naoLidas: number;
+                            /** @description Verdadeiro quando não dá para enviar: par antigo (troca de treinador), conta desativada ou gestor lendo por supervisão */
+                            somenteLeitura: boolean;
+                            /** @description Só para o gestor: até quando vale o acesso de supervisão dele; nulo = sem acesso */
+                            supervisaoAte: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversas/{id}/mensagens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mensagens de uma conversa, em ordem cronológica
+         * @description Só as partes da conversa; o gestor lê uma `treinador_atleta` só com supervisão vigente (POST /conversas/{id}/acesso-supervisao); sem acesso, 404 (não revela que a conversa existe). Sem filtros: as `limite` mais recentes. `antesDe` (instante ISO): as mensagens anteriores a ele, para rolar o histórico (`proximoAntesDe` da resposta anterior). `depoisDe` (instante ISO): só as mais novas, para consulta a cada 15 a 30 segundos. `propria` é verdadeiro nas mensagens de quem chama. O texto é puro: o front escapa.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    depoisDe?: string;
+                    antesDe?: string;
+                    limite?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                id: string;
+                                autor: {
+                                    nome: string;
+                                    papel: string;
+                                };
+                                /** @description Verdadeiro quando quem chama é o autor */
+                                propria: boolean;
+                                /** @description Texto puro: o front escapa, nunca monta HTML */
+                                texto: string;
+                                /** @description Instante ISO */
+                                enviadaEm: string;
+                            }[];
+                            /** @description Passe em `antesDe` para a página anterior; nulo = não há mais */
+                            proximoAntesDe: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Envia uma mensagem
+         * @description Só quem é parte da conversa e ela não está somente leitura: par antigo (troca de treinador) ou conta desativada dão 409; o gestor lendo por supervisão não envia (403). Sem acesso à conversa, 404. `texto`: texto puro de 1 a 2000 caracteres (sem HTML; o texto é guardado como veio e o front escapa). Limite de 30 mensagens por minuto por usuário (429 `limite_excedido`). Avisa o outro lado (`mensagem_nova`, `referencia: { conversaId }`), só se a pessoa ainda não tem aviso não lido desta conversa; na caixa compartilhada, avisa os gestores ativos. A auditoria guarda só ids e tipo, nunca o texto.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        texto: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            autor: {
+                                nome: string;
+                                papel: string;
+                            };
+                            /** @description Verdadeiro quando quem chama é o autor */
+                            propria: boolean;
+                            /** @description Texto puro: o front escapa, nunca monta HTML */
+                            texto: string;
+                            /** @description Instante ISO */
+                            enviadaEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversas/{id}/lidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Marca a conversa como lida, até agora, para quem chama
+         * @description Vale só para quem chama (na caixa compartilhada, cada gestor tem a sua marca). Também marca como lidos os avisos `mensagem_nova` desta conversa. O gestor em supervisão não grava marca (204 sem efeito). Não gera auditoria (dado de interface).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": null;
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversas/{id}/acesso-supervisao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gestor pede acesso de leitura a uma conversa entre treinador e atleta
+         * @description Só o gestor, só conversas `treinador_atleta` (as outras dão 400; conversa inexistente, 404). `motivo` obrigatório, de 5 a 500 caracteres (ex.: denúncia). Libera a leitura daquela conversa, para aquele gestor, por 24 horas (GET /conversas/{id}/mensagens); durante a supervisão ele só lê, não envia. Pedir de novo renova o prazo e registra outro acesso. Cada pedido vai para a auditoria (`acessar_conversa_supervisao`) com o motivo e sem o conteúdo das mensagens. Os participantes veem na tela que a conversa pode ser lida pelo gestor em caso de denúncia.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        motivo: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            conversaId: string;
+                            /** @description Instante ISO: fim da leitura liberada */
+                            expiraEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/resultados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O atleta informa um resultado (uma edição de um evento), com a súmula ou o link oficial
+         * @description Só o atleta, no próprio cadastro completo. `nivel`: mundial, continental (inclui Sul-Americano e Pan-Americano) ou nacional (Brasileiro); grava como `mundial`, `continental` ou `brasileiro`. `ano` é a edição (de 2000 ao ano atual). Exige a súmula (`anexoId`: anexo do próprio atleta com categoria `sumula`, enviado em POST /atletas/:id/evidencias) ou o `linkOficial` https (400 nos campos `anexoId` e `linkOficial` se faltar os dois). `tamanhoFrota` é opcional (a nota não depende dele; com ele, a posição não pode passar da frota). `data` é opcional (não futura, dentro do `ano`); sem ela, vale o último dia do ano da edição, ou hoje se o ano é o atual. Limite de edições: no máximo `edicoes_max` (regra PERF_RESULTADOS) do mesmo evento (mesmo nome, sem diferença de maiúsculas e espaços, e mesmo nível): acima disso, 409; edição repetida do mesmo evento, 409. Resultado já recusado não conta nos dois limites (dá para informar de novo). Nasce `pendente`: só entra na nota e nos gates depois da validação do treinador ou do gestor (PUT /resultados/:id/validacao). Avisa o treinador (`atleta_lancou_resultado`, `referencia: { resultadoId }`). Auditoria `informar_resultado` só com ids e nomes de campo.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        evento: string;
+                        /** @enum {string} */
+                        nivel: "mundial" | "continental" | "nacional";
+                        ano: number;
+                        posicao: number;
+                        tamanhoFrota?: number | null;
+                        /** Format: date */
+                        data?: string | null;
+                        /** Format: uuid */
+                        anexoId?: string | null;
+                        /** Format: uri */
+                        linkOficial?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Identificador do resultado (PUT /resultados/:id/validacao) */
+                            id: string;
+                            /** @description AAAA-MM-DD */
+                            data: string;
+                            nivel: string;
+                            evento: string;
+                            /** @description Ano da edição (nos resultados lançados antes da D10, o ano da data) */
+                            edicao: number;
+                            posicao: number;
+                            /** @description Nulo quando o atleta informou o resultado sem a frota; a nota não depende dela */
+                            tamanhoFrota: number | null;
+                            internacional: boolean;
+                            /** @description Só informação: não entra na nota */
+                            pontosCbvela: number | null;
+                            /**
+                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                             * @enum {string}
+                             */
+                            fonte: "ranking_cbvela" | "manual" | "atleta";
+                            linkOficial: string | null;
+                            /**
+                             * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                             * @enum {string}
+                             */
+                            status: "validado" | "pendente" | "recusado";
+                            /** @description Motivo da recusa; nulo para o IBVAR */
+                            motivo: string | null;
+                            /** @description Súmula anexada pelo atleta (GET /evidencias/:id/link); nula para o IBVAR */
+                            anexo: {
+                                id: string;
+                                nomeArquivo: string;
+                            } | null;
+                            /** @description Quem validou ou recusou por último; nulo para o IBVAR */
+                            validadoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO; nulo para o IBVAR */
+                            validadoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/resultados/{id}/validacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Valida ou recusa um resultado informado pelo atleta
+         * @description Gestor ou treinador do atleta (outro treinador e resultado inexistente: 404; atleta e IBVAR: 403). Só vale para resultado da fonte `atleta`; os lançados por gestor ou treinador e os do Ranking CBVela já valem (400). `recusar` exige `motivo` (até 300 caracteres; 400 em `motivo`). A decisão vira uma linha nova na série (nada é sobrescrito): a situação vigente é a da validação mais recente, então dá para mudar de `validado` para `recusado` e vice-versa; repetir a situação atual dá 409. Só o `validado` entra na nota (PERF_RESULTADOS) e nos gates G2 e G3. A súmula fica guardada. Avisa o atleta (`resultado_validado` ou `resultado_recusado`, `referencia: { resultadoId }`). Auditoria `decidir_resultado` sem o motivo.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decisao: "validar" | "recusar";
+                        motivo?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Identificador do resultado (PUT /resultados/:id/validacao) */
+                            id: string;
+                            /** @description AAAA-MM-DD */
+                            data: string;
+                            nivel: string;
+                            evento: string;
+                            /** @description Ano da edição (nos resultados lançados antes da D10, o ano da data) */
+                            edicao: number;
+                            posicao: number;
+                            /** @description Nulo quando o atleta informou o resultado sem a frota; a nota não depende dela */
+                            tamanhoFrota: number | null;
+                            internacional: boolean;
+                            /** @description Só informação: não entra na nota */
+                            pontosCbvela: number | null;
+                            /**
+                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                             * @enum {string}
+                             */
+                            fonte: "ranking_cbvela" | "manual" | "atleta";
+                            linkOficial: string | null;
+                            /**
+                             * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                             * @enum {string}
+                             */
+                            status: "validado" | "pendente" | "recusado";
+                            /** @description Motivo da recusa; nulo para o IBVAR */
+                            motivo: string | null;
+                            /** @description Súmula anexada pelo atleta (GET /evidencias/:id/link); nula para o IBVAR */
+                            anexo: {
+                                id: string;
+                                nomeArquivo: string;
+                            } | null;
+                            /** @description Quem validou ou recusou por último; nulo para o IBVAR */
+                            validadoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO; nulo para o IBVAR */
+                            validadoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/resultados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resultados do atleta, com a situação de cada um
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). Do mais recente para o mais antigo. `?status=validado|pendente|recusado` filtra pela situação (os resultados lançados por gestor, treinador ou importados do Ranking CBVela são sempre `validado`). Cada item traz fonte, edição, súmula (`anexo`), motivo da recusa e quem validou.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "validado" | "pendente" | "recusado";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                /** @description Identificador do resultado (PUT /resultados/:id/validacao) */
+                                id: string;
+                                /** @description AAAA-MM-DD */
+                                data: string;
+                                nivel: string;
+                                evento: string;
+                                /** @description Ano da edição (nos resultados lançados antes da D10, o ano da data) */
+                                edicao: number;
+                                posicao: number;
+                                /** @description Nulo quando o atleta informou o resultado sem a frota; a nota não depende dela */
+                                tamanhoFrota: number | null;
+                                internacional: boolean;
+                                /** @description Só informação: não entra na nota */
+                                pontosCbvela: number | null;
+                                /**
+                                 * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                                 * @enum {string}
+                                 */
+                                fonte: "ranking_cbvela" | "manual" | "atleta";
+                                linkOficial: string | null;
+                                /**
+                                 * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                                 * @enum {string}
+                                 */
+                                status: "validado" | "pendente" | "recusado";
+                                /** @description Motivo da recusa; nulo para o IBVAR */
+                                motivo: string | null;
+                                /** @description Súmula anexada pelo atleta (GET /evidencias/:id/link); nula para o IBVAR */
+                                anexo: {
+                                    id: string;
+                                    nomeArquivo: string;
+                                } | null;
+                                /** @description Quem validou ou recusou por último; nulo para o IBVAR */
+                                validadoPor: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO; nulo para o IBVAR */
+                                validadoEm: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Lança à mão um resultado internacional, com o link do resultado oficial
+         * @description Grava como internacional, fonte manual e sem pontos do Ranking CBVela. Os gates G2 e G3 são recalculados na leitura. Treinador só lança para os próprios atletas.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        nivel: "mundial" | "sul_americano" | "continental" | "internacional_aberto";
+                        evento: string;
+                        /**
+                         * Format: date
+                         * @description AAAA-MM-DD, não futura
+                         */
+                        data: string;
+                        posicao: number;
+                        tamanhoFrota: number;
+                        /** Format: uri */
+                        linkOficial: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Identificador do resultado (PUT /resultados/:id/validacao) */
+                            id: string;
+                            /** @description AAAA-MM-DD */
+                            data: string;
+                            nivel: string;
+                            evento: string;
+                            /** @description Ano da edição (nos resultados lançados antes da D10, o ano da data) */
+                            edicao: number;
+                            posicao: number;
+                            /** @description Nulo quando o atleta informou o resultado sem a frota; a nota não depende dela */
+                            tamanhoFrota: number | null;
+                            internacional: boolean;
+                            /** @description Só informação: não entra na nota */
+                            pontosCbvela: number | null;
+                            /**
+                             * @description ranking_cbvela: importado; manual: lançado por gestor ou treinador; atleta: informado pelo atleta
+                             * @enum {string}
+                             */
+                            fonte: "ranking_cbvela" | "manual" | "atleta";
+                            linkOficial: string | null;
+                            /**
+                             * @description Só o resultado do atleta (fonte `atleta`) passa por validação; os demais vêm `validado`. Só o validado conta na nota e nos gates
+                             * @enum {string}
+                             */
+                            status: "validado" | "pendente" | "recusado";
+                            /** @description Motivo da recusa; nulo para o IBVAR */
+                            motivo: string | null;
+                            /** @description Súmula anexada pelo atleta (GET /evidencias/:id/link); nula para o IBVAR */
+                            anexo: {
+                                id: string;
+                                nomeArquivo: string;
+                            } | null;
+                            /** @description Quem validou ou recusou por último; nulo para o IBVAR */
+                            validadoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO; nulo para o IBVAR */
+                            validadoEm: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1951,7 +5150,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1968,7 +5167,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -1985,7 +5184,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2002,7 +5201,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2056,7 +5255,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2073,7 +5272,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2101,7 +5300,7 @@ export interface paths {
         };
         /**
          * Todos os atletas do piloto, para gestão do cadastro
-         * @description Inclui inativos e quem não aceitou o termo. Sem dado sensível nem e-mail. termoAceito segue a regra do ranking (TERMO_EXIGE_REACEITE). contaVinculada: já existe conta de atleta ligada a ele. busca procura no nome e no código VelaID.
+         * @description Inclui inativos e quem não aceitou o termo. Sem dado sensível nem e-mail. termoAceito segue a regra do ranking (TERMO_EXIGE_REACEITE). contaVinculada: já existe conta de atleta ligada a ele. busca procura no nome, no ID World Sailing e no código VelaID. cadastroCompleto: o atleta já informou nome, gênero e data de nascimento; incompleto aparece com nome nulo. cadastroRecusado: o atleta informou menos de 18 anos no primeiro acesso (inativado; o gestor remove o cadastro pela anonimização).
          */
         get: {
             parameters: {
@@ -2110,7 +5309,8 @@ export interface paths {
                     termoAceito?: "true" | "false";
                     classeId?: string;
                     treinadorId?: string;
-                    /** @description Parte do nome ou do VelaID */
+                    cadastroCompleto?: "true" | "false";
+                    /** @description Parte do nome, do ID World Sailing ou do VelaID */
                     busca?: string;
                 };
                 header?: never;
@@ -2127,8 +5327,10 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string;
-                            nome: string;
-                            velaid: string;
+                            /** @description Nulo enquanto o cadastro está incompleto */
+                            nome: string | null;
+                            wsId: string;
+                            velaid: string | null;
                             classe: {
                                 id: string;
                                 nome: string;
@@ -2138,8 +5340,13 @@ export interface paths {
                                 nome: string;
                             } | null;
                             numeroVela: string | null;
+                            /** @description Calculada no servidor; nula com o cadastro incompleto. A data de nascimento não sai na lista */
+                            idade: number | null;
                             ativo: boolean;
                             termoAceito: boolean;
+                            cadastroCompleto: boolean;
+                            /** @description Menor de 18 anos no primeiro acesso: inativado, aguarda anonimização */
+                            cadastroRecusado: boolean;
                             contaVinculada: boolean;
                         }[];
                     };
@@ -2152,7 +5359,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2169,7 +5376,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2186,7 +5393,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2199,8 +5406,8 @@ export interface paths {
         };
         put?: never;
         /**
-         * Cadastra o atleta a partir do VelaID e registra o envio do termo
-         * @description Revalida tudo no servidor: existe no VelaID, 18+, ainda não cadastrado, classe ativa e treinador válido. O atleta só entra no ranking depois do aceite do termo.
+         * Cadastra o atleta pelo ID World Sailing e registra o envio do termo
+         * @description O atleta nasce com cadastro incompleto (sem nome, gênero e data de nascimento): ele os informa no primeiro acesso, em PUT /me/cadastro. Até lá fica fora do ranking, do score, das pendências, do fechamento de ciclo e do investimento. wsId duplicado ou velaid já usado dão 409. confirmaMaioridade deve ser true. Se o velaid vier e existir no VelaID, o vínculo é guardado e os dados de lá ficam como sugestão para o atleta; velaid de menor de 18 anos é recusado. Código fora do VelaID importado é aceito, sem sugestão. Revalida classe ativa e treinador válido.
          */
         post: {
             parameters: {
@@ -2212,12 +5419,22 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        velaidCodigo: string;
+                        /** @description ID World Sailing (ex.: BRARB51). Vira maiúsculas e sem espaços; formato ^[A-Z]{3}[A-Z0-9]{2,12}$ */
+                        wsId: string;
+                        /**
+                         * Format: email
+                         * @description E-mail do atleta: conta de login, convite e termo
+                         */
+                        email: string;
                         classeId: string;
                         /** Format: uuid */
                         treinadorId: string;
+                        /** @description Código VelaID, opcional. Se existir em velaid_registros, os dados de lá viram sugestão para o atleta confirmar no primeiro acesso */
+                        velaid?: string;
+                        /** @enum {boolean} */
+                        confirmaMaioridade: true;
                         /**
-                         * @description Cria a conta do atleta (papel atleta) e envia o convite, se houver e-mail no VelaID
+                         * @description Cria a conta do atleta (papel atleta) e envia o convite
                          * @default true
                          */
                         criarConta?: boolean;
@@ -2233,14 +5450,17 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string;
-                            nome: string;
+                            wsId: string;
+                            velaid: string | null;
+                            /** @enum {boolean} */
+                            cadastroCompleto: false;
                             termo: {
                                 /** @enum {string} */
                                 status: "aguardando_aceite";
                                 versao: string;
                             };
                             /**
-                             * @description convite_enviado: conta criada e convite enviado. sem_email: nenhuma conta criada (VelaID sem e-mail, e-mail já em uso ou criarConta=false). indisponivel: conta criada, mas o convite não foi enviado (use POST /usuarios/:id/convite).
+                             * @description convite_enviado: conta criada e convite enviado. sem_email: nenhuma conta criada (e-mail já em uso ou criarConta=false). indisponivel: conta criada, mas o convite não foi enviado (use POST /usuarios/:id/convite).
                              * @enum {string}
                              */
                             conta: "convite_enviado" | "sem_email" | "indisponivel";
@@ -2255,7 +5475,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2272,7 +5492,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2289,7 +5509,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2306,7 +5526,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2323,7 +5543,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2368,8 +5588,10 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string;
-                            nome: string;
-                            velaid: string;
+                            /** @description Nulo enquanto o cadastro está incompleto */
+                            nome: string | null;
+                            wsId: string;
+                            velaid: string | null;
                             classe: {
                                 id: string;
                                 nome: string;
@@ -2389,7 +5611,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2406,7 +5628,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2475,7 +5697,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2492,7 +5714,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2509,7 +5731,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2526,7 +5748,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2543,7 +5765,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2618,7 +5840,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2635,7 +5857,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2652,7 +5874,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2769,7 +5991,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2786,7 +6008,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2803,7 +6025,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2872,7 +6094,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2889,7 +6111,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2906,7 +6128,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2923,7 +6145,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -2996,7 +6218,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3013,7 +6235,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3030,7 +6252,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3047,7 +6269,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3072,7 +6294,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lista pedidos de revisão (gestor: todos, abertos primeiro; treinador: dos próprios atletas; atleta: os seus) */
+        /**
+         * Lista pedidos de revisão (gestor: todos, abertos primeiro; treinador: dos próprios atletas; atleta: os seus)
+         * @description Cada pedido traz a instância (1 ou 2), a resposta da 1ª instância (texto, papel e data de quem respondeu), o recurso do atleta e a resposta final do gestor na 2ª instância.
+         */
         get: {
             parameters: {
                 query?: {
@@ -3108,8 +6333,38 @@ export interface paths {
                             /** @enum {string} */
                             status: "aberto" | "respondido";
                             criadoEm: string;
+                            /** @description Resposta vigente: a da 1ª instância enquanto não há recurso; depois do recurso, a da 2ª (nula até o gestor responder) */
                             resposta: string | null;
                             respondidoEm: string | null;
+                            /** @description 1: treinador ou gestor responde; 2: recurso do atleta, só o gestor responde */
+                            instancia: 1 | 2;
+                            /** @description Resposta da 1ª instância (também depois do recurso); nula enquanto não respondida */
+                            primeiraResposta: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description Recurso do atleta contra a resposta da 1ª instância; nulo se não houve */
+                            recurso: {
+                                texto: string;
+                                em: string;
+                            } | null;
+                            /** @description Resposta do gestor na 2ª instância; nula se não houve recurso ou se ainda aberto */
+                            respostaFinal: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description true quando o atleta ainda pode pedir a 2ª instância (respondido pelo treinador, sem recurso) */
+                            podeRecurso: boolean;
                             /** @description Lançamento ligado à resposta, se houver */
                             avaliacaoId: string | null;
                             /** @description Nota do lançamento anterior ao ligado (mesmo atleta e indicador) */
@@ -3127,7 +6382,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3144,7 +6399,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3195,7 +6450,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3212,7 +6467,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3229,7 +6484,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3246,7 +6501,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3272,7 +6527,7 @@ export interface paths {
         };
         /**
          * Lista os lançamentos que podem ser ligados ao pedido de revisão
-         * @description Só os lançamentos que o PUT /revisoes/:id aceitaria em avaliacaoId (mesmo atleta, indicador do pedido ou de um indicador do pilar, e lançados depois do pedido), do mais novo para o mais antigo. Vale para pedido aberto ou respondido. Sem evidência.
+         * @description Gestor (qualquer pedido) e treinador (só de atleta dele; outro pedido dá 404). Só os lançamentos que o PUT /revisoes/:id aceitaria em avaliacaoId (mesmo atleta, indicador do pedido ou de um indicador do pilar, e lançados depois do pedido), do mais novo para o mais antigo. Vale para pedido aberto ou respondido. Sem evidência.
          */
         get: {
             parameters: {
@@ -3316,7 +6571,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3333,7 +6588,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3350,7 +6605,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3367,7 +6622,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3396,7 +6651,7 @@ export interface paths {
         get?: never;
         /**
          * Responde um pedido de revisão
-         * @description Pedido já respondido devolve 409 (código requisicao_invalida). avaliacaoId (opcional) liga a resposta ao lançamento que a atendeu: do mesmo atleta, do indicador do pedido (ou de um indicador do pilar, se o pedido foi por pilar) e lançado depois do pedido. Depois de gravar, o atleta recebe um e-mail só com o aviso e o link; falha no envio não desfaz a resposta.
+         * @description Gestor responde qualquer pedido; treinador, só o de atleta dele (outro dá 404) e só na 1ª instância (pedido em 2ª instância dá 403). A resposta do gestor na 2ª instância encerra o pedido. Pedido já respondido devolve 409 (código requisicao_invalida). avaliacaoId (opcional) liga a resposta ao lançamento que a atendeu: do mesmo atleta, do indicador do pedido (ou de um indicador do pilar, se o pedido foi por pilar) e lançado depois do pedido. Depois de gravar, o atleta recebe um e-mail só com o aviso e o link; falha no envio não desfaz a resposta.
          */
         put: {
             parameters: {
@@ -3441,8 +6696,38 @@ export interface paths {
                             /** @enum {string} */
                             status: "aberto" | "respondido";
                             criadoEm: string;
+                            /** @description Resposta vigente: a da 1ª instância enquanto não há recurso; depois do recurso, a da 2ª (nula até o gestor responder) */
                             resposta: string | null;
                             respondidoEm: string | null;
+                            /** @description 1: treinador ou gestor responde; 2: recurso do atleta, só o gestor responde */
+                            instancia: 1 | 2;
+                            /** @description Resposta da 1ª instância (também depois do recurso); nula enquanto não respondida */
+                            primeiraResposta: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description Recurso do atleta contra a resposta da 1ª instância; nulo se não houve */
+                            recurso: {
+                                texto: string;
+                                em: string;
+                            } | null;
+                            /** @description Resposta do gestor na 2ª instância; nula se não houve recurso ou se ainda aberto */
+                            respostaFinal: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description true quando o atleta ainda pode pedir a 2ª instância (respondido pelo treinador, sem recurso) */
+                            podeRecurso: boolean;
                             /** @description Lançamento ligado à resposta, se houver */
                             avaliacaoId: string | null;
                             /** @description Nota do lançamento anterior ao ligado (mesmo atleta e indicador) */
@@ -3460,7 +6745,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3477,7 +6762,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3494,7 +6779,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3511,7 +6796,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3528,7 +6813,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3546,6 +6831,194 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/revisoes/{id}/recurso": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atleta discorda da resposta do treinador e pede a 2ª instância (gestor)
+         * @description Só o atleta dono do pedido (outro pedido dá 404). Só uma vez por pedido e só depois da resposta do treinador na 1ª instância; fora disso, 409 (inclusive pedido respondido pelo gestor, que já é a instância final). O pedido volta a `aberto` com `instancia` 2 e só o gestor responde. A auditoria guarda a instância, sem o texto.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        texto: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            atleta: {
+                                id: string;
+                                nome: string;
+                            };
+                            pilar: {
+                                id: string;
+                                nomeCurto: string;
+                            } | null;
+                            indicador: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            motivo: string;
+                            /** @enum {string} */
+                            status: "aberto" | "respondido";
+                            criadoEm: string;
+                            /** @description Resposta vigente: a da 1ª instância enquanto não há recurso; depois do recurso, a da 2ª (nula até o gestor responder) */
+                            resposta: string | null;
+                            respondidoEm: string | null;
+                            /** @description 1: treinador ou gestor responde; 2: recurso do atleta, só o gestor responde */
+                            instancia: 1 | 2;
+                            /** @description Resposta da 1ª instância (também depois do recurso); nula enquanto não respondida */
+                            primeiraResposta: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description Recurso do atleta contra a resposta da 1ª instância; nulo se não houve */
+                            recurso: {
+                                texto: string;
+                                em: string;
+                            } | null;
+                            /** @description Resposta do gestor na 2ª instância; nula se não houve recurso ou se ainda aberto */
+                            respostaFinal: {
+                                texto: string;
+                                /**
+                                 * @description Papel de quem respondeu
+                                 * @enum {string}
+                                 */
+                                papel: "gestor" | "treinador";
+                                respondidoEm: string;
+                            } | null;
+                            /** @description true quando o atleta ainda pode pedir a 2ª instância (respondido pelo treinador, sem recurso) */
+                            podeRecurso: boolean;
+                            /** @description Lançamento ligado à resposta, se houver */
+                            avaliacaoId: string | null;
+                            /** @description Nota do lançamento anterior ao ligado (mesmo atleta e indicador) */
+                            notaAnterior: number | null;
+                            /** @description Nota do lançamento ligado */
+                            notaNova: number | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/investimento": {
         parameters: {
             query?: never;
@@ -3555,11 +7028,13 @@ export interface paths {
         };
         /**
          * Painel de investimento: agregados do piloto e lista 'Onde investir'
-         * @description Os números agregados incluem todos os atletas do piloto. A lista 'Onde investir' do IBVAR traz só quem consentiu, sem meses assegurados.
+         * @description Sem `ciclo`, abre no último ciclo fechado, com os números congelados no fechamento (score, faixa, pilares, gates, status final e perfil de suporte); sem ciclo fechado, no ciclo aberto, calculado na hora (`parcial: true`); sem nenhum ciclo, calculado na hora com `cicloExibido: null`. `?ciclo=<id>` escolhe outro ciclo (inexistente: 404). Ciclo fechado antes do congelamento completo só tem score e faixa: o resto vem nulo, `congelamentoCompleto` é false e `ondeInvestir` vem vazia. Os números agregados incluem todos os atletas do piloto. A lista 'Onde investir' do IBVAR traz só quem consentiu (vale o consentimento atual), sem meses assegurados. `dadosAtualizadosEm` é sempre agregado, nunca de um atleta. O campo `ciclo` fica por compatibilidade e repete nome e prazo de `cicloExibido`.
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    ciclo?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -3573,18 +7048,48 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /** @description Compatibilidade: nome e prazo do ciclo exibido (o mesmo de cicloExibido) */
                             ciclo: {
                                 nome: string;
                                 /** @description AAAA-MM-DD */
                                 prazo: string;
                             } | null;
+                            /** @description Ciclo de onde saem os números; nulo se ainda não existe nenhum ciclo */
+                            cicloExibido: {
+                                /** Format: uuid */
+                                id: string;
+                                nome: string;
+                                /** @description AAAA-MM-DD */
+                                inicio: string;
+                                /** @description AAAA-MM-DD */
+                                prazo: string;
+                                /** @enum {string} */
+                                status: "aberto" | "fechado";
+                                /** @description Instante ISO do fechamento; nulo se aberto */
+                                fechadoEm: string | null;
+                            } | null;
+                            /** @description true: números calculados na hora (ciclo aberto ou sem ciclo), ainda podem mudar */
+                            parcial: boolean;
+                            /** @description false: ciclo fechado antes do congelamento completo; só score e faixa existem e o resto vem nulo */
+                            congelamentoCompleto: boolean;
+                            /** @description Para o seletor, do mais recente ao mais antigo */
+                            ciclosDisponiveis: {
+                                /** Format: uuid */
+                                id: string;
+                                nome: string;
+                                /** @enum {string} */
+                                status: "aberto" | "fechado";
+                                fechadoEm: string | null;
+                            }[];
+                            /** @description Instante ISO. Ciclo fechado: o fechamento. Ciclo aberto: o último lançamento que muda score ou gates no piloto. Sempre agregado, nunca de um atleta */
+                            dadosAtualizadosEm: string | null;
                             kpis: {
                                 atletas: number;
                                 scoreMedio: number;
-                                /** @description Aptos nos 4 gates */
-                                aptos: number;
-                                /** @description Perfil de suporte C ou D */
-                                dependentesApoio: number;
+                                /** @description Aptos nos 4 gates; nulo sem congelamento completo */
+                                aptos: number | null;
+                                /** @description Perfil de suporte C ou D; nulo sem congelamento completo */
+                                dependentesApoio: number | null;
                             };
                             funil: {
                                 faixa: {
@@ -3596,9 +7101,9 @@ export interface paths {
                             gates: {
                                 gate: number;
                                 nome: string;
-                                apto: number;
-                                condicional: number;
-                                alerta: number;
+                                apto: number | null;
+                                condicional: number | null;
+                                alerta: number | null;
                             }[];
                             mediaPilares: {
                                 pilarId: string;
@@ -3621,8 +7126,25 @@ export interface paths {
                                 /** @description Nulo para o IBVAR (vê só o perfil A–D) */
                                 mesesAssegurados: number | null;
                             }[];
-                            /** @description Só para o IBVAR: atletas do recorte 'Onde investir' que ficaram fora da lista; nulo para o gestor */
+                            /** @description Só para o IBVAR: atletas do recorte 'Onde investir' que ficaram fora da lista; nulo para o gestor (e sem congelamento completo) */
                             ocultosSemConsentimento: number | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
                         };
                     };
                 };
@@ -3634,7 +7156,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3651,7 +7173,184 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/investimento/evolucao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Evolução da turma entre ciclos fechados e meta de alta da média
+         * @description Para cada ciclo fechado (mais antigo primeiro): atletas, média do score, média por pilar, funil por faixa e aptos nos gates, a partir do que o fechamento congelou. Ciclo fechado antes do congelamento completo só tem score e faixa: pilares e gates vêm nulos. `meta` compara os dois últimos ciclos fechados com META_EVOLUCAO (nula sem dois ciclos). `?classeId=` recorta pela classe atual dos atletas (inexistente: 404). Sigilo (D12): para o IBVAR, ciclo com menos de MIN_GRUPO_AGREGADO atletas no recorte vem com `suprimido: true` e os números nulos (a meta fica nula se um dos dois ciclos foi suprimido); o gestor vê tudo. Só agregados: nenhum dado individual. GET /investimento não tem recorte (soma todo o piloto), por isso não aplica o mínimo.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    classeId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Ciclos fechados, do mais antigo ao mais recente */
+                            ciclos: {
+                                ciclo: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    nome: string;
+                                    /** @description Instante ISO do fechamento */
+                                    fechadoEm: string | null;
+                                };
+                                /** @description Atletas do recorte com score congelado neste ciclo */
+                                atletas: number;
+                                /** @description Média do score; nula se suprimido ou sem atletas */
+                                scoreMedio: number | null;
+                                /** @description Nulo em ciclo fechado antes do congelamento completo, ou se suprimido */
+                                mediaPorPilar: {
+                                    pilarId: string;
+                                    nomeCurto: string;
+                                    media: number | null;
+                                }[] | null;
+                                /** @description Atletas por faixa de score; nulo se suprimido */
+                                funil: {
+                                    faixaId: string;
+                                    nome: string;
+                                    n: number;
+                                }[] | null;
+                                /** @description Aptos nos 4 gates; nulo sem congelamento completo ou se suprimido */
+                                aptosNosGates: number | null;
+                                congelamentoCompleto: boolean;
+                                /** @description true: grupo menor que MIN_GRUPO_AGREGADO para o IBVAR; os números vêm nulos */
+                                suprimido: boolean;
+                            }[];
+                            meta: {
+                                /** @description META_EVOLUCAO: alta esperada da média, em % */
+                                percentual: number;
+                                cicloBase: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                cicloAtual: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                mediaBase: number | null;
+                                mediaAtual: number | null;
+                                variacaoPercentual: number | null;
+                                /** @description Nula sem dois ciclos fechados, com média oculta ou com média base zero */
+                                atingida: boolean | null;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3710,6 +7409,17 @@ export interface paths {
                                     /** @enum {string} */
                                     tipo: "T" | "A" | "R";
                                     calculado: boolean;
+                                    /**
+                                     * @description Se a nota do indicador exige texto de evidência (treinador e sugestão do atleta). O gestor muda em PUT /parametros (indicadores)
+                                     * @enum {string}
+                                     */
+                                    evidencia: "obrigatoria" | "opcional";
+                                    /** @description A nota depende de arquivo anexado (ex.: foto da balança no peso) */
+                                    exigeAnexo: boolean;
+                                    /** @description O atleta pode sugerir a nota deste indicador (POST /autoavaliacoes). O gestor muda em PUT /parametros (indicadores) */
+                                    autoavaliacao: boolean;
+                                    /** @description Texto de ajuda do indicador, mostrado embaixo do campo; nulo = sem orientação. O gestor muda em PUT /parametros (indicadores) */
+                                    orientacao: string | null;
                                 }[];
                             }[];
                             faixas: {
@@ -3732,6 +7442,15 @@ export interface paths {
                                 alturaMinCm: number | null;
                                 alturaMediaCm: number | null;
                                 alturaMaxCm: number | null;
+                                /** @description De onde vem a faixa de peso da classe; nula se não informada */
+                                fonte: {
+                                    /** @description Documento que traz a faixa de peso */
+                                    documento: string | null;
+                                    /** @description Versão do documento, como ele a informa */
+                                    versao: string | null;
+                                    /** @description Data do documento (AAAA-MM-DD) */
+                                    data: string | null;
+                                } | null;
                             }[];
                             rubricas: {
                                 /** @description Nulo = escala geral de 0 a 5 */
@@ -3761,7 +7480,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3778,7 +7497,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3790,7 +7509,7 @@ export interface paths {
             };
         };
         /**
-         * Atualiza pesos, faixas de score, rubricas, regras e classes
+         * Atualiza pesos, faixas de score, rubricas, regras, evidência por indicador e classes
          * @description O ranking recalcula sozinho (o cálculo é feito na leitura). Grava auditoria com antes e depois.
          */
         put: {
@@ -3821,10 +7540,20 @@ export interface paths {
                         }[];
                         /** @description Ids de pilar cujas rubricas próprias saem (volta a valer a escala geral). A escala geral não pode ser removida: nulo ou vazio dão 400 com mensagem explícita */
                         rubricasRemover?: (string | null)[];
-                        /** @description {codigo: valor}; códigos aceitos: P3, G1, G2, G3, G4, RANKING_CBVELA, TERMO_EXIGE_REACEITE, PERF_PONTOS. O valor segue o formato lido em GET /parametros. PERF_PONTOS: { ativa, indicador (opcional, padrão perf_nacional; precisa ser um indicador T não calculado), faixas: [{ ate, nota }] }, ate crescente e nota de 0 a 5 que não diminui */
+                        /** @description {codigo: valor}; códigos aceitos: P3, G1, G2, G3, G4, RANKING_CBVELA, TERMO_EXIGE_REACEITE, PERF_RESULTADOS, META_EVOLUCAO, MIN_GRUPO_AGREGADO, TENDENCIA. TENDENCIA (D13): { limiar (maior que 0, até 100) }, pontos de score da tendência do atleta e da faixa de na média da turma. META_EVOLUCAO (D12): { percentual (0 a 1000) }, meta de alta da média do score da turma sobre o ciclo fechado anterior. MIN_GRUPO_AGREGADO (D12): { minimo (inteiro, 1 a 1000) }, menor grupo que o IBVAR vê em agregado. O valor segue o formato lido em GET /parametros. PERF_RESULTADOS (regra provisória P12): { edicoes_max (1 a 20), sem_resultado (nota 0 a 5 do nível sem resultado validado, padrão 0), niveis: { mundial, continental, nacional } }, cada nível uma lista de faixas { ate, nota } em ordem: ate crescente (inteiro, 1 a 500), só a última com ate nulo (qualquer colocação), nota inteira de 0 a 5 que não aumenta */
                         regras?: {
                             [key: string]: unknown;
                         };
+                        /** @description Regra por indicador: `evidencia` (obrigatoria ou opcional), `autoavaliacao` (boolean) e/ou `orientacao` (texto de ajuda, até 1.000 caracteres; null remove). A auditoria guarda antes e depois (da orientação, só se havia texto) */
+                        indicadores?: {
+                            id: string;
+                            /** @enum {string} */
+                            evidencia?: "obrigatoria" | "opcional";
+                            /** @description Liga ou desliga a autoavaliação do indicador (só tipo T não calculado pode ligar) */
+                            autoavaliacao?: boolean;
+                            /** @description Texto de ajuda do indicador (até 1.000 caracteres); null remove */
+                            orientacao?: string | null;
+                        }[];
                         classes?: {
                             id: string;
                             pesoMinKg?: number;
@@ -3836,6 +7565,13 @@ export interface paths {
                             alturaMaxCm?: number | null;
                             /** @description Não dá para desativar classe com atleta ativo */
                             ativa?: boolean;
+                            /** @description Fonte da faixa de peso (documento, versão e data), só informativa. Nulo limpa. A auditoria guarda antes e depois */
+                            fonte?: {
+                                documento: string;
+                                versao?: string | null;
+                                /** Format: date */
+                                data?: string | null;
+                            } | null;
                         }[];
                     };
                 };
@@ -3861,6 +7597,17 @@ export interface paths {
                                     /** @enum {string} */
                                     tipo: "T" | "A" | "R";
                                     calculado: boolean;
+                                    /**
+                                     * @description Se a nota do indicador exige texto de evidência (treinador e sugestão do atleta). O gestor muda em PUT /parametros (indicadores)
+                                     * @enum {string}
+                                     */
+                                    evidencia: "obrigatoria" | "opcional";
+                                    /** @description A nota depende de arquivo anexado (ex.: foto da balança no peso) */
+                                    exigeAnexo: boolean;
+                                    /** @description O atleta pode sugerir a nota deste indicador (POST /autoavaliacoes). O gestor muda em PUT /parametros (indicadores) */
+                                    autoavaliacao: boolean;
+                                    /** @description Texto de ajuda do indicador, mostrado embaixo do campo; nulo = sem orientação. O gestor muda em PUT /parametros (indicadores) */
+                                    orientacao: string | null;
                                 }[];
                             }[];
                             faixas: {
@@ -3883,6 +7630,15 @@ export interface paths {
                                 alturaMinCm: number | null;
                                 alturaMediaCm: number | null;
                                 alturaMaxCm: number | null;
+                                /** @description De onde vem a faixa de peso da classe; nula se não informada */
+                                fonte: {
+                                    /** @description Documento que traz a faixa de peso */
+                                    documento: string | null;
+                                    /** @description Versão do documento, como ele a informa */
+                                    versao: string | null;
+                                    /** @description Data do documento (AAAA-MM-DD) */
+                                    data: string | null;
+                                } | null;
                             }[];
                             rubricas: {
                                 /** @description Nulo = escala geral de 0 a 5 */
@@ -3912,7 +7668,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3929,7 +7685,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -3946,7 +7702,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4014,7 +7770,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4031,7 +7787,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4048,7 +7804,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4117,7 +7873,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4134,7 +7890,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4151,7 +7907,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4168,7 +7924,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4246,7 +8002,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4263,7 +8019,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4280,7 +8036,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4297,7 +8053,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4314,7 +8070,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4342,8 +8098,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Fecha o ciclo e congela o score e a faixa dos atletas do piloto
-         * @description Calcula score e faixa de todos os atletas ativos com o termo do piloto aceito, grava em scores_ciclo e marca o ciclo como fechado, numa transação. Alimenta o histórico de score da ficha. Se nenhum atleta tiver o termo aceito mas houver atletas ativos, recusa com 409 (nada a congelar).
+         * Fecha o ciclo e congela score, faixa, pilares, gates, status final e perfil de suporte
+         * @description Calcula score e faixa de todos os atletas ativos com o termo do piloto aceito, grava em scores_ciclo e congela também a nota de cada pilar, o status de cada gate, o status final e o perfil de suporte; marca o ciclo como fechado (fechadoEm) numa só transação. Alimenta o histórico de score da ficha e o painel de investimento (GET /investimento?ciclo=). Depois do commit, avisa por e-mail as contas ativas de gestor e IBVAR (sem score nem nome de atleta); falha no envio não desfaz o fechamento nem muda a resposta. Se nenhum atleta tiver o termo aceito mas houver atletas ativos, recusa com 409 (nada a congelar).
          */
         post: {
             parameters: {
@@ -4390,7 +8146,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4407,7 +8163,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4424,7 +8180,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4441,7 +8197,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4458,7 +8214,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4534,7 +8290,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4551,7 +8307,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4568,7 +8324,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4585,7 +8341,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4602,7 +8358,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4690,7 +8446,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4707,7 +8463,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4724,7 +8480,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4741,7 +8497,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4758,7 +8514,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -4770,160 +8526,6 @@ export interface paths {
             };
         };
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/atletas/{id}/resultados": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Lança à mão um resultado internacional, com o link do resultado oficial
-         * @description Grava como internacional, fonte manual e sem pontos do Ranking CBVela. Os gates G2 e G3 são recalculados na leitura. Treinador só lança para os próprios atletas.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        nivel: "mundial" | "sul_americano" | "continental" | "internacional_aberto";
-                        evento: string;
-                        /**
-                         * Format: date
-                         * @description AAAA-MM-DD, não futura
-                         */
-                        data: string;
-                        posicao: number;
-                        tamanhoFrota: number;
-                        /** Format: uri */
-                        linkOficial: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Default Response */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: string;
-                            nivel: string;
-                            evento: string;
-                            posicao: number;
-                            tamanhoFrota: number;
-                            internacional: boolean;
-                            pontosCbvela: number | null;
-                            /** @enum {string} */
-                            fonte: "ranking_cbvela" | "manual";
-                            linkOficial: string | null;
-                        };
-                    };
-                };
-                /** @description Default Response */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
-                            mensagem: string;
-                            campos?: {
-                                campo: string;
-                                mensagem: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
-                            mensagem: string;
-                            campos?: {
-                                campo: string;
-                                mensagem: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
-                            mensagem: string;
-                            campos?: {
-                                campo: string;
-                                mensagem: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
-                            mensagem: string;
-                            campos?: {
-                                campo: string;
-                                mensagem: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
-                            mensagem: string;
-                            campos?: {
-                                campo: string;
-                                mensagem: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
         delete?: never;
         options?: never;
         head?: never;
@@ -4997,7 +8599,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5014,7 +8616,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5031,7 +8633,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5059,7 +8661,7 @@ export interface paths {
         };
         /**
          * Exporta em JSON tudo o que o sistema guarda sobre o atleta (LGPD)
-         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados, decisões de gate, financeiro, pedidos de revisão e pedidos do titular, foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo) e plano individual (todas as versões). Só o atleta logado, só os próprios dados.
+         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados (com a edição e a situação da validação), decisões de gate, financeiro, pedidos de revisão (com o recurso, se houve) e pedidos do titular, telefone, validade do passaporte e aptidões conferidas, pesagens informadas, pedidos de ajuste recebidos, mensagens das conversas (D16), foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo) e plano individual (todas as versões). Só o atleta logado, só os próprios dados.
          */
         get: {
             parameters: {
@@ -5118,6 +8720,26 @@ export interface paths {
                             pedidosTitular: {
                                 [key: string]: unknown;
                             }[];
+                            /** @description Aptidão para a prática esportiva conferida pelo gestor (apto, quem conferiu e quando; sem arquivo) */
+                            aptidoes: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Pesagens informadas pelo atleta: peso, situação (pendente, validada ou recusada), motivo da recusa, quem decidiu e quando (a foto da balança não é exportada e é apagada depois da decisão) */
+                            pesagens: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Conquistas informadas pelo atleta: título, ano, situação (pendente, validada ou recusada), motivo da recusa, quem decidiu e quando (o anexo está em evidencias). Os pódios dos resultados validados estão em resultados */
+                            conquistas: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Pedidos de ajuste recebidos do treinador ou do gestor: mensagem, indicador, quem pediu e quando */
+                            pedidosAjuste: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Mensagens das conversas do atleta (com o treinador, atuais e antigas, e com a gestão): conversa, tipo, texto, autor (nome e papel) e data */
+                            mensagens: {
+                                [key: string]: unknown;
+                            }[];
                             /** @description Foto de perfil da conta do atleta (o caminho interno não é exportado) */
                             foto: {
                                 tipoMime: string;
@@ -5143,7 +8765,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5160,7 +8782,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5177,7 +8799,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5255,7 +8877,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5272,7 +8894,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5326,7 +8948,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5343,7 +8965,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5360,7 +8982,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5377,7 +8999,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5467,7 +9089,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5484,7 +9106,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5501,7 +9123,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5518,7 +9140,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5535,7 +9157,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5613,7 +9235,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5630,7 +9252,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5647,7 +9269,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5664,7 +9286,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5681,7 +9303,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5781,7 +9403,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5798,7 +9420,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5815,7 +9437,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5832,7 +9454,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5849,7 +9471,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5875,12 +9497,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Lista as evidências anexadas ao atleta (mais recentes primeiro)
-         * @description Gestor, treinador dos próprios atletas e o próprio atleta. IBVAR não tem acesso.
+         * Lista os anexos do atleta (mais recentes primeiro)
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta. IBVAR não tem acesso. Cada item traz `categoria` e `enviadoPor.papel`. Filtro opcional `categoria`. `usoBytes` e `cotaBytes` mostram a cota de anexos do atleta (soma de todos os anexos não removidos, sem o filtro).
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    categoria?: "evidencia" | "sumula" | "balanca";
+                };
                 header?: never;
                 path: {
                     id: string;
@@ -5903,10 +9527,41 @@ export interface paths {
                                 tipoMime: string;
                                 tamanhoBytes: number;
                                 indicadorId: string | null;
+                                /**
+                                 * @description evidencia, sumula ou balanca
+                                 * @enum {string}
+                                 */
+                                categoria: "evidencia" | "sumula" | "balanca";
+                                /** @description Papel de quem enviou o arquivo (sem nome nem e-mail) */
+                                enviadoPor: {
+                                    /** @enum {string} */
+                                    papel: "gestor" | "treinador" | "atleta";
+                                };
                                 /** @description Instante ISO */
                                 enviadoEm: string;
                                 /** @description Instante ISO em que o arquivo foi removido (DELETE /evidencias/{id} ou limpeza de anexo não vinculado); nulo = disponível. Atleta anonimizado não aparece na API (404) */
                                 removidoEm: string | null;
+                            }[];
+                            /** @description Soma dos anexos não removidos do atleta */
+                            usoBytes: number;
+                            /** @description Cota de anexos por atleta */
+                            cotaBytes: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
                             }[];
                         };
                     };
@@ -5919,7 +9574,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5936,7 +9591,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5953,7 +9608,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -5966,8 +9621,8 @@ export interface paths {
         };
         put?: never;
         /**
-         * Anexa uma evidência (PDF, JPEG ou PNG de até 5 MB) ao atleta
-         * @description Gestor, ou treinador dos próprios atletas. O arquivo vai em base64, é conferido pelo tamanho e pela assinatura e fica no Storage privado. Use o `id` retornado como `anexoId` ao lançar a nota. Limite de 20 envios por minuto por usuário (429 `limite_excedido`).
+         * Anexa um arquivo (PDF, JPEG ou PNG de até 5 MB) ao atleta
+         * @description Gestor, treinador dos próprios atletas, ou o atleta no próprio cadastro (outro atleta: 404). IBVAR: 403. O arquivo vai em base64, é conferido pelo tamanho e pela assinatura e fica no Storage privado. `categoria`: evidencia (padrão), sumula ou balanca. Use o `id` retornado como `anexoId` ao lançar a nota. Cota de 200 MB por atleta (soma dos anexos não removidos): acima dela, 413 `cota_excedida`. Limite de 20 envios por minuto por usuário (429 `limite_excedido`).
          */
         post: {
             parameters: {
@@ -5986,6 +9641,11 @@ export interface paths {
                         tipoMime: "application/pdf" | "image/jpeg" | "image/png";
                         conteudoBase64: string;
                         indicadorId?: string;
+                        /**
+                         * @default evidencia
+                         * @enum {string}
+                         */
+                        categoria?: "evidencia" | "sumula" | "balanca";
                     };
                 };
             };
@@ -6003,6 +9663,16 @@ export interface paths {
                             tipoMime: string;
                             tamanhoBytes: number;
                             indicadorId: string | null;
+                            /**
+                             * @description evidencia, sumula ou balanca
+                             * @enum {string}
+                             */
+                            categoria: "evidencia" | "sumula" | "balanca";
+                            /** @description Papel de quem enviou o arquivo (sem nome nem e-mail) */
+                            enviadoPor: {
+                                /** @enum {string} */
+                                papel: "gestor" | "treinador" | "atleta";
+                            };
                             /** @description Instante ISO */
                             enviadoEm: string;
                             /** @description Instante ISO em que o arquivo foi removido (DELETE /evidencias/{id} ou limpeza de anexo não vinculado); nulo = disponível. Atleta anonimizado não aparece na API (404) */
@@ -6018,7 +9688,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6035,7 +9705,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6052,7 +9722,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6069,7 +9739,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6086,7 +9756,24 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6103,7 +9790,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6120,7 +9807,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6180,7 +9867,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6197,7 +9884,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6214,7 +9901,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6231,7 +9918,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6248,7 +9935,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6279,7 +9966,7 @@ export interface paths {
         post?: never;
         /**
          * Remove um anexo que ainda não foi ligado a nenhuma avaliação
-         * @description Gestor, ou quem enviou o anexo (treinador) desde que ainda tenha acesso ao atleta. Só vale para anexo sem avaliação ligada (`anexoId`): anexo já ligado responde 409; inexistente ou de atleta fora do acesso, 404; já removido, 410. O arquivo sai do Storage primeiro (falha = 503 e nada muda). O registro não é apagado: fica marcado como removido (`removidoEm`, nome `removido`), a mesma marcação da anonimização. Auditoria `remover_anexo` só com ids.
+         * @description Gestor, ou quem enviou o anexo (treinador, ou o próprio atleta no próprio cadastro) desde que ainda tenha acesso ao atleta; anexo de outro atleta dá 404 para o atleta. Só vale para anexo sem avaliação ligada (`anexoId`): anexo já ligado responde 409; inexistente ou de atleta fora do acesso, 404; já removido, 410. O arquivo sai do Storage primeiro (falha = 503 e nada muda). O registro não é apagado: fica marcado como removido (`removidoEm`, nome `removido`), a mesma marcação da anonimização. Auditoria `remover_anexo` só com ids.
          */
         delete: {
             parameters: {
@@ -6309,7 +9996,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6326,7 +10013,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6343,7 +10030,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6360,7 +10047,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6377,7 +10064,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6394,7 +10081,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6459,7 +10146,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6476,7 +10163,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6548,7 +10235,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6565,7 +10252,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6582,7 +10269,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6599,7 +10286,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6616,7 +10303,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6695,7 +10382,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6712,7 +10399,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6729,7 +10416,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6746,7 +10433,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6763,7 +10450,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6825,7 +10512,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6842,7 +10529,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6859,7 +10546,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6876,7 +10563,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6893,7 +10580,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6910,7 +10597,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6959,6 +10646,8 @@ export interface paths {
                             texto: string;
                             /** @description Instante ISO */
                             vigenteDesde: string;
+                            /** @description A versão cita foto e bio entre o que vai ao IBVAR */
+                            incluiFotoBio: boolean;
                         };
                     };
                 };
@@ -6970,7 +10659,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -6987,7 +10676,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7038,6 +10727,8 @@ export interface paths {
                             texto: string;
                             /** @description Instante ISO em que passa a valer */
                             vigenteDesde: string;
+                            /** @description A versão cita foto e bio entre o que vai ao IBVAR */
+                            incluiFotoBio: boolean;
                         };
                     };
                 };
@@ -7049,7 +10740,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7066,7 +10757,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7083,7 +10774,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7150,7 +10841,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7167,7 +10858,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7184,7 +10875,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7201,7 +10892,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7251,6 +10942,8 @@ export interface paths {
                             vigenteDesde: string;
                             /** @description Instante ISO */
                             criadoEm: string;
+                            /** @description A versão cita foto e bio entre o que vai ao IBVAR: só quem aceitou uma versão assim e consentiu com o IBVAR tem foto e bio vistas por ele */
+                            incluiFotoBio: boolean;
                             /** @description É a versão vigente agora */
                             vigente: boolean;
                             /** @description Ainda não começou a valer */
@@ -7268,7 +10961,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7285,7 +10978,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7299,7 +10992,7 @@ export interface paths {
         put?: never;
         /**
          * Publica uma nova versão do termo (gestor)
-         * @description A versão passa a valer em vigenteDesde, que não pode estar no passado nem ser anterior ou igual à vigência de outra versão (inclusive futura). Quem aceitou só a anterior fica com aceite pendente; se o ranking os exclui depende da regra TERMO_EXIGE_REACEITE. A auditoria não guarda o texto.
+         * @description A versão passa a valer em vigenteDesde, que não pode estar no passado nem ser anterior ou igual à vigência de outra versão (inclusive futura). Quem aceitou só a anterior fica com aceite pendente; se o ranking os exclui depende da regra TERMO_EXIGE_REACEITE. `incluiFotoBio` (padrão falso): marque na versão cujo texto cita foto e bio entre o que vai ao IBVAR (decisão D). O IBVAR só recebe foto e bio de quem consentiu com ele e tem como aceite mais recente uma versão com essa marca; quem não aceitar a versão nova segue sem foto e sem bio para ele. A auditoria não guarda o texto.
          */
         post: {
             parameters: {
@@ -7314,6 +11007,8 @@ export interface paths {
                         versao: string;
                         titulo: string;
                         texto: string;
+                        /** @default false */
+                        incluiFotoBio?: boolean;
                         /** Format: date-time */
                         vigenteDesde: string;
                     };
@@ -7333,6 +11028,8 @@ export interface paths {
                             vigenteDesde: string;
                             /** @description Instante ISO */
                             criadoEm: string;
+                            /** @description A versão cita foto e bio entre o que vai ao IBVAR: só quem aceitou uma versão assim e consentiu com o IBVAR tem foto e bio vistas por ele */
+                            incluiFotoBio: boolean;
                             /** @description É a versão vigente agora */
                             vigente: boolean;
                             /** @description Ainda não começou a valer */
@@ -7350,7 +11047,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7367,7 +11064,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7384,7 +11081,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @enum {string} */
-                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
                             mensagem: string;
                             campos?: {
                                 campo: string;
@@ -7395,6 +11092,855 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/avisos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Meus avisos (sino), do mais recente para o mais antigo
+         * @description Avisos do próprio usuário (gestor, treinador e atleta). IBVAR não recebe avisos: lista vazia. Paginação por data: `antesDe` é o `proximoAntesDe` da página anterior (instante ISO; só vêm avisos criados antes dele). `limite` de 1 a 100 (padrão 20). Aviso que cita um atleta só aparece enquanto o usuário pode ver esse atleta. Para `pedido_ajuste` o item traz `mensagem` e `indicador` (o destinatário é o próprio atleta); o front monta a frase dos demais tipos.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    apenasNaoLidos?: "true" | "false";
+                    limite?: number;
+                    antesDe?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                id: string;
+                                /** @enum {string} */
+                                tipo: "atleta_respondeu" | "atleta_anexou" | "atleta_atualizou_perfil" | "atleta_completou_cadastro" | "pedido_ajuste" | "sugestao_respondida" | "atleta_autoavaliou" | "autoavaliacao_corrigida" | "atleta_enviou_pesagem" | "pesagem_validada" | "pesagem_recusada" | "atleta_lancou_resultado" | "resultado_validado" | "resultado_recusado" | "atleta_registrou_conquista" | "conquista_validada" | "conquista_recusada" | "mensagem_nova";
+                                /** @description Instante ISO */
+                                criadoEm: string;
+                                /** @description Instante ISO; nulo = não lido */
+                                lidoEm: string | null;
+                                atleta: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Só ids e nomes de campo: `{ indicadorId }`, `{ anexoId, categoria }`, `{ campos }`, `{ pedidoAjusteId }`, `{ sugestaoId, status }`, `{ quantidade }` (atleta_autoavaliou), `{ pesagemId }` (pesagens) */
+                                referencia: {
+                                    [key: string]: unknown;
+                                };
+                                criadoPor: {
+                                    nome: string;
+                                    papel: string;
+                                } | null;
+                                /** @description Texto puro do pedido de ajuste (tipo `pedido_ajuste`); nulo nos demais tipos */
+                                mensagem: string | null;
+                                /** @description Indicador do pedido de ajuste ou da resposta (`referencia.indicadorId`) */
+                                indicador: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                            }[];
+                            /** @description Passe em `antesDe` para a próxima página; nulo = não há mais */
+                            proximoAntesDe: string | null;
+                            /** @description Total de não lidos do usuário (não só da página) */
+                            naoLidos: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/avisos/lidos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Marca todos os meus avisos como lidos
+         * @description Gestor, treinador e atleta. IBVAR: 403. Não gera auditoria (dado de interface).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            marcados: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/avisos/{id}/lido": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Marca um aviso meu como lido
+         * @description Só o dono do aviso (o de outra pessoa responde 404). Repetir é aceito e mantém a primeira data. Gestor, treinador e atleta; IBVAR: 403. Não gera auditoria (dado de interface).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": null;
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/pedidos-ajuste": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pede ao atleta que revise algo (indicador ou perfil)
+         * @description Gestor, ou o treinador do atleta (o de outro atleta recebe 404). Atleta e IBVAR: 403. `indicadorId` é opcional: sem ele o pedido é sobre o perfil ou algo geral. `mensagem` é texto puro de 1 a 300 caracteres (o front não interpreta HTML). Grava o pedido (só inserção) e cria o aviso `pedido_ajuste` na conta do atleta; se o atleta ainda não tem conta de login, grava o pedido e responde `avisoEnviado: false`. A auditoria guarda só ids (nunca a mensagem).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        mensagem: string;
+                        indicadorId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Falso quando o atleta ainda não tem conta de login (o pedido fica gravado) */
+                            avisoEnviado: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sugestoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sugestões ao gestor: todas (gestor) ou só as minhas (treinador)
+         * @description Gestor vê todas; treinador, só as próprias. Atleta e IBVAR: 403. Do mais recente para o mais antigo, no máximo 200. `faixaAtual` traz a faixa de peso vigente da classe, para o gestor comparar com a `proposta`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "aberta" | "aprovada" | "recusada";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                id: string;
+                                /** @enum {string} */
+                                tipo: "class_fit" | "parametro" | "sistema";
+                                /** @enum {string} */
+                                status: "aberta" | "aprovada" | "recusada";
+                                texto: string;
+                                autor: {
+                                    nome: string;
+                                };
+                                classe: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Só em `class_fit`: a faixa de peso proposta (kg) */
+                                proposta: {
+                                    pesoMinKg: number;
+                                    pesoMedioKg: number;
+                                    pesoMaxKg: number;
+                                } | null;
+                                /** @description Só em `class_fit`: a faixa de peso vigente da classe, para o gestor comparar */
+                                faixaAtual: {
+                                    pesoMinKg: number;
+                                    pesoMedioKg: number;
+                                    pesoMaxKg: number;
+                                } | null;
+                                resposta: string | null;
+                                respondidoPor: {
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO */
+                                respondidoEm: string | null;
+                                /** @description Instante ISO */
+                                criadoEm: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * O treinador sugere uma mudança ao gestor
+         * @description Só o treinador (gestor, atleta e IBVAR: 403). `tipo`: `class_fit` (exige `classeId` existente e `proposta` com `pesoMinKg` <= `pesoMedioKg` <= `pesoMaxKg`, de 0 a 400 kg, arredondados a 1 casa, as mesmas regras de PUT /parametros), `parametro` ou `sistema` (sem `classeId` nem `proposta`). `texto` de 1 a 1.000 caracteres, texto puro. Até 10 sugestões abertas por autor: acima disso, 409. Nada muda nos parâmetros: o gestor responde em PUT /sugestoes/{id}.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        tipo: "class_fit" | "parametro" | "sistema";
+                        classeId?: string;
+                        proposta?: {
+                            pesoMinKg: number;
+                            pesoMedioKg: number;
+                            pesoMaxKg: number;
+                        };
+                        texto: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @enum {string} */
+                            tipo: "class_fit" | "parametro" | "sistema";
+                            /** @enum {string} */
+                            status: "aberta" | "aprovada" | "recusada";
+                            texto: string;
+                            autor: {
+                                nome: string;
+                            };
+                            classe: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Só em `class_fit`: a faixa de peso proposta (kg) */
+                            proposta: {
+                                pesoMinKg: number;
+                                pesoMedioKg: number;
+                                pesoMaxKg: number;
+                            } | null;
+                            /** @description Só em `class_fit`: a faixa de peso vigente da classe, para o gestor comparar */
+                            faixaAtual: {
+                                pesoMinKg: number;
+                                pesoMedioKg: number;
+                                pesoMaxKg: number;
+                            } | null;
+                            resposta: string | null;
+                            respondidoPor: {
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            respondidoEm: string | null;
+                            /** @description Instante ISO */
+                            criadoEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sugestoes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * O gestor aprova ou recusa uma sugestão
+         * @description Só o gestor. `resposta` é obrigatória ao recusar (até 1.000 caracteres) e opcional ao aprovar. Só sugestão aberta: já respondida dá 409. Aprovar NÃO muda o parâmetro: o front leva o gestor a Parâmetros com a proposta preenchida e a mudança segue por PUT /parametros, com a auditoria de sempre. Gera o aviso `sugestao_respondida` ao autor (`referencia`: `{ sugestaoId, status }`). Auditoria `responder_sugestao` só com ids e status.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "aprovada" | "recusada";
+                        resposta?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @enum {string} */
+                            tipo: "class_fit" | "parametro" | "sistema";
+                            /** @enum {string} */
+                            status: "aberta" | "aprovada" | "recusada";
+                            texto: string;
+                            autor: {
+                                nome: string;
+                            };
+                            classe: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Só em `class_fit`: a faixa de peso proposta (kg) */
+                            proposta: {
+                                pesoMinKg: number;
+                                pesoMedioKg: number;
+                                pesoMaxKg: number;
+                            } | null;
+                            /** @description Só em `class_fit`: a faixa de peso vigente da classe, para o gestor comparar */
+                            faixaAtual: {
+                                pesoMinKg: number;
+                                pesoMedioKg: number;
+                                pesoMaxKg: number;
+                            } | null;
+                            resposta: string | null;
+                            respondidoPor: {
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            respondidoEm: string | null;
+                            /** @description Instante ISO */
+                            criadoEm: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;

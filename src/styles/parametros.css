@@ -114,3 +114,100 @@
   text-align: center;
   border-bottom: 1px solid var(--line);
 }
+
+.par-evid-pilar {
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.par-evid-pilar legend {
+  padding: 0;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.par-evid-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.par-evid-lista li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.par-evid-nome {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.par-evid-auto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Faixas de colocação da regra PERF_RESULTADOS (D10). */
+.par-res-faixas {
+  width: 100%;
+  table-layout: fixed;
+}
+.par-res-faixas th,
+.par-res-faixas td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+.par-res-faixas input {
+  width: 100%;
+  min-width: 0;
+  max-width: 6rem;
+  min-height: 34px;
+}
+.par-res-faixas col:first-child,
+.par-res-faixas th:first-child {
+  width: 3.5rem;
+}
+.par-res-faixas th:last-child {
+  width: 3rem;
+}
+.par-evid-orientacao {
+  flex: 1 1 100%;
+}
+.par-evid-orientacao textarea {
+  width: 100%;
+  min-height: 3.5rem;
+}
+
+/* Opção do termo que inclui foto e mini bio (D14). */
+.par-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 600;
+}
+.par-check input {
+  margin-top: 4px;
+}
+
+/* Fonte da faixa de peso (D18). */
+.par-classes .par-fonte {
+  width: 100%;
+  min-width: 6rem;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  font: inherit;
+}
+.par-classes .par-fonte-fDoc {
+  min-width: 14rem;
+}
+.par-classes .par-fonte-fData {
+  min-width: 9rem;
+}

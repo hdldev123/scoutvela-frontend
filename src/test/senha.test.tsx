@@ -86,6 +86,11 @@ describe("esqueci a senha", () => {
 
 describe("redefinir senha", () => {
   const sessao = { data: { session: { access_token: "t", user: { id: "u" } } } };
+  /** JWT só com o payload que a tela lê (o sub); a assinatura é conferida pelo Auth no updateUser. */
+  const tokenDe = (sub: string) =>
+    `cab.${btoa(JSON.stringify({ sub })).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_")}.ass`;
+  const linkDe = (sub: string, tipo = "recovery") =>
+    `#access_token=${tokenDe(sub)}&refresh_token=r&type=${tipo}`;
 
   function preencher(senha: string, confirmacao: string) {
     fireEvent.change(screen.getByLabelText("Nova senha"), { target: { value: senha } });
@@ -96,6 +101,7 @@ describe("redefinir senha", () => {
   }
 
   it("valida tamanho e confirmação antes de chamar updateUser", async () => {
+    window.location.hash = linkDe("u");
     getSession.mockResolvedValue(sessao);
     montar(<TelaRedefinirSenha />);
     await screen.findByRole("heading", { name: "Redefinir senha" });
@@ -109,6 +115,7 @@ describe("redefinir senha", () => {
   });
 
   it("salva a senha e leva para a raiz", async () => {
+    window.location.hash = linkDe("u");
     getSession.mockResolvedValue(sessao);
     updateUser.mockResolvedValue({ error: null });
     montar(<TelaRedefinirSenha />);
@@ -119,18 +126,53 @@ describe("redefinir senha", () => {
   });
 
   it("usa o título Definir senha para convite", async () => {
-    window.location.hash = "#access_token=abc&type=invite";
+    window.location.hash = linkDe("u", "invite");
     getSession.mockResolvedValue(sessao);
     montar(<TelaRedefinirSenha />);
     expect(await screen.findByRole("heading", { name: "Definir senha" })).toBeTruthy();
   });
 
   it("sem sessão mostra link inválido e caminho para pedir outro", async () => {
+    window.location.hash = linkDe("u");
     montar(<TelaRedefinirSenha />);
-    expect((await screen.findByRole("alert")).textContent).toMatch(/inválido ou expirou/);
+    expect((await screen.findByRole("alert")).textContent).toMatch(
+      /inválido, expirou ou já foi usado/,
+    );
     expect(screen.getByRole("link", { name: "Ir para o login" }).getAttribute("href")).toBe(
       "/entrar",
     );
     expect(screen.queryByLabelText("Nova senha")).toBeNull();
+  });
+  it("A7: link com erro (já usado) não troca a senha da sessão que já estava aberta", async () => {
+    // O gestor está logado; o link de convite de outra pessoa já foi usado e volta com erro.
+    window.location.hash = "#error=access_denied&error_code=otp_expired&error_description=x";
+    getSession.mockResolvedValue({
+      data: { session: { access_token: "t", user: { id: "gestor" } } },
+    });
+    montar(<TelaRedefinirSenha />);
+    expect((await screen.findByRole("heading", { name: "Link inválido" })).textContent).toBe(
+      "Link inválido",
+    );
+    expect(screen.queryByLabelText("Nova senha")).toBeNull();
+    expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  it("A7: sem link no endereço, a página não troca a senha da conta em uso", async () => {
+    window.location.hash = "";
+    getSession.mockResolvedValue(sessao);
+    montar(<TelaRedefinirSenha />);
+    expect(await screen.findByRole("heading", { name: "Abra pelo link do e-mail" })).toBeTruthy();
+    expect(screen.queryByLabelText("Nova senha")).toBeNull();
+  });
+
+  it("A7: token do link de outra conta que não a da sessão não mostra o formulário", async () => {
+    window.location.hash = linkDe("outra-conta", "invite");
+    getSession.mockResolvedValue({
+      data: { session: { access_token: "t", user: { id: "gestor" } } },
+    });
+    montar(<TelaRedefinirSenha />);
+    expect(await screen.findByRole("heading", { name: "Link inválido" })).toBeTruthy();
+    expect(screen.queryByLabelText("Nova senha")).toBeNull();
+    expect(updateUser).not.toHaveBeenCalled();
   });
 });

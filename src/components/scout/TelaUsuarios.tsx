@@ -2,9 +2,12 @@ import { useEffect, useId, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialogo } from "./Dialogo";
 import { EstadoVazio } from "./EstadoVazio";
-import { fmtInstante } from "./formato";
+import { LinkWsId } from "./LinkWsId";
+import { fmtInstante, nomeOuWsId } from "./formato";
+import { MensagemCampo } from "./MensagemCampo";
+import { atributosDoCampo } from "./campo-util";
 import { useTreinadores } from "@/lib/api/cadastro";
-import { mensagemDeErro } from "@/lib/api/cliente";
+import { ErroApi, errosPorCampo, mensagemDeErro } from "@/lib/api/cliente";
 import { useParametros } from "@/lib/api/parametros";
 import {
   useAlterarAtivo,
@@ -20,6 +23,7 @@ import {
   type Usuario,
 } from "@/lib/api/usuarios";
 import { useMe } from "@/lib/auth/sessao";
+import { mensagemWsId, normalizarWsId } from "@/lib/world-sailing";
 import "@/styles/contas.css";
 
 const PAPEIS: Record<string, string> = {
@@ -158,7 +162,10 @@ function NovaConta() {
                 <option value="">Escolha</option>
                 {semConta.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.nome} ({a.velaid}){a.termoAceito ? "" : " · termo pendente"}
+                    {nomeOuWsId(a)}
+                    {a.velaid ? ` (${a.velaid})` : ""}
+                    {a.cadastroCompleto ? "" : " · cadastro incompleto"}
+                    {a.termoAceito ? "" : " · termo pendente"}
                   </option>
                 ))}
               </select>
@@ -362,11 +369,13 @@ function AtletasDoPiloto() {
   const idBusca = useId();
   const idSituacao = useId();
   const idTermo = useId();
+  const idCadastro = useId();
   const idClasse = useId();
   const idTreinador = useId();
   const [busca, setBusca] = useState("");
   const [ativo, setAtivo] = useState<Sim>("");
   const [termoAceito, setTermoAceito] = useState<Sim>("");
+  const [cadastro, setCadastro] = useState<Sim>("");
   const [classeId, setClasseId] = useState("");
   const [treinadorId, setTreinadorId] = useState("");
   const buscaAtrasada = useAtrasado(busca.trim());
@@ -374,6 +383,7 @@ function AtletasDoPiloto() {
     ...(buscaAtrasada ? { busca: buscaAtrasada } : {}),
     ...(ativo ? { ativo } : {}),
     ...(termoAceito ? { termoAceito } : {}),
+    ...(cadastro ? { cadastroCompleto: cadastro } : {}),
     ...(classeId ? { classeId } : {}),
     ...(treinadorId ? { treinadorId } : {}),
   };
@@ -399,7 +409,7 @@ function AtletasDoPiloto() {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             maxLength={80}
-            placeholder="Nome ou VelaID"
+            placeholder="Nome, ID World Sailing ou VelaID"
             autoComplete="off"
           />
         </label>
@@ -421,6 +431,18 @@ function AtletasDoPiloto() {
             <option value="">Todos</option>
             <option value="true">Aceito</option>
             <option value="false">Pendente</option>
+          </select>
+        </label>
+        <label className="field" htmlFor={idCadastro}>
+          Cadastro
+          <select
+            id={idCadastro}
+            value={cadastro}
+            onChange={(e) => setCadastro(e.target.value as Sim)}
+          >
+            <option value="">Todos</option>
+            <option value="true">Completos</option>
+            <option value="false">Incompletos</option>
           </select>
         </label>
         <label className="field" htmlFor={idClasse}>
@@ -475,10 +497,11 @@ function AtletasDoPiloto() {
             <thead>
               <tr>
                 <th>Atleta</th>
-                <th>VelaID</th>
+                <th>ID World Sailing</th>
+                <th className="ct-col-vela">VelaID</th>
                 <th>Classe</th>
+                <th>Idade</th>
                 <th className="ct-col-treinador">Treinador(a)</th>
-                <th className="ct-col-vela">Nº de vela</th>
                 <th>Situação</th>
                 <th>Termo</th>
                 <th>Conta</th>
@@ -491,22 +514,32 @@ function AtletasDoPiloto() {
               {atletas.data.map((a) => (
                 <tr key={a.id} className={a.ativo ? undefined : "ct-inativo"}>
                   <td className="ct-nome">
-                    <span className="ct-nome-txt">{a.nome}</span>
-                    {(a.treinador || a.numeroVela) && (
+                    <span className="ct-nome-txt">{nomeOuWsId(a)}</span>
+                    {a.cadastroRecusado ? (
+                      <span className="pill st-alerta ct-selo">Recusado (menor de 18)</span>
+                    ) : (
+                      !a.cadastroCompleto && (
+                        <span className="pill st-cond ct-selo">Cadastro incompleto</span>
+                      )
+                    )}
+                    {(a.treinador || a.velaid) && (
                       <small className="ct-sub-txt ct-vinculo">
                         {[
                           a.treinador ? `Treinador: ${a.treinador.nome}` : null,
-                          a.numeroVela ?? null,
+                          a.velaid ? `VelaID: ${a.velaid}` : null,
                         ]
                           .filter(Boolean)
                           .join(" · ")}
                       </small>
                     )}
                   </td>
-                  <td className="nw mono">{a.velaid}</td>
+                  <td className="nw">
+                    <LinkWsId wsId={a.wsId} nome={a.nome} />
+                  </td>
+                  <td className="nw mono ct-col-vela">{a.velaid ?? "—"}</td>
                   <td className="nw">{a.classe.nome}</td>
+                  <td className="nw">{a.idade == null ? "—" : `${a.idade} anos`}</td>
                   <td className="nw ct-col-treinador">{a.treinador?.nome ?? "—"}</td>
-                  <td className="nw ct-col-vela">{a.numeroVela ?? "—"}</td>
                   <td className="nw">
                     <span className={`pill ${a.ativo ? "st-apto" : "st-neutro"}`}>
                       {a.ativo ? "Ativo" : "Inativo"}
@@ -526,7 +559,7 @@ function AtletasDoPiloto() {
                     <button
                       type="button"
                       className="btn sm ghost"
-                      aria-label={`Editar ${a.nome}`}
+                      aria-label={`Editar ${nomeOuWsId(a)}`}
                       onClick={() => setAlvo(a)}
                     >
                       Editar
@@ -552,14 +585,24 @@ function EditarAtleta({ atleta: a, aoFechar }: { atleta: AtletaGestao; aoFechar:
   const [numeroVela, setNumeroVela] = useState(a.numeroVela ?? "");
   const [ativo, setAtivo] = useState(a.ativo);
   const [ativoMexido, setAtivoMexido] = useState(false);
+  const [wsId, setWsId] = useState(a.wsId);
   const [erro, setErro] = useState("");
+  const [tentou, setTentou] = useState(false);
+  const [errosApi, setErrosApi] = useState<Record<string, string>>({});
+  const idWs = useId();
+
+  const erroWs = (tentou ? mensagemWsId(wsId) : null) ?? errosApi["wsId"];
 
   const classes = (parametros.data?.classes ?? []).filter((c) => c.ativa || c.id === a.classe.id);
 
   const salvar = (e: FormEvent) => {
     e.preventDefault();
     setErro("");
+    setErrosApi({});
+    setTentou(true);
+    if (mensagemWsId(wsId)) return;
     const corpo: CorpoAtleta = {};
+    if (normalizarWsId(wsId) !== a.wsId) corpo.wsId = normalizarWsId(wsId);
     if (classeId !== a.classe.id) corpo.classeId = classeId;
     if (treinadorId) corpo.treinadorId = treinadorId;
     if (numeroVela.trim() !== (a.numeroVela ?? "")) corpo.numeroVela = numeroVela.trim();
@@ -568,17 +611,38 @@ function EditarAtleta({ atleta: a, aoFechar }: { atleta: AtletaGestao; aoFechar:
       { id: a.id, corpo },
       {
         onSuccess: () => {
-          toast.success(`${a.nome} atualizado`);
+          toast.success(`${nomeOuWsId(a)} atualizado`);
           aoFechar();
         },
-        onError: (err) => setErro(mensagemDeErro(err)),
+        onError: (err) => {
+          const campos = errosPorCampo(err);
+          // 409 (WS ID repetido) vem sem campo: a mensagem fica embaixo do ID World Sailing.
+          if (err instanceof ErroApi && err.status === 409) campos["wsId"] = err.message;
+          setErrosApi(campos);
+          if (!campos["wsId"]) setErro(mensagemDeErro(err));
+        },
       },
     );
   };
 
   return (
-    <Dialogo titulo={`Editar ${a.nome}`} aoFechar={aoFechar}>
+    <Dialogo titulo={`Editar ${nomeOuWsId(a)}`} aoFechar={aoFechar}>
       <form className="stack" style={{ gap: 12 }} onSubmit={salvar}>
+        <div>
+          <label className="field" htmlFor={idWs}>
+            ID World Sailing
+            <input
+              id={idWs}
+              className="ct-wsid"
+              value={wsId}
+              onChange={(e) => setWsId(e.target.value)}
+              maxLength={40}
+              autoComplete="off"
+              {...atributosDoCampo(`${idWs}-erro`, erroWs)}
+            />
+          </label>
+          <MensagemCampo id={`${idWs}-erro`} texto={erroWs} />
+        </div>
         <label className="field">
           Classe e função
           <select value={classeId} onChange={(e) => setClasseId(e.target.value)}>

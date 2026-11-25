@@ -1,17 +1,24 @@
-import { Avatar } from "./Avatar";
+import { CartaoPerfil } from "./CartaoPerfil";
+import { BlocoContato } from "./BlocoContato";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BigScore } from "./BigScore";
+import { ComparacaoAutoavaliacao } from "./ComparacaoAutoavaliacao";
 import { Dialogo } from "./Dialogo";
-import { EvidenciasSecao, AbrirEvidencia } from "./EvidenciasSecao";
+import { EvidenciasSecao, AbrirEvidencia, VerVideo } from "./EvidenciasSecao";
 import { FinanceiroDialog } from "./FinanceiroDialog";
 import { GaugeClassFit } from "./GaugeClassFit";
+import { PedirAjusteDialog } from "./PedirAjusteDialog";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
+import { PesagensPendentes } from "./PesagensPendentes";
+import { ConquistasParaValidar } from "./ConquistasParaValidar";
+import { ResultadosParaValidar } from "./ResultadosParaValidar";
 import { PlanoIndividual } from "./PlanoIndividual";
 import { ResultadoDialog } from "./ResultadoDialog";
 import { SemAcesso } from "./SemAcesso";
+import { ComparacaoTurma } from "./ComparacaoTurma";
 import { SparkScore } from "./SparkScore";
 import { StatusPill } from "./StatusPill";
 import { fmt0, fmt1, fmtData, fmtInstante, rotuloCiclo } from "./formato";
@@ -26,6 +33,7 @@ import {
   type LancamentoHistorico,
 } from "@/lib/api/consultas";
 import { atualizarGate } from "@/lib/api/mutacoes-ficha";
+import { INDICADORES_DE_RESULTADO, ROTULO_STATUS_RESULTADO } from "@/lib/api/resultados";
 import "@/styles/ficha.css";
 
 type Pilar = FichaAtleta["pilares"][number];
@@ -40,6 +48,7 @@ const SUPORTE: Record<string, string> = {
 };
 const PATROCINIO = { sim: "Sim", em_negociacao: "Em negociação", nao: "Não" } as const;
 const STATUS_GATE = ["apto", "condicional", "alerta"] as const;
+const SEM_EVIDENCIA = "Sem evidência registrada";
 const TEXTO_NAO_VE =
   "Este perfil não vê a ficha deste atleta. Treinador vê só os próprios atletas; o IBVAR vê só quem consentiu.";
 
@@ -51,17 +60,30 @@ const ORIGEM_LANCAMENTO: Record<LancamentoHistorico["origem"], string> = {
   avaliacao: "Avaliação",
   resposta_confirmada: "Resposta do atleta confirmada",
   resposta_sugerida: "Sugestão do atleta, aguardando avaliador",
+  autoavaliacao: "Autoavaliação do atleta, aguardando avaliador",
+  autoavaliacao_aprovada: "Autoavaliação do atleta aprovada",
   calculado: "Calculada pela pesagem",
+};
+const ORIGEM_RESULTADO = "Calculado pelo resultado validado";
+const rotuloFonte = (fonte: string, papel: string) =>
+  papel === "ibvar" ? "Lançado" : (FONTE_RESULTADO[fonte] ?? "Lançado");
+const ehResultado = (id: string) => INDICADORES_DE_RESULTADO.includes(id);
+const FONTE_RESULTADO: Record<string, string> = {
+  ranking_cbvela: "Ranking CBVela",
+  manual: "Lançado",
+  atleta: "Atleta",
 };
 
 /** Lançamentos do indicador, do mais novo para o mais antigo. Mostra só o que a API devolve ao papel. */
 function HistoricoDialog({
   atletaId,
   ind,
+  papel,
   aoFechar,
 }: {
   atletaId: string;
   ind: Indicador;
+  papel: string;
   aoFechar: () => void;
 }) {
   const hist = useHistoricoIndicador(atletaId, ind.id);
@@ -90,9 +112,25 @@ function HistoricoDialog({
                 </span>
               </div>
               <div className="src">
-                {[ORIGEM_LANCAMENTO[l.origem], l.avaliador?.nome].filter(Boolean).join(" · ")}
+                {[
+                  l.origem === "calculado" && ehResultado(ind.id)
+                    ? ORIGEM_RESULTADO
+                    : ORIGEM_LANCAMENTO[l.origem],
+                  l.avaliador?.nome,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </div>
-              {l.evidencia && <div className="src">Evidência: {l.evidencia}</div>}
+              {l.justificativa && <div className="src">Justificativa: {l.justificativa}</div>}
+              {l.evidencia ? (
+                <div className="src">Evidência: {l.evidencia}</div>
+              ) : (
+                papel !== "ibvar" &&
+                !(l.origem === "calculado" && ehResultado(ind.id)) && (
+                  <div className="src">{SEM_EVIDENCIA}</div>
+                )
+              )}
+              {l.link && <VerVideo url={l.link} />}
               {l.anexo && (
                 <AbrirEvidencia
                   id={l.anexo.id}
@@ -111,7 +149,15 @@ function HistoricoDialog({
   );
 }
 
-function BotaoHistorico({ atletaId, ind }: { atletaId: string; ind: Indicador }) {
+function BotaoHistorico({
+  atletaId,
+  ind,
+  papel,
+}: {
+  atletaId: string;
+  ind: Indicador;
+  papel: string;
+}) {
   const [aberto, setAberto] = useState(false);
   return (
     <>
@@ -124,13 +170,26 @@ function BotaoHistorico({ atletaId, ind }: { atletaId: string; ind: Indicador })
         Ver histórico
       </button>
       {aberto && (
-        <HistoricoDialog atletaId={atletaId} ind={ind} aoFechar={() => setAberto(false)} />
+        <HistoricoDialog
+          atletaId={atletaId}
+          ind={ind}
+          papel={papel}
+          aoFechar={() => setAberto(false)}
+        />
       )}
     </>
   );
 }
 
-function LinhaIndicador({ ind, atletaId }: { ind: Indicador; atletaId: string }) {
+function LinhaIndicador({
+  ind,
+  atletaId,
+  papel,
+}: {
+  ind: Indicador;
+  atletaId: string;
+  papel: string;
+}) {
   const resp = ind.resposta ? ` · resposta: “${ind.resposta}”` : "";
   if (ind.tipo === "R") {
     return (
@@ -144,15 +203,24 @@ function LinhaIndicador({ ind, atletaId }: { ind: Indicador; atletaId: string })
     );
   }
   let origem: string;
-  if (ind.nota == null) {
+  if (ind.calculado && ehResultado(ind.id)) {
+    // Nota calculada pelos resultados validados: a API explica qual resultado vale.
+    origem = [ind.explicacao, ORIGEM_RESULTADO].filter(Boolean).join(" · ");
+  } else if (ind.nota == null) {
     origem = ind.tipo === "A" ? "Aguardando resposta do atleta" : "Ainda não avaliado neste ciclo";
   } else {
     const quem =
       ind.origem === "resposta_confirmada"
         ? `Resposta do atleta · nota de ${ind.avaliador?.nome ?? "avaliador"}`
-        : ind.avaliador?.nome;
+        : ind.origem === "autoavaliacao_aprovada"
+          ? `Autoavaliação aprovada por ${ind.avaliador?.nome ?? "avaliador"}`
+          : ind.avaliador?.nome;
     origem =
-      [ind.evidencia, quem, ind.lancadoEm ? fmtInstante(ind.lancadoEm) : null]
+      [
+        ind.evidencia ?? (papel !== "ibvar" && !ind.calculado ? SEM_EVIDENCIA : null),
+        quem,
+        ind.lancadoEm ? fmtInstante(ind.lancadoEm) : null,
+      ]
         .filter(Boolean)
         .join(" · ") + resp;
   }
@@ -161,6 +229,7 @@ function LinhaIndicador({ ind, atletaId }: { ind: Indicador; atletaId: string })
       <div>
         {ind.nome}
         <div className="src">{origem}</div>
+        {ind.justificativa && <div className="src">Justificativa: {ind.justificativa}</div>}
         {ind.sugestaoPendente && (
           <div className="src">
             Sugestão do atleta: {ind.sugestaoPendente.valor}, aguardando avaliador
@@ -176,8 +245,13 @@ function LinhaIndicador({ ind, atletaId }: { ind: Indicador; atletaId: string })
             <span>{ind.anexo.nomeArquivo}</span>
           </AbrirEvidencia>
         )}
+        {ind.link && (
+          <div>
+            <VerVideo url={ind.link} />
+          </div>
+        )}
         <div>
-          <BotaoHistorico atletaId={atletaId} ind={ind} />
+          <BotaoHistorico atletaId={atletaId} ind={ind} papel={papel} />
         </div>
       </div>
       <span className={`nota ${ind.nota == null ? "na" : ""}`}>
@@ -193,12 +267,14 @@ function BlocoPilar({
   aoAlternar,
   maiorPerda,
   atletaId,
+  papel,
 }: {
   pilar: Pilar;
   aberto: boolean;
   aoAlternar: () => void;
   maiorPerda: boolean;
   atletaId: string;
+  papel: string;
 }) {
   const { nota } = pilar;
   const painel = `pilar-${pilar.id}`;
@@ -247,7 +323,7 @@ function BlocoPilar({
         ) : (
           <div className="ind-list" id={painel}>
             {pilar.indicadores.map((i) => (
-              <LinhaIndicador key={i.id} ind={i} atletaId={atletaId} />
+              <LinhaIndicador key={i.id} ind={i} atletaId={atletaId} papel={papel} />
             ))}
           </div>
         ))}
@@ -363,6 +439,14 @@ function BlocoFinanceiro({ fin }: { fin: FichaAtleta["financeiro"] }) {
   );
 }
 
+/** "Fonte da faixa: <documento>, versão <versão> (<data>)"; só o que a API trouxe. Nulo sem documento. */
+function textoFonteFaixa(fonte: NonNullable<FichaAtleta["classFit"]>["fonte"]): string | null {
+  if (!fonte?.documento) return null;
+  const versao = fonte.versao ? `, versão ${fonte.versao}` : "";
+  const data = fonte.data ? ` (${fmtData(fonte.data)})` : "";
+  return `Fonte da faixa: ${fonte.documento}${versao}${data}`;
+}
+
 const SITUACAO_ALTURA = {
   dentro: { texto: "dentro da faixa", status: "apto" },
   abaixo: { texto: "abaixo da faixa", status: "condicional" },
@@ -420,6 +504,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
   const queryClient = useQueryClient();
   const [abertos, setAbertos] = useState<Record<string, boolean>>({});
   const [pedindoRevisao, setPedindoRevisao] = useState(false);
+  const [pedindoAjuste, setPedindoAjuste] = useState(false);
   const [lancandoResultado, setLancandoResultado] = useState(false);
   const [editandoFinanceiro, setEditandoFinanceiro] = useState(false);
   const { atleta, pilares, gates, classFit, resultados } = ficha;
@@ -452,17 +537,17 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
     (p.indicadores ?? []).filter((i) => i.tipo !== "R").map((i) => ({ id: i.id, nome: i.nome })),
   );
 
+  // Média da turma por ciclo fechado (D13): o ponto do ciclo atual não tem média, e `null` (grupo
+  // pequeno para o IBVAR) não desenha ponto.
+  const mediaDoCiclo = new Map(ficha.mediaTurmaPorCiclo.map((m) => [m.ciclo, m.media]));
   const pontos = [
-    ...ficha.historicoScore.map((h) => ({ rotulo: rotuloCiclo(h.ciclo), score: h.score })),
-    { rotulo: rotuloCiclo(ficha.ciclo?.nome ?? "Atual"), score: ficha.score },
+    ...ficha.historicoScore.map((h) => ({
+      rotulo: rotuloCiclo(h.ciclo),
+      score: h.score,
+      mediaTurma: mediaDoCiclo.get(h.ciclo) ?? null,
+    })),
+    { rotulo: rotuloCiclo(ficha.ciclo?.nome ?? "Atual"), score: ficha.score, mediaTurma: null },
   ];
-
-  const local = [
-    atleta.clube,
-    atleta.cidade && atleta.uf ? `${atleta.cidade}/${atleta.uf}` : (atleta.cidade ?? atleta.uf),
-  ]
-    .filter(Boolean)
-    .join(" · ");
 
   return (
     <div className="stack ficha">
@@ -475,48 +560,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
         </div>
       )}
       <div className="athlete-head">
-        <div className="athlete-id">
-          {atleta.fotoUrl && <Avatar nome={atleta.nome} fotoUrl={atleta.fotoUrl} grande />}
-          <div className="athlete-txt">
-            <div className="eyebrow">
-              Ficha individual{ficha.ciclo ? ` · ciclo de ${ficha.ciclo.nome}` : ""}
-            </div>
-            <h1>{atleta.nome}</h1>
-            <ul className="facts">
-              {atleta.numeroVela && (
-                <li>
-                  <span className="sail" title="Número de vela">
-                    {atleta.numeroVela}
-                  </span>
-                </li>
-              )}
-              <li>
-                <i className="ph ph-identification-card" aria-hidden="true" />
-                <span className="fato-rot">VelaID</span> <code>{atleta.velaid}</code>
-              </li>
-              <li>
-                <i className="ph ph-sailboat" aria-hidden="true" />
-                {atleta.classe.nome} · {atleta.funcao}
-              </li>
-              <li>
-                <i className="ph ph-cake" aria-hidden="true" />
-                {atleta.idade} anos
-              </li>
-              {local && (
-                <li>
-                  <i className="ph ph-map-pin" aria-hidden="true" />
-                  {local}
-                </li>
-              )}
-              {ficha.contato?.treinador && (
-                <li>
-                  <i className="ph ph-user" aria-hidden="true" />
-                  <span className="fato-rot">Treinador(a)</span> {ficha.contato.treinador.nome}
-                </li>
-              )}
-            </ul>
-          </div>
-        </div>
+        <CartaoPerfil ficha={ficha} />
         <BigScore score={ficha.score} faixa={ficha.faixa} parcial={!ficha.completo}>
           <SparkScore pontos={pontos} />
         </BigScore>
@@ -526,6 +570,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
           Aguardando aceite do termo: o atleta ainda não entra no ranking.
         </p>
       )}
+      <ComparacaoTurma ficha={ficha} />
       <div className="ficha-grid">
         {/* Duas colunas reais no DOM: a esquerda inteira, depois a direita. No celular, essa
             sequência é a ordem de leitura e de foco (pilares, gates, histórico, Class Fit,
@@ -537,6 +582,11 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               {papel === "atleta" && (
                 <button type="button" className="btn sm" onClick={() => setPedindoRevisao(true)}>
                   Pedir revisão de uma nota
+                </button>
+              )}
+              {podeLancar && (
+                <button type="button" className="btn sm" onClick={() => setPedindoAjuste(true)}>
+                  Pedir ajuste
                 </button>
               )}
               {podeLancar && (
@@ -557,6 +607,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 aoAlternar={() => setAbertos((a) => ({ ...a, [p.id]: !a[p.id] }))}
                 maiorPerda={maiorPerda?.id === p.id}
                 atletaId={ficha.atleta.id}
+                papel={papel}
               />
             ))}
           </section>
@@ -604,23 +655,26 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                   <tr>
                     <th>Data</th>
                     <th>Evento</th>
+                    <th className="r">Edição</th>
                     <th className="r">Posição</th>
                     <th className="r">Pts</th>
                     <th>Fonte</th>
+                    {papel !== "ibvar" && <th>Situação</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {resultados.map((r, i) => {
+                  {resultados.map((r) => {
                     const link = linkSeguro(r.linkOficial);
                     return (
-                      <tr key={`${r.data}-${r.evento}-${i}`}>
+                      <tr key={r.id}>
                         <td className="nw">{fmtData(r.data)}</td>
                         <td>
                           {r.evento}
                           <small className="sub">{rotuloNivelHistorico(r.nivel)}</small>
                         </td>
+                        <td className="r nw">{r.edicao}</td>
                         <td className="r nw">
-                          {r.posicao}º de {r.tamanhoFrota}
+                          {r.posicao}º{r.tamanhoFrota != null ? ` de ${r.tamanhoFrota}` : ""}
                         </td>
                         <td className="r num">
                           {r.pontosCbvela == null ? "—" : fmt0(r.pontosCbvela)}
@@ -634,15 +688,30 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                               href={link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              aria-label="Lançado + link oficial"
+                              aria-label={`${rotuloFonte(r.fonte, papel)} + link oficial`}
                             >
-                              Lançado
+                              {rotuloFonte(r.fonte, papel)}
                               <i className="ph ph-arrow-square-out" aria-hidden="true" />
                             </a>
                           ) : (
-                            <span className="pill st-neutro">Lançado</span>
+                            <span className="pill st-neutro">{rotuloFonte(r.fonte, papel)}</span>
                           )}
                         </td>
+                        {papel !== "ibvar" && (
+                          <td>
+                            <span className={`pill ${ROTULO_STATUS_RESULTADO[r.status].classe}`}>
+                              {ROTULO_STATUS_RESULTADO[r.status].rotulo}
+                            </span>
+                            {r.validadoPor && r.validadoEm && (
+                              <small className="sub">
+                                por {r.validadoPor.nome} em {fmtInstante(r.validadoEm)}
+                              </small>
+                            )}
+                            {r.status === "recusado" && r.motivo && (
+                              <small className="sub">Motivo: {r.motivo}</small>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -650,10 +719,18 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               </table>
             </div>
             <p className="panel-dica">
-              Resultados nacionais chegam do Ranking CBVela pelo código VelaID. Internacionais são
-              lançados com o link do resultado oficial.
+              Os pontos do Ranking CBVela são só informação e não entram na nota. A nota dos
+              indicadores de resultado sai dos resultados validados.
             </p>
           </section>
+          {podeLancar && <ResultadosParaValidar atletaId={atleta.id} />}
+          {podeLancar && <ConquistasParaValidar atletaId={atleta.id} />}
+          {papel !== "ibvar" && (
+            <ComparacaoAutoavaliacao
+              atletaId={atleta.id}
+              pilares={pilares.map((p) => ({ id: p.id, nomeCurto: p.nomeCurto }))}
+            />
+          )}
         </div>
         <div className="ficha-col ficha-col-b">
           <section className="panel ordem-classfit">
@@ -681,6 +758,9 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 <p className="panel-dica">
                   Faixa de peso de referência da classe (parâmetro da metodologia).
                 </p>
+                {textoFonteFaixa(classFit.fonte) && (
+                  <p className="panel-dica">{textoFonteFaixa(classFit.fonte)}</p>
+                )}
                 <p className="panel-dica">
                   A altura é informativa: não entra no score nem nos gates.
                 </p>
@@ -691,6 +771,10 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               </div>
             )}
           </section>
+          {podeLancar && <PesagensPendentes atletaId={atleta.id} />}
+          {ficha.contato && (
+            <BlocoContato atletaId={atleta.id} contato={ficha.contato} papel={papel} />
+          )}
           <section className="panel ordem-financeiro">
             <div className="panel-head">
               <h2>Sustentabilidade da campanha</h2>
@@ -725,6 +809,18 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
           atletaId={atleta.id}
           atual={ficha.financeiro}
           aoFechar={() => setEditandoFinanceiro(false)}
+        />
+      )}
+      {pedindoAjuste && (
+        <PedirAjusteDialog
+          atletaId={atleta.id}
+          atletaNome={atleta.nome}
+          aoFechar={() => setPedindoAjuste(false)}
+          pilares={pilares.map((p) => ({
+            id: p.id,
+            nome: p.nome,
+            indicadores: (p.indicadores ?? []).map((i) => ({ id: i.id, nome: i.nome })),
+          }))}
         />
       )}
       {pedindoRevisao && (

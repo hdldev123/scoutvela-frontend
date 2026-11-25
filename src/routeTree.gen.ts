@@ -19,10 +19,12 @@ import { Route as AppAvaliarRouteImport } from './routes/_app/avaliar'
 import { Route as AppCadastroRouteImport } from './routes/_app/cadastro'
 import { Route as AppCiclosRouteImport } from './routes/_app/ciclos'
 import { Route as AppInvestimentoRouteImport } from './routes/_app/investimento'
+import { Route as AppMensagensRouteImport } from './routes/_app/mensagens'
 import { Route as AppPainelRouteImport } from './routes/_app/painel'
 import { Route as AppParametrosRouteImport } from './routes/_app/parametros'
 import { Route as AppRankingRouteImport } from './routes/_app/ranking'
 import { Route as AppRevisoesRouteImport } from './routes/_app/revisoes'
+import { Route as AppSugestoesRouteImport } from './routes/_app/sugestoes'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 import { Route as AppAtletasIdRouteImport } from './routes/_app/atletas.$id'
 
@@ -75,6 +77,11 @@ const AppInvestimentoRoute = AppInvestimentoRouteImport.update({
   path: '/investimento',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMensagensRoute = AppMensagensRouteImport.update({
+  id: '/mensagens',
+  path: '/mensagens',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPainelRoute = AppPainelRouteImport.update({
   id: '/painel',
   path: '/painel',
@@ -93,6 +100,11 @@ const AppRankingRoute = AppRankingRouteImport.update({
 const AppRevisoesRoute = AppRevisoesRouteImport.update({
   id: '/revisoes',
   path: '/revisoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSugestoesRoute = AppSugestoesRouteImport.update({
+  id: '/sugestoes',
+  path: '/sugestoes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppUsuariosRoute = AppUsuariosRouteImport.update({
@@ -116,10 +128,12 @@ export interface FileRoutesByFullPath {
   '/cadastro': typeof AppCadastroRoute
   '/ciclos': typeof AppCiclosRoute
   '/investimento': typeof AppInvestimentoRoute
+  '/mensagens': typeof AppMensagensRoute
   '/painel': typeof AppPainelRoute
   '/parametros': typeof AppParametrosRoute
   '/ranking': typeof AppRankingRoute
   '/revisoes': typeof AppRevisoesRoute
+  '/sugestoes': typeof AppSugestoesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/atletas/$id': typeof AppAtletasIdRoute
 }
@@ -133,10 +147,12 @@ export interface FileRoutesByTo {
   '/cadastro': typeof AppCadastroRoute
   '/ciclos': typeof AppCiclosRoute
   '/investimento': typeof AppInvestimentoRoute
+  '/mensagens': typeof AppMensagensRoute
   '/painel': typeof AppPainelRoute
   '/parametros': typeof AppParametrosRoute
   '/ranking': typeof AppRankingRoute
   '/revisoes': typeof AppRevisoesRoute
+  '/sugestoes': typeof AppSugestoesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/atletas/$id': typeof AppAtletasIdRoute
 }
@@ -152,10 +168,12 @@ export interface FileRoutesById {
   '/_app/cadastro': typeof AppCadastroRoute
   '/_app/ciclos': typeof AppCiclosRoute
   '/_app/investimento': typeof AppInvestimentoRoute
+  '/_app/mensagens': typeof AppMensagensRoute
   '/_app/painel': typeof AppPainelRoute
   '/_app/parametros': typeof AppParametrosRoute
   '/_app/ranking': typeof AppRankingRoute
   '/_app/revisoes': typeof AppRevisoesRoute
+  '/_app/sugestoes': typeof AppSugestoesRoute
   '/_app/usuarios': typeof AppUsuariosRoute
   '/_app/atletas/$id': typeof AppAtletasIdRoute
 }
@@ -171,10 +189,12 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/ciclos'
     | '/investimento'
+    | '/mensagens'
     | '/painel'
     | '/parametros'
     | '/ranking'
     | '/revisoes'
+    | '/sugestoes'
     | '/usuarios'
     | '/atletas/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -188,10 +208,12 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/ciclos'
     | '/investimento'
+    | '/mensagens'
     | '/painel'
     | '/parametros'
     | '/ranking'
     | '/revisoes'
+    | '/sugestoes'
     | '/usuarios'
     | '/atletas/$id'
   id:
@@ -206,10 +228,12 @@ export interface FileRouteTypes {
     | '/_app/cadastro'
     | '/_app/ciclos'
     | '/_app/investimento'
+    | '/_app/mensagens'
     | '/_app/painel'
     | '/_app/parametros'
     | '/_app/ranking'
     | '/_app/revisoes'
+    | '/_app/sugestoes'
     | '/_app/usuarios'
     | '/_app/atletas/$id'
   fileRoutesById: FileRoutesById
@@ -294,6 +318,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInvestimentoRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/mensagens': {
+      id: '/_app/mensagens'
+      path: '/mensagens'
+      fullPath: '/mensagens'
+      preLoaderRoute: typeof AppMensagensRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/painel': {
       id: '/_app/painel'
       path: '/painel'
@@ -322,6 +353,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRevisoesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/sugestoes': {
+      id: '/_app/sugestoes'
+      path: '/sugestoes'
+      fullPath: '/sugestoes'
+      preLoaderRoute: typeof AppSugestoesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/usuarios': {
       id: '/_app/usuarios'
       path: '/usuarios'
@@ -345,10 +383,12 @@ interface AppRouteChildren {
   AppCadastroRoute: typeof AppCadastroRoute
   AppCiclosRoute: typeof AppCiclosRoute
   AppInvestimentoRoute: typeof AppInvestimentoRoute
+  AppMensagensRoute: typeof AppMensagensRoute
   AppPainelRoute: typeof AppPainelRoute
   AppParametrosRoute: typeof AppParametrosRoute
   AppRankingRoute: typeof AppRankingRoute
   AppRevisoesRoute: typeof AppRevisoesRoute
+  AppSugestoesRoute: typeof AppSugestoesRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
   AppAtletasIdRoute: typeof AppAtletasIdRoute
 }
@@ -359,10 +399,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppCadastroRoute: AppCadastroRoute,
   AppCiclosRoute: AppCiclosRoute,
   AppInvestimentoRoute: AppInvestimentoRoute,
+  AppMensagensRoute: AppMensagensRoute,
   AppPainelRoute: AppPainelRoute,
   AppParametrosRoute: AppParametrosRoute,
   AppRankingRoute: AppRankingRoute,
   AppRevisoesRoute: AppRevisoesRoute,
+  AppSugestoesRoute: AppSugestoesRoute,
   AppUsuariosRoute: AppUsuariosRoute,
   AppAtletasIdRoute: AppAtletasIdRoute,
 }
