@@ -78,7 +78,21 @@ export interface paths {
                             };
                             atleta: {
                                 id: string;
-                                nome: string;
+                                /** @description Nulo até o atleta completar o cadastro */
+                                nome: string | null;
+                            } | null;
+                            /** @description Só para o atleta que ainda não completou o cadastro: ele informa nome, gênero e data de nascimento em PUT /me/cadastro antes do painel. Nulo nos demais casos. */
+                            cadastroPendente: {
+                                wsId: string;
+                                velaid: string | null;
+                                /** @description Dados do VelaID para o atleta confirmar; nula sem VelaID */
+                                sugestao: {
+                                    nome: string;
+                                    /** @enum {string} */
+                                    genero: "F" | "M";
+                                    /** @description AAAA-MM-DD */
+                                    dataNascimento: string;
+                                } | null;
                             } | null;
                             telas: string[];
                             telaInicial: string;
@@ -122,6 +136,150 @@ export interface paths {
             };
         };
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/cadastro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * O atleta completa o cadastro: nome, gênero e data de nascimento (uma vez)
+         * @description Só o atleta, e só uma vez: depois de completo, a segunda chamada devolve 409 (a correção é pelo pedido do titular). Os dados sugeridos do VelaID vêm em GET /me (cadastroPendente.sugestao). Menor de 18 anos: a API recusa com 400 sem gravar a data, o nome nem o gênero, inativa o atleta e a conta, abre um pedido de exclusão para o gestor anonimizar e soma no balão `cadastro` do gestor; a auditoria não guarda a data. Data futura ou de mais de 100 anos: 400. Ao completar, o atleta passa a entrar no ranking depois do aceite do termo.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        nome: string;
+                        /** @enum {string} */
+                        genero: "F" | "M";
+                        /**
+                         * Format: date
+                         * @description AAAA-MM-DD
+                         */
+                        dataNascimento: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            nome: string;
+                            /** @enum {string} */
+                            genero: "F" | "M";
+                            dataNascimento: string;
+                            /** @enum {boolean} */
+                            cadastroCompleto: true;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -341,14 +499,19 @@ export interface paths {
                             /** @description A sessão atual passou pelo segundo fator (aal2) */
                             mfaAtivo: boolean;
                             atleta: {
-                                velaid: string;
+                                /** @description ID World Sailing (a chave do atleta) */
+                                wsId: string;
+                                /** @description Nulo se o atleta não tem VelaID */
+                                velaid: string | null;
+                                /** @description Falso até o atleta informar nome, gênero e data de nascimento (PUT /me/cadastro) */
+                                cadastroCompleto: boolean;
                                 classe: {
                                     id: string;
                                     nome: string;
                                 };
                                 numeroVela: string | null;
-                                /** @description AAAA-MM-DD */
-                                dataNascimento: string;
+                                /** @description AAAA-MM-DD; nula com o cadastro incompleto */
+                                dataNascimento: string | null;
                                 clube: string | null;
                                 cidade: string | null;
                                 uf: string | null;
@@ -405,7 +568,7 @@ export interface paths {
         };
         /**
          * Edita o perfil: nome (treinador e gestor) ou e-mail de contato (atleta)
-         * @description Os dados vindos do VelaID não são editáveis aqui: a correção é pelo pedido do titular (tipo `correcao`). A auditoria guarda só os nomes dos campos.
+         * @description Nome, gênero e data de nascimento do atleta (informados em PUT /me/cadastro) e o ID World Sailing não são editáveis aqui: a correção é pelo pedido do titular (tipo `correcao`); só o gestor troca o WS ID. A auditoria guarda só os nomes dos campos.
          */
         put: {
             parameters: {
@@ -441,14 +604,19 @@ export interface paths {
                             /** @description A sessão atual passou pelo segundo fator (aal2) */
                             mfaAtivo: boolean;
                             atleta: {
-                                velaid: string;
+                                /** @description ID World Sailing (a chave do atleta) */
+                                wsId: string;
+                                /** @description Nulo se o atleta não tem VelaID */
+                                velaid: string | null;
+                                /** @description Falso até o atleta informar nome, gênero e data de nascimento (PUT /me/cadastro) */
+                                cadastroCompleto: boolean;
                                 classe: {
                                     id: string;
                                     nome: string;
                                 };
                                 numeroVela: string | null;
-                                /** @description AAAA-MM-DD */
-                                dataNascimento: string;
+                                /** @description AAAA-MM-DD; nula com o cadastro incompleto */
+                                dataNascimento: string | null;
                                 clube: string | null;
                                 cidade: string | null;
                                 uf: string | null;
@@ -744,7 +912,7 @@ export interface paths {
         };
         /**
          * Ranking de atletas do piloto, conforme a matriz de acesso do papel
-         * @description Gestor vê todos; treinador, os próprios; IBVAR, só atletas com consentimento (os demais entram apenas na contagem).
+         * @description Gestor vê todos; treinador, os próprios; IBVAR, só atletas com consentimento (os demais entram apenas na contagem). Atleta com cadastro incompleto não entra.
          */
         get: {
             parameters: {
@@ -778,7 +946,10 @@ export interface paths {
                                 atleta: {
                                     id: string;
                                     nome: string;
-                                    velaid: string;
+                                    /** @description ID World Sailing; para o IBVAR só de quem consentiu (como o item) */
+                                    wsId: string;
+                                    /** @description Nulo se o atleta não tem VelaID */
+                                    velaid: string | null;
                                     numeroVela: string | null;
                                     uf: string | null;
                                     idade: number;
@@ -886,7 +1057,7 @@ export interface paths {
         };
         /**
          * Ficha do atleta, conforme a matriz de acesso do papel
-         * @description Atleta fora do acesso do usuário e atleta inexistente dão o mesmo 404. IBVAR: só vê quem consentiu E está dentro do piloto (mesma regra do ranking: aceite do termo, que segue TERMO_EXIGE_REACEITE); fora do piloto dá 404, também no histórico do indicador. Gestor, treinador e o próprio atleta mantêm o acesso. IBVAR: sem indicadores sensíveis, Class Fit, contato, financeiro detalhado nem texto de evidência; o motivo do gate G1 vem genérico, sem a diferença em kg.
+         * @description Atleta fora do acesso do usuário e atleta inexistente dão o mesmo 404; atleta com cadastro incompleto também dá 404 (o próprio atleta lê a sugestão em GET /me). IBVAR: só vê quem consentiu E está dentro do piloto (mesma regra do ranking: aceite do termo, que segue TERMO_EXIGE_REACEITE); fora do piloto dá 404, também no histórico do indicador. Gestor, treinador e o próprio atleta mantêm o acesso. IBVAR: sem indicadores sensíveis, Class Fit, contato, financeiro detalhado nem texto de evidência; o motivo do gate G1 vem genérico, sem a diferença em kg.
          */
         get: {
             parameters: {
@@ -909,7 +1080,10 @@ export interface paths {
                             atleta: {
                                 id: string;
                                 nome: string;
-                                velaid: string;
+                                /** @description ID World Sailing; o IBVAR só vê atleta que consentiu */
+                                wsId: string;
+                                /** @description Nulo se o atleta não tem VelaID */
+                                velaid: string | null;
                                 numeroVela: string | null;
                                 /** @enum {string} */
                                 genero: "F" | "M";
@@ -1159,8 +1333,8 @@ export interface paths {
             };
         };
         /**
-         * Edita classe, treinador, número de vela ou situação do atleta
-         * @description Valida classe ativa e treinador ativo. numeroVela vazio limpa o campo. Atleta anonimizado não pode ser alterado nem reativado: 409.
+         * Edita WS ID, classe, treinador, número de vela ou situação do atleta
+         * @description Valida classe ativa e treinador ativo. numeroVela vazio limpa o campo. wsId (ID World Sailing, a chave do atleta): só o gestor troca; vira maiúsculas e sem espaços, segue ^[A-Z]{3}[A-Z0-9]{2,12}$ (400) e não pode repetir o de outro atleta (409); a auditoria guarda só o nome do campo. Atleta anonimizado não pode ser alterado nem reativado: 409.
          */
         put: {
             parameters: {
@@ -1174,6 +1348,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
+                        wsId?: string;
                         classeId?: string;
                         /** Format: uuid */
                         treinadorId?: string;
@@ -1191,6 +1366,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string;
+                            wsId: string;
                             classeId: string;
                             treinadorId: string | null;
                             numeroVela: string | null;
@@ -2101,7 +2277,7 @@ export interface paths {
         };
         /**
          * Todos os atletas do piloto, para gestão do cadastro
-         * @description Inclui inativos e quem não aceitou o termo. Sem dado sensível nem e-mail. termoAceito segue a regra do ranking (TERMO_EXIGE_REACEITE). contaVinculada: já existe conta de atleta ligada a ele. busca procura no nome e no código VelaID.
+         * @description Inclui inativos e quem não aceitou o termo. Sem dado sensível nem e-mail. termoAceito segue a regra do ranking (TERMO_EXIGE_REACEITE). contaVinculada: já existe conta de atleta ligada a ele. busca procura no nome, no ID World Sailing e no código VelaID. cadastroCompleto: o atleta já informou nome, gênero e data de nascimento; incompleto aparece com nome nulo. cadastroRecusado: o atleta informou menos de 18 anos no primeiro acesso (inativado; o gestor remove o cadastro pela anonimização).
          */
         get: {
             parameters: {
@@ -2110,7 +2286,8 @@ export interface paths {
                     termoAceito?: "true" | "false";
                     classeId?: string;
                     treinadorId?: string;
-                    /** @description Parte do nome ou do VelaID */
+                    cadastroCompleto?: "true" | "false";
+                    /** @description Parte do nome, do ID World Sailing ou do VelaID */
                     busca?: string;
                 };
                 header?: never;
@@ -2127,8 +2304,10 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string;
-                            nome: string;
-                            velaid: string;
+                            /** @description Nulo enquanto o cadastro está incompleto */
+                            nome: string | null;
+                            wsId: string;
+                            velaid: string | null;
                             classe: {
                                 id: string;
                                 nome: string;
@@ -2140,6 +2319,9 @@ export interface paths {
                             numeroVela: string | null;
                             ativo: boolean;
                             termoAceito: boolean;
+                            cadastroCompleto: boolean;
+                            /** @description Menor de 18 anos no primeiro acesso: inativado, aguarda anonimização */
+                            cadastroRecusado: boolean;
                             contaVinculada: boolean;
                         }[];
                     };
@@ -2199,8 +2381,8 @@ export interface paths {
         };
         put?: never;
         /**
-         * Cadastra o atleta a partir do VelaID e registra o envio do termo
-         * @description Revalida tudo no servidor: existe no VelaID, 18+, ainda não cadastrado, classe ativa e treinador válido. O atleta só entra no ranking depois do aceite do termo.
+         * Cadastra o atleta pelo ID World Sailing e registra o envio do termo
+         * @description O atleta nasce com cadastro incompleto (sem nome, gênero e data de nascimento): ele os informa no primeiro acesso, em PUT /me/cadastro. Até lá fica fora do ranking, do score, das pendências, do fechamento de ciclo e do investimento. wsId duplicado ou velaid já usado dão 409. confirmaMaioridade deve ser true. Se o velaid vier e existir no VelaID, o vínculo é guardado e os dados de lá ficam como sugestão para o atleta; velaid de menor de 18 anos é recusado. Código fora do VelaID importado é aceito, sem sugestão. Revalida classe ativa e treinador válido.
          */
         post: {
             parameters: {
@@ -2212,12 +2394,22 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        velaidCodigo: string;
+                        /** @description ID World Sailing (ex.: BRARB51). Vira maiúsculas e sem espaços; formato ^[A-Z]{3}[A-Z0-9]{2,12}$ */
+                        wsId: string;
+                        /**
+                         * Format: email
+                         * @description E-mail do atleta: conta de login, convite e termo
+                         */
+                        email: string;
                         classeId: string;
                         /** Format: uuid */
                         treinadorId: string;
+                        /** @description Código VelaID, opcional. Se existir em velaid_registros, os dados de lá viram sugestão para o atleta confirmar no primeiro acesso */
+                        velaid?: string;
+                        /** @enum {boolean} */
+                        confirmaMaioridade: true;
                         /**
-                         * @description Cria a conta do atleta (papel atleta) e envia o convite, se houver e-mail no VelaID
+                         * @description Cria a conta do atleta (papel atleta) e envia o convite
                          * @default true
                          */
                         criarConta?: boolean;
@@ -2233,14 +2425,17 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string;
-                            nome: string;
+                            wsId: string;
+                            velaid: string | null;
+                            /** @enum {boolean} */
+                            cadastroCompleto: false;
                             termo: {
                                 /** @enum {string} */
                                 status: "aguardando_aceite";
                                 versao: string;
                             };
                             /**
-                             * @description convite_enviado: conta criada e convite enviado. sem_email: nenhuma conta criada (VelaID sem e-mail, e-mail já em uso ou criarConta=false). indisponivel: conta criada, mas o convite não foi enviado (use POST /usuarios/:id/convite).
+                             * @description convite_enviado: conta criada e convite enviado. sem_email: nenhuma conta criada (e-mail já em uso ou criarConta=false). indisponivel: conta criada, mas o convite não foi enviado (use POST /usuarios/:id/convite).
                              * @enum {string}
                              */
                             conta: "convite_enviado" | "sem_email" | "indisponivel";
@@ -2368,8 +2563,10 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string;
-                            nome: string;
-                            velaid: string;
+                            /** @description Nulo enquanto o cadastro está incompleto */
+                            nome: string | null;
+                            wsId: string;
+                            velaid: string | null;
                             classe: {
                                 id: string;
                                 nome: string;
