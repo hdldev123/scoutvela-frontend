@@ -36,11 +36,19 @@ const indicador = (
   indicadorId: id,
   nome,
   pilarId,
+  evidencia: "opcional" as const,
+  orientacao: null,
   sugestao: null,
   treinador: null,
   diferenca: null,
   ...extra,
 });
+
+const ESCALA_GERAL = [
+  { nota: 0, descricao: "Sem evidência" },
+  { nota: 3, descricao: "Nível regional consistente" },
+  { nota: 5, descricao: "Referência nacional" },
+];
 
 function dados(extra: Record<string, unknown> = {}) {
   return {
@@ -50,6 +58,7 @@ function dados(extra: Record<string, unknown> = {}) {
       indicador("tec_2", "Manobras", "tec"),
       indicador("amb_1", "Apoio do clube", "amb"),
     ],
+    rubricas: [{ pilarId: null, notas: ESCALA_GERAL }],
     resumoPorPilar: null,
     ...extra,
   };
@@ -96,6 +105,85 @@ beforeEach(() => {
 });
 
 describe("Minha autoavaliação", () => {
+  describe("evidência, orientação e escala (D9)", () => {
+    const obrigatorio = () =>
+      dados({
+        indicadores: [
+          indicador("tec_1", "Leitura de vento", "tec", {
+            evidencia: "obrigatoria",
+            orientacao: "Descreva o teste de campo que embasa a nota.",
+          }),
+          indicador("tec_2", "Manobras", "tec", { evidencia: "opcional" }),
+        ],
+      });
+
+    it("rotula a evidência como obrigatória ou opcional antes de enviar", async () => {
+      montar(obrigatorio());
+      await screen.findByRole("heading", { level: 3, name: "Técnica" });
+      nota("Leitura de vento", 4);
+      nota("Manobras", 3);
+      expect(screen.getByLabelText("Evidência (obrigatória)")).toBeTruthy();
+      expect(screen.getByLabelText("Evidência (opcional)")).toBeTruthy();
+    });
+
+    it("bloqueia no cliente a evidência obrigatória vazia e envia depois de preencher", async () => {
+      montar(obrigatorio());
+      await screen.findByRole("heading", { level: 3, name: "Técnica" });
+      nota("Leitura de vento", 4);
+      fireEvent.click(screen.getByRole("button", { name: "Enviar autoavaliação" }));
+      const msg = await screen.findByText(/Informe a evidência da nota: este indicador a exige/);
+      const campo = screen.getByLabelText("Evidência (obrigatória)");
+      expect(campo.getAttribute("aria-invalid")).toBe("true");
+      expect(campo.getAttribute("aria-describedby")).toBe(msg.id);
+      expect(POST).not.toHaveBeenCalled();
+      fireEvent.change(campo, { target: { value: "Teste de 12/11" } });
+      fireEvent.click(screen.getByRole("button", { name: "Enviar autoavaliação" }));
+      await waitFor(() =>
+        expect(corpoEnviado()).toEqual({
+          notas: [{ indicadorId: "tec_1", valor: 4, evidencia: "Teste de 12/11" }],
+        }),
+      );
+    });
+
+    it("mostra a orientação do indicador e liga ao grupo de notas", async () => {
+      montar(obrigatorio());
+      const texto = await screen.findByText("Descreva o teste de campo que embasa a nota.");
+      const grupo = screen.getByRole("radiogroup", { name: "Sua nota para Leitura de vento" });
+      expect(grupo.getAttribute("aria-describedby")).toBe(texto.id);
+      const outro = screen.getByRole("radiogroup", { name: "Sua nota para Manobras" });
+      expect(outro.getAttribute("aria-describedby")).toBeNull();
+    });
+
+    it("mostra a escala geral e a descrição da nota escolhida", async () => {
+      montar(obrigatorio());
+      await screen.findByRole("heading", { level: 3, name: "Técnica" });
+      expect(screen.getByText("Escala de notas de Técnica")).toBeTruthy();
+      expect(screen.getAllByText("Referência nacional").length).toBeGreaterThan(0);
+      nota("Leitura de vento", 3);
+      expect(screen.getByText("Nota 3: Nível regional consistente")).toBeTruthy();
+    });
+
+    it("usa a rubrica própria do pilar no lugar da escala geral", async () => {
+      montar(
+        dados({
+          rubricas: [
+            { pilarId: null, notas: ESCALA_GERAL },
+            {
+              pilarId: "tec",
+              notas: [{ nota: 4, descricao: "Domina as manobras em vento forte" }],
+            },
+          ],
+        }),
+      );
+      await screen.findByRole("heading", { level: 3, name: "Técnica" });
+      nota("Leitura de vento", 4);
+      expect(screen.getByText("Nota 4: Domina as manobras em vento forte")).toBeTruthy();
+      // O pilar Ambiente não tem rubrica própria: vale a escala geral.
+      nota("Apoio do clube", 5);
+      expect(screen.getByText("Nota 5: Referência nacional")).toBeTruthy();
+    });
+  });
+
   it("lista os indicadores por pilar e envia a nota com a evidência", async () => {
     montar(dados());
     expect(await screen.findByRole("heading", { level: 3, name: "Técnica" })).toBeTruthy();
@@ -107,7 +195,9 @@ describe("Minha autoavaliação", () => {
     expect(enviar).toBeDisabled();
 
     nota("Leitura de vento", 4);
-    fireEvent.change(screen.getByLabelText("Evidência"), { target: { value: "Treino de vento" } });
+    fireEvent.change(screen.getByLabelText("Evidência (opcional)"), {
+      target: { value: "Treino de vento" },
+    });
     fireEvent.change(screen.getByLabelText("Link do vídeo (opcional)"), {
       target: { value: "https://youtu.be/abc" },
     });
@@ -140,7 +230,7 @@ describe("Minha autoavaliação", () => {
     );
   });
 
-  it("evidência obrigatória ausente: mostra o 400 no campo e passa a rotular como obrigatória", async () => {
+  it("a API recusa a evidência: mostra o 400 no campo", async () => {
     POST.mockResolvedValue(
       erro400([{ campo: "notas.0.evidencia", mensagem: "Informe a evidência." }]),
     );
@@ -149,7 +239,7 @@ describe("Minha autoavaliação", () => {
     nota("Leitura de vento", 4);
     fireEvent.click(screen.getByRole("button", { name: "Enviar autoavaliação" }));
     const msg = await screen.findByText("Informe a evidência.");
-    const campo = await screen.findByLabelText("Evidência (obrigatória)");
+    const campo = await screen.findByLabelText("Evidência (opcional)");
     expect(campo.getAttribute("aria-invalid")).toBe("true");
     expect(campo.getAttribute("aria-describedby")).toBe(msg.id);
     expect(toastFn.success).not.toHaveBeenCalled();
@@ -188,7 +278,7 @@ describe("Minha autoavaliação", () => {
   });
 
   it("sem ciclo, avisa e não oferece envio", async () => {
-    montar({ ciclo: null, indicadores: [], resumoPorPilar: null });
+    montar({ ciclo: null, indicadores: [], rubricas: [], resumoPorPilar: null });
     expect(await screen.findByText(/Não há ciclo de avaliação aberto/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Enviar/ })).toBeNull();
   });

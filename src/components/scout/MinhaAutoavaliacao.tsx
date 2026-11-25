@@ -52,7 +52,6 @@ export function MinhaAutoavaliacao({
   const enviar = useEnviarAutoavaliacao(atletaId);
   const [rasc, setRasc] = useState<Record<string, Rascunho>>({});
   const [locais, setLocais] = useState<Record<string, string>>({});
-  const [obrigatorias, setObrigatorias] = useState<Set<string>>(new Set());
   const [enviados, setEnviados] = useState<string[]>([]);
 
   if (consulta.isPending) {
@@ -76,7 +75,11 @@ export function MinhaAutoavaliacao({
     );
   }
 
-  const { ciclo, indicadores } = consulta.data;
+  const { ciclo, indicadores, rubricas } = consulta.data;
+  // Escala do pilar, se tiver rubrica própria; senão a geral (`pilarId` nulo).
+  const escalaDe = (pilarId: string) =>
+    (rubricas.find((r) => r.pilarId === pilarId) ?? rubricas.find((r) => r.pilarId === null))
+      ?.notas ?? [];
   const aberto = ciclo?.status === "aberto";
   const nomePilar = (id: string) => pilares.find((p) => p.id === id)?.nome ?? id;
   const grupos: { pilarId: string; itens: IndicadorAutoavaliacao[] }[] = [];
@@ -141,7 +144,12 @@ export function MinhaAutoavaliacao({
         continue;
       }
       const evidencia = r.evidencia.trim();
-      const falhaEv = evidencia === "" ? null : mensagemEvidenciaNota(evidencia);
+      const falhaEv =
+        evidencia === ""
+          ? ind.evidencia === "obrigatoria"
+            ? "Informe a evidência da nota: este indicador a exige."
+            : null
+          : mensagemEvidenciaNota(evidencia);
       const falhaLink = mensagemLinkVideo(r.link.trim());
       if (falhaEv) novosErros[ind.indicadorId] = falhaEv;
       if (falhaLink) novosErros[`${ind.indicadorId}:link`] = falhaLink;
@@ -164,17 +172,6 @@ export function MinhaAutoavaliacao({
           `Autoavaliação enviada: ${r.enviadas} ${r.enviadas === 1 ? "indicador" : "indicadores"}.`,
         );
         setRasc({});
-        setObrigatorias(new Set());
-      },
-      onError: (e) => {
-        const faltou = new Set(obrigatorias);
-        for (const campo of Object.keys(errosPorCampo(e))) {
-          const [raiz, n, resto] = campo.split(".");
-          const id =
-            raiz === "notas" && n !== undefined ? itens[Number(n)]?.indicadorId : undefined;
-          if (id && resto === "evidencia") faltou.add(id);
-        }
-        setObrigatorias(faltou);
       },
     });
   }
@@ -202,6 +199,7 @@ export function MinhaAutoavaliacao({
       {grupos.map((g) => (
         <section key={g.pilarId} className="auto-pilar" aria-labelledby={`auto-p-${g.pilarId}`}>
           <h3 id={`auto-p-${g.pilarId}`}>{nomePilar(g.pilarId)}</h3>
+          <EscalaDoPilar nome={nomePilar(g.pilarId)} notas={escalaDe(g.pilarId)} />
           {g.itens.map((ind) => (
             <LinhaAutoavaliacao
               key={ind.indicadorId}
@@ -209,7 +207,7 @@ export function MinhaAutoavaliacao({
               valor={valorDe(ind)}
               rascunho={rasc[ind.indicadorId]}
               editavel={aberto && !enviar.isPending}
-              obrigatoria={obrigatorias.has(ind.indicadorId)}
+              escala={escalaDe(ind.pilarId)}
               erro={erros[ind.indicadorId]}
               erroLink={erros[`${ind.indicadorId}:link`]}
               aoMudar={(parte) => mudar(ind, parte)}
@@ -248,7 +246,7 @@ function LinhaAutoavaliacao({
   valor,
   rascunho,
   editavel,
-  obrigatoria,
+  escala,
   erro,
   erroLink,
   aoMudar,
@@ -258,7 +256,7 @@ function LinhaAutoavaliacao({
   valor: number | undefined;
   rascunho: Rascunho | undefined;
   editavel: boolean;
-  obrigatoria: boolean;
+  escala: { nota: number; descricao: string }[];
   erro: string | undefined;
   erroLink: string | undefined;
   aoMudar: (p: Partial<Rascunho>) => void;
@@ -268,11 +266,19 @@ function LinhaAutoavaliacao({
   const id = ind.indicadorId;
   const { sugestao, treinador } = ind;
   const corrigida = !!treinador && !!sugestao && treinador.valor !== sugestao.valor;
+  const obrigatoria = ind.evidencia === "obrigatoria";
+  const descricaoNota =
+    valor === undefined ? undefined : escala.find((r) => r.nota === valor)?.descricao;
 
   return (
     <div className="ed-row auto-linha">
       <div className="lbl">
         {ind.nome}
+        {ind.orientacao && (
+          <small className="auto-orientacao" id={`auto-orient-${id}`}>
+            {ind.orientacao}
+          </small>
+        )}
         {sugestao ? (
           <small>
             Sua sugestão: {sugestao.valor} · enviada em {fmtInstante(sugestao.em)}
@@ -321,7 +327,12 @@ function LinhaAutoavaliacao({
           </div>
         )}
       </div>
-      <div className="seg seg-radio" role="radiogroup" aria-label={`Sua nota para ${ind.nome}`}>
+      <div
+        className="seg seg-radio"
+        role="radiogroup"
+        aria-label={`Sua nota para ${ind.nome}`}
+        {...(ind.orientacao ? { "aria-describedby": `auto-orient-${id}` } : {})}
+      >
         {[0, 1, 2, 3, 4, 5].map((n) => (
           <label key={n}>
             <input
@@ -336,11 +347,18 @@ function LinhaAutoavaliacao({
           </label>
         ))}
       </div>
+      {descricaoNota && (
+        <div className="lbl" style={{ gridColumn: "1 / -1" }}>
+          <small>
+            Nota {valor}: {descricaoNota}
+          </small>
+        </div>
+      )}
       <MensagemCampo id={`auto-erro-${id}`} texto={erro} />
       {rascunho && (
         <div className="avaliar-evidencia ev">
           <label className="field ev" htmlFor={`auto-ev-${id}`}>
-            {obrigatoria ? "Evidência (obrigatória)" : "Evidência"}
+            {obrigatoria ? "Evidência (obrigatória)" : "Evidência (opcional)"}
             <input
               id={`auto-ev-${id}`}
               maxLength={EVID_MAX}
@@ -393,5 +411,31 @@ function LinhaAutoavaliacao({
         </div>
       )}
     </div>
+  );
+}
+
+/** Escala de 0 a 5 do pilar (rubrica própria ou a geral), para o atleta saber o que cada nota quer dizer. */
+function EscalaDoPilar({
+  nome,
+  notas,
+}: {
+  nome: string;
+  notas: { nota: number; descricao: string }[];
+}) {
+  if (notas.length === 0) return null;
+  return (
+    <details className="auto-escala">
+      <summary>Escala de notas de {nome}</summary>
+      <dl>
+        {[...notas]
+          .sort((a, b) => a.nota - b.nota)
+          .map((r) => (
+            <div key={r.nota}>
+              <dt>Nota {r.nota}</dt>
+              <dd>{r.descricao}</dd>
+            </div>
+          ))}
+      </dl>
+    </details>
   );
 }
