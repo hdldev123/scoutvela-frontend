@@ -92,6 +92,24 @@ const params: Parametros = {
       },
       atualizadoEm: "2026-11-03T12:00:00.000Z",
     },
+    {
+      codigo: "META_EVOLUCAO",
+      descricao: "Meta de evolução da turma",
+      valor: { percentual: 10 },
+      atualizadoEm: "2026-11-04T12:00:00.000Z",
+    },
+    {
+      codigo: "MIN_GRUPO_AGREGADO",
+      descricao: "Menor grupo em agregado",
+      valor: { minimo: 3 },
+      atualizadoEm: "2026-11-04T12:00:00.000Z",
+    },
+    {
+      codigo: "TENDENCIA",
+      descricao: "Limiar da tendência",
+      valor: { limiar: 2 },
+      atualizadoEm: "2026-11-04T12:00:00.000Z",
+    },
   ],
   componentesCusto: [{ id: "treinador", nome: "Treinador" }],
 };
@@ -635,6 +653,59 @@ describe("TelaParametros", () => {
             },
           },
         },
+      }),
+    );
+  });
+
+  it("regras da evolução (D12): valida cada limite e salva META_EVOLUCAO, MIN_GRUPO_AGREGADO e TENDENCIA", async () => {
+    ok();
+    montar();
+    await screen.findByLabelText("Alta esperada (%)");
+    irPara("Regras provisórias");
+
+    const meta = screen.getByLabelText("Alta esperada (%)");
+    expect(meta).toHaveValue("10");
+    fireEvent.change(meta, { target: { value: "1001" } });
+    expect(
+      screen.getByText("Alta esperada (%): informe um número entre 0 e 1000."),
+    ).toBeInTheDocument();
+    const salvarMeta = screen.getByRole("button", { name: "Salvar Meta de evolução da turma" });
+    expect(salvarMeta).toBeDisabled();
+    fireEvent.change(meta, { target: { value: "12,5" } });
+    fireEvent.click(salvarMeta);
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: { regras: { META_EVOLUCAO: { percentual: 12.5 } } },
+      }),
+    );
+
+    const minimo = screen.getByLabelText("Mínimo de atletas");
+    fireEvent.change(minimo, { target: { value: "0" } });
+    expect(
+      screen.getByText("Mínimo de atletas: informe um inteiro entre 1 e 1000."),
+    ).toBeInTheDocument();
+    fireEvent.change(minimo, { target: { value: "2,5" } });
+    expect(screen.getByRole("button", { name: "Salvar Menor grupo em agregado" })).toBeDisabled();
+    fireEvent.change(minimo, { target: { value: "5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar Menor grupo em agregado" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: { regras: { MIN_GRUPO_AGREGADO: { minimo: 5 } } },
+      }),
+    );
+
+    const limiar = screen.getByLabelText("Limiar (pontos de score)");
+    fireEvent.change(limiar, { target: { value: "0" } });
+    expect(
+      screen.getByText("Limiar (pontos de score): informe um número maior que 0 e até 100."),
+    ).toBeInTheDocument();
+    fireEvent.change(limiar, { target: { value: "101" } });
+    expect(screen.getByRole("button", { name: "Salvar Limiar da tendência" })).toBeDisabled();
+    fireEvent.change(limiar, { target: { value: "1,5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar Limiar da tendência" }));
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith("/parametros", {
+        body: { regras: { TENDENCIA: { limiar: 1.5 } } },
       }),
     );
   });

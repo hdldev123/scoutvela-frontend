@@ -23,3 +23,26 @@ export function useInvestimento(ciclo?: string) {
     },
   });
 }
+
+export type RespostaEvolucao =
+  paths["/investimento/evolucao"]["get"]["responses"][200]["content"]["application/json"];
+export type CicloEvolucao = RespostaEvolucao["ciclos"][number];
+
+/**
+ * `GET /investimento/evolucao` (chave `['investimento', 'evolucao', classeId]`): médias por ciclo
+ * fechado e meta da turma, só agregados. `classeId` recorta pela classe atual dos atletas.
+ */
+export function useEvolucao(classeId?: string) {
+  return useQuery({
+    queryKey: ["investimento", "evolucao", classeId ?? null],
+    retry: false,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error, response } = await (classeId
+        ? api.GET("/investimento/evolucao", { params: { query: { classeId } } })
+        : api.GET("/investimento/evolucao"));
+      if (error || !data) throw paraErroApi(response.status, error);
+      return data;
+    },
+  });
+}

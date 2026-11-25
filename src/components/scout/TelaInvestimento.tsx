@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { EvolucaoTurma } from "./EvolucaoTurma";
 import { StatusPill } from "./StatusPill";
 import { fmt0, fmt1, fmtData, fmtInstante } from "./formato";
 import { mensagemDeErro } from "@/lib/api/cliente";
@@ -300,6 +301,7 @@ export function TelaInvestimento({ papel, ciclo, aoMudarCiclo }: TelaInvestiment
               </section>
             </div>
           </div>
+          <EvolucaoTurma />
         </>
       )}
     </>

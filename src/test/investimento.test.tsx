@@ -5,9 +5,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const GET = vi.fn();
 const PUT = vi.fn();
+const GET_EVOLUCAO = vi.fn();
+const GET_RANKING = vi.fn();
 vi.mock("@/lib/api/cliente", async (importar) => ({
   ...(await importar<typeof import("@/lib/api/cliente")>()),
-  api: { GET: (...args: unknown[]) => GET(...args), PUT: (...args: unknown[]) => PUT(...args) },
+  api: {
+    GET: (rota: string, ...args: unknown[]) =>
+      rota === "/investimento/evolucao"
+        ? GET_EVOLUCAO(rota, ...args)
+        : rota === "/ranking"
+          ? GET_RANKING(rota, ...args)
+          : GET(rota, ...args),
+    PUT: (...args: unknown[]) => PUT(...args),
+  },
 }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
@@ -23,7 +33,7 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 import { TelaInvestimento } from "@/components/scout/TelaInvestimento";
-import type { RespostaInvestimento } from "@/lib/api/investimento";
+import type { RespostaEvolucao, RespostaInvestimento } from "@/lib/api/investimento";
 
 function resposta(extra: Partial<RespostaInvestimento> = {}): RespostaInvestimento {
   return {
@@ -83,6 +93,51 @@ function resposta(extra: Partial<RespostaInvestimento> = {}): RespostaInvestimen
   };
 }
 
+type CicloEvo = RespostaEvolucao["ciclos"][number];
+
+function cicloEvo(id: string, nome: string, extra: Partial<CicloEvo> = {}): CicloEvo {
+  return {
+    ciclo: { id, nome, fechadoEm: "2026-11-01T12:00:00.000Z" },
+    atletas: 10,
+    scoreMedio: 70,
+    mediaPorPilar: [
+      { pilarId: "perf", nomeCurto: "Performance", media: 3 },
+      { pilarId: "cf", nomeCurto: "Class Fit", media: 4 },
+    ],
+    funil: [],
+    aptosNosGates: 4,
+    congelamentoCompleto: true,
+    suprimido: false,
+    ...extra,
+  };
+}
+
+function evolucao(extra: Partial<RespostaEvolucao> = {}): RespostaEvolucao {
+  return {
+    ciclos: [
+      cicloEvo("c-set", "Setembro de 2026", { scoreMedio: 66 }),
+      cicloEvo("c-out", "Outubro de 2026", { scoreMedio: 70 }),
+      cicloEvo("c-nov", "Novembro de 2026", {
+        scoreMedio: 75.6,
+        mediaPorPilar: [
+          { pilarId: "perf", nomeCurto: "Performance", media: 3.4 },
+          { pilarId: "cf", nomeCurto: "Class Fit", media: 3.8 },
+        ],
+      }),
+    ],
+    meta: {
+      percentual: 10,
+      cicloBase: { id: "c-out", nome: "Outubro de 2026" },
+      cicloAtual: { id: "c-nov", nome: "Novembro de 2026" },
+      mediaBase: 70,
+      mediaAtual: 75.6,
+      variacaoPercentual: 8,
+      atingida: false,
+    },
+    ...extra,
+  };
+}
+
 function montar(ui: ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const envolver = (x: ReactNode) => <QueryClientProvider client={client}>{x}</QueryClientProvider>;
@@ -94,6 +149,10 @@ describe("TelaInvestimento", () => {
   beforeEach(() => {
     GET.mockReset();
     PUT.mockReset();
+    GET_EVOLUCAO.mockReset();
+    GET_EVOLUCAO.mockResolvedValue({ data: evolucao({ ciclos: [] }), response: { status: 200 } });
+    GET_RANKING.mockReset();
+    GET_RANKING.mockResolvedValue({ data: { itens: [] }, response: { status: 200 } });
     PUT.mockResolvedValue({ response: { status: 204 } });
   });
 
@@ -293,5 +352,195 @@ describe("TelaInvestimento", () => {
     montar(<TelaInvestimento papel="gestor" />);
     expect(screen.getByRole("status")).toHaveTextContent("Carregando painel…");
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Sem permissão."));
+  });
+
+  describe("Evolução da turma (D12)", () => {
+    const abrir = async (papel = "gestor") => {
+      GET.mockResolvedValue({ data: resposta(), response: { status: 200 } });
+      montar(<TelaInvestimento papel={papel} />);
+      return screen.findByRole("heading", { name: "Evolução da turma" });
+    };
+
+    it("desenha um ponto por ciclo, a meta e a descrição textual do gráfico", async () => {
+      GET_EVOLUCAO.mockResolvedValue({ data: evolucao(), response: { status: 200 } });
+      await abrir();
+      const grafico = await screen.findByRole("img", { name: /Média do score da turma/ });
+      expect(grafico).toHaveAccessibleName(
+        "Média do score da turma por ciclo fechado: Set/26 66,0; Out/26 70,0; Nov/26 75,6; meta do ciclo atual 77,0.",
+      );
+      expect(screen.getAllByTestId("evo-ponto")).toHaveLength(3);
+      expect(screen.getByTestId("evo-meta")).toHaveTextContent("Meta 77,0");
+      // Equivalente textual: tabela com os mesmos números.
+      const tabela = screen.getByRole("table", { name: "Evolução da turma por ciclo fechado" });
+      const linha = within(tabela).getByRole("row", { name: /Novembro de 2026/ });
+      expect(linha).toHaveTextContent("10");
+      expect(linha).toHaveTextContent("75,6");
+      expect(linha).toHaveTextContent("4");
+      expect(GET_EVOLUCAO).toHaveBeenCalledWith("/investimento/evolucao");
+    });
+
+    it("resume a meta: não atingida", async () => {
+      GET_EVOLUCAO.mockResolvedValue({ data: evolucao(), response: { status: 200 } });
+      await abrir();
+      expect(await screen.findByTestId("evo-resumo-meta")).toHaveTextContent(
+        "Meta: +10% sobre Outubro de 2026. Realizado: +8% (não atingida)",
+      );
+    });
+
+    it("resume a meta: atingida", async () => {
+      GET_EVOLUCAO.mockResolvedValue({
+        data: evolucao({
+          meta: {
+            percentual: 10,
+            cicloBase: { id: "c-out", nome: "Outubro de 2026" },
+            cicloAtual: { id: "c-nov", nome: "Novembro de 2026" },
+            mediaBase: 70,
+            mediaAtual: 78.4,
+            variacaoPercentual: 12,
+            atingida: true,
+          },
+        }),
+        response: { status: 200 },
+      });
+      await abrir();
+      expect(await screen.findByTestId("evo-resumo-meta")).toHaveTextContent(
+        "Meta: +10% sobre Outubro de 2026. Realizado: +12% (atingida)",
+      );
+    });
+
+    it("compara o ciclo atual com o anterior por pilar, com a diferença em texto", async () => {
+      GET_EVOLUCAO.mockResolvedValue({ data: evolucao(), response: { status: 200 } });
+      await abrir();
+      expect(
+        await screen.findByRole("heading", {
+          name: "Média por pilar: Novembro de 2026 contra Outubro de 2026",
+        }),
+      ).toBeVisible();
+      const lista = within(document.querySelector<HTMLElement>(".evo-pilares")!);
+      const perf = lista.getByText("Performance").closest("li")!;
+      expect(perf).toHaveTextContent("3,0");
+      expect(perf).toHaveTextContent("3,4");
+      expect(perf).toHaveTextContent("+0,4 (subiu)");
+      expect(lista.getByText("Class Fit").closest("li")).toHaveTextContent("−0,2 (caiu)");
+    });
+
+    it("IBVAR: ciclo suprimido não desenha ponto e mostra o aviso de grupo pequeno", async () => {
+      GET_EVOLUCAO.mockResolvedValue({
+        data: evolucao({
+          ciclos: [
+            cicloEvo("c-out", "Outubro de 2026", { scoreMedio: 70 }),
+            cicloEvo("c-nov", "Novembro de 2026", {
+              atletas: 2,
+              scoreMedio: null,
+              mediaPorPilar: null,
+              funil: null,
+              aptosNosGates: null,
+              suprimido: true,
+            }),
+          ],
+          meta: {
+            percentual: 10,
+            cicloBase: { id: "c-out", nome: "Outubro de 2026" },
+            cicloAtual: { id: "c-nov", nome: "Novembro de 2026" },
+            mediaBase: 70,
+            mediaAtual: null,
+            variacaoPercentual: null,
+            atingida: null,
+          },
+        }),
+        response: { status: 200 },
+      });
+      await abrir("ibvar");
+      expect(
+        await screen.findByText(
+          "Grupo pequeno: números ocultos para proteger quem não consentiu.",
+          {
+            selector: "p.inv-aviso",
+          },
+        ),
+      ).toBeVisible();
+      expect(screen.getAllByTestId("evo-ponto")).toHaveLength(1);
+      expect(screen.getByRole("img", { name: /Nov\/26 oculto/ })).toBeInTheDocument();
+      expect(screen.getByTestId("evo-resumo-meta")).toHaveTextContent(
+        "Realizado: oculto (grupo pequeno).",
+      );
+      expect(screen.getByText(/Média por pilar oculta/)).toBeVisible();
+      expect(screen.getByRole("row", { name: /Novembro de 2026/ })).toHaveTextContent("Oculto");
+    });
+
+    it("ciclo antigo sem congelamento completo: pilares e aptos aparecem como sem dado", async () => {
+      GET_EVOLUCAO.mockResolvedValue({
+        data: evolucao({
+          ciclos: [
+            cicloEvo("c-out", "Outubro de 2026", {
+              mediaPorPilar: null,
+              aptosNosGates: null,
+              congelamentoCompleto: false,
+            }),
+            cicloEvo("c-nov", "Novembro de 2026", { scoreMedio: 75 }),
+          ],
+        }),
+        response: { status: 200 },
+      });
+      await abrir();
+      expect(await screen.findByText(/Sem dado neste ciclo \(Outubro de 2026\)/)).toBeVisible();
+      expect(screen.getByRole("row", { name: /Outubro de 2026/ })).toHaveTextContent(
+        "Sem dado neste ciclo",
+      );
+      expect(screen.getAllByTestId("evo-ponto")).toHaveLength(2);
+    });
+
+    it("menos de dois ciclos fechados: estado vazio explicado, sem gráfico", async () => {
+      GET_EVOLUCAO.mockResolvedValue({
+        data: evolucao({ ciclos: [cicloEvo("c-nov", "Novembro de 2026")] }),
+        response: { status: 200 },
+      });
+      await abrir();
+      expect(await screen.findByText("Ainda não há dois ciclos fechados")).toBeVisible();
+      expect(
+        screen.queryByRole("img", { name: /Média do score da turma/ }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("filtro por classe chama a API com classeId", async () => {
+      GET_RANKING.mockResolvedValue({
+        data: {
+          itens: [
+            { atleta: { id: "a1", classe: { id: "k-ilca6", nome: "ILCA 6" } } },
+            { atleta: { id: "a2", classe: { id: "k-470", nome: "470" } } },
+            { atleta: { id: "a3", classe: { id: "k-ilca6", nome: "ILCA 6" } } },
+          ],
+        },
+        response: { status: 200 },
+      });
+      GET_EVOLUCAO.mockResolvedValue({ data: evolucao(), response: { status: 200 } });
+      await abrir();
+      const seletor = await screen.findByRole("combobox", { name: "Classe" });
+      await waitFor(() =>
+        expect(
+          within(seletor)
+            .getAllByRole("option")
+            .map((o) => o.textContent),
+        ).toEqual(["Todas as classes", "470", "ILCA 6"]),
+      );
+      fireEvent.change(seletor, { target: { value: "k-ilca6" } });
+      await waitFor(() =>
+        expect(GET_EVOLUCAO).toHaveBeenCalledWith("/investimento/evolucao", {
+          params: { query: { classeId: "k-ilca6" } },
+        }),
+      );
+    });
+
+    it("mostra a mensagem de erro da evolução sem derrubar o painel", async () => {
+      GET_EVOLUCAO.mockResolvedValue({
+        error: { erro: "nao_encontrado", mensagem: "Classe não encontrada." },
+        response: { status: 404 },
+      });
+      await abrir();
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent("Classe não encontrada."),
+      );
+      expect(screen.getByRole("heading", { name: "Painel de investimento" })).toBeVisible();
+    });
   });
 });

@@ -146,6 +146,9 @@ function ficha(extra: Partial<FichaAtleta> = {}): FichaAtleta {
     pontosCbvela: 900,
     plano: null,
     sugestaoPlano: null,
+    mediaTurmaPorCiclo: [],
+    comparacaoTurma: null,
+    tendencia: null,
     historicoScore: [
       { ciclo: "Setembro de 2026", score: 60 },
       { ciclo: "Outubro de 2026", score: 66 },

@@ -43,3 +43,95 @@
   gap: 6px 10px;
   margin: 0 0 16px;
 }
+
+/* Evolução da turma (D12) */
+.evo {
+  margin-top: 16px;
+}
+.evo-figura {
+  margin: 12px 0 0;
+}
+.evo-figura figcaption {
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+.evo-svg {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+}
+.evo-meta {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin: 0;
+  font-size: 0.95rem;
+}
+.evo-tabela {
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+.evo-tabela summary {
+  cursor: pointer;
+  padding: 6px 0;
+}
+.evo-cor-ant {
+  background: var(--ink-2);
+}
+.evo-pilares {
+  display: grid;
+  gap: 14px;
+  margin-top: 10px;
+}
+.evo-pilar {
+  display: grid;
+  gap: 4px 12px;
+  font-size: 0.9rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+.evo-pilar-nome {
+  font-weight: 600;
+}
+.evo-barras {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.evo-linha {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr) 2.2rem;
+  gap: 8px;
+  align-items: center;
+}
+.evo-rot {
+  font-family: var(--f-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+.evo-trilho {
+  height: 10px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  overflow: hidden;
+  display: block;
+}
+.evo-trilho span {
+  display: block;
+  height: 100%;
+}
+.evo-linha .n {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.evo-delta {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+@media (min-width: 640px) {
+  .evo-pilar {
+    grid-template-columns: 8rem minmax(0, 1fr) 8.5rem;
+    align-items: center;
+  }
+}

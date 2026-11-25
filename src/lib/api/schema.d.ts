@@ -1174,6 +1174,29 @@ export interface paths {
                                 ciclo: string;
                                 score: number;
                             }[];
+                            /** @description Um item por ciclo fechado, do mais antigo ao mais recente, alinhado com historicoScore */
+                            mediaTurmaPorCiclo: {
+                                /** Format: uuid */
+                                cicloId: string;
+                                ciclo: string;
+                                /** @description Média do score de todo o piloto no ciclo; nula para o IBVAR se o grupo for pequeno */
+                                media: number | null;
+                                atletas: number;
+                            }[];
+                            /** @description Último ciclo fechado em que o atleta tem score; na_media quando a diferença absoluta é menor que TENDENCIA.limiar. Nulo sem ciclo fechado com score, ou se a média foi suprimida para o IBVAR */
+                            comparacaoTurma: {
+                                scoreAtual: number;
+                                mediaTurma: number;
+                                /** @description scoreAtual menos mediaTurma */
+                                diferenca: number;
+                                /** @enum {string} */
+                                posicao: "acima" | "na_media" | "abaixo";
+                            } | null;
+                            /**
+                             * @description Dois últimos ciclos fechados do atleta contra TENDENCIA.limiar; nula com menos de dois
+                             * @enum {string|null}
+                             */
+                            tendencia: "subindo" | "estavel" | "caindo" | null;
                             pilares: {
                                 id: string;
                                 nome: string;
@@ -5876,6 +5899,166 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/investimento/evolucao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Evolução da turma entre ciclos fechados e meta de alta da média
+         * @description Para cada ciclo fechado (mais antigo primeiro): atletas, média do score, média por pilar, funil por faixa e aptos nos gates, a partir do que o fechamento congelou. Ciclo fechado antes do congelamento completo só tem score e faixa: pilares e gates vêm nulos. `meta` compara os dois últimos ciclos fechados com META_EVOLUCAO (nula sem dois ciclos). `?classeId=` recorta pela classe atual dos atletas (inexistente: 404). Sigilo (D12): para o IBVAR, ciclo com menos de MIN_GRUPO_AGREGADO atletas no recorte vem com `suprimido: true` e os números nulos (a meta fica nula se um dos dois ciclos foi suprimido); o gestor vê tudo. Só agregados: nenhum dado individual. GET /investimento não tem recorte (soma todo o piloto), por isso não aplica o mínimo.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    classeId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Ciclos fechados, do mais antigo ao mais recente */
+                            ciclos: {
+                                ciclo: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    nome: string;
+                                    /** @description Instante ISO do fechamento */
+                                    fechadoEm: string | null;
+                                };
+                                /** @description Atletas do recorte com score congelado neste ciclo */
+                                atletas: number;
+                                /** @description Média do score; nula se suprimido ou sem atletas */
+                                scoreMedio: number | null;
+                                /** @description Nulo em ciclo fechado antes do congelamento completo, ou se suprimido */
+                                mediaPorPilar: {
+                                    pilarId: string;
+                                    nomeCurto: string;
+                                    media: number | null;
+                                }[] | null;
+                                /** @description Atletas por faixa de score; nulo se suprimido */
+                                funil: {
+                                    faixaId: string;
+                                    nome: string;
+                                    n: number;
+                                }[] | null;
+                                /** @description Aptos nos 4 gates; nulo sem congelamento completo ou se suprimido */
+                                aptosNosGates: number | null;
+                                congelamentoCompleto: boolean;
+                                /** @description true: grupo menor que MIN_GRUPO_AGREGADO para o IBVAR; os números vêm nulos */
+                                suprimido: boolean;
+                            }[];
+                            meta: {
+                                /** @description META_EVOLUCAO: alta esperada da média, em % */
+                                percentual: number;
+                                cicloBase: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                cicloAtual: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                mediaBase: number | null;
+                                mediaAtual: number | null;
+                                variacaoPercentual: number | null;
+                                /** @description Nula sem dois ciclos fechados, com média oculta ou com média base zero */
+                                atingida: boolean | null;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/parametros": {
         parameters: {
             query?: never;
@@ -6038,7 +6221,7 @@ export interface paths {
                         }[];
                         /** @description Ids de pilar cujas rubricas próprias saem (volta a valer a escala geral). A escala geral não pode ser removida: nulo ou vazio dão 400 com mensagem explícita */
                         rubricasRemover?: (string | null)[];
-                        /** @description {codigo: valor}; códigos aceitos: P3, G1, G2, G3, G4, RANKING_CBVELA, TERMO_EXIGE_REACEITE, PERF_RESULTADOS. O valor segue o formato lido em GET /parametros. PERF_RESULTADOS (regra provisória P12): { edicoes_max (1 a 20), sem_resultado (nota 0 a 5 do nível sem resultado validado, padrão 0), niveis: { mundial, continental, nacional } }, cada nível uma lista de faixas { ate, nota } em ordem: ate crescente (inteiro, 1 a 500), só a última com ate nulo (qualquer colocação), nota inteira de 0 a 5 que não aumenta */
+                        /** @description {codigo: valor}; códigos aceitos: P3, G1, G2, G3, G4, RANKING_CBVELA, TERMO_EXIGE_REACEITE, PERF_RESULTADOS, META_EVOLUCAO, MIN_GRUPO_AGREGADO, TENDENCIA. TENDENCIA (D13): { limiar (maior que 0, até 100) }, pontos de score da tendência do atleta e da faixa de na média da turma. META_EVOLUCAO (D12): { percentual (0 a 1000) }, meta de alta da média do score da turma sobre o ciclo fechado anterior. MIN_GRUPO_AGREGADO (D12): { minimo (inteiro, 1 a 1000) }, menor grupo que o IBVAR vê em agregado. O valor segue o formato lido em GET /parametros. PERF_RESULTADOS (regra provisória P12): { edicoes_max (1 a 20), sem_resultado (nota 0 a 5 do nível sem resultado validado, padrão 0), niveis: { mundial, continental, nacional } }, cada nível uma lista de faixas { ate, nota } em ordem: ate crescente (inteiro, 1 a 500), só a última com ate nulo (qualquer colocação), nota inteira de 0 a 5 que não aumenta */
                         regras?: {
                             [key: string]: unknown;
                         };
