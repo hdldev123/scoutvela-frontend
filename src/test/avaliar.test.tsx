@@ -164,7 +164,13 @@ const PREVIA = {
   },
 };
 
-const SEM_AUTOAVALIACAO = { ciclo: null, indicadores: [], resumoPorPilar: null };
+const SEM_AUTOAVALIACAO = {
+  ciclo: null,
+  indicadores: [],
+  orientacoesResultados: [],
+  rubricas: [],
+  resumoPorPilar: null,
+};
 let autoavaliacao: unknown = SEM_AUTOAVALIACAO;
 let pesagens: unknown = { itens: [] };
 

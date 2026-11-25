@@ -101,9 +101,9 @@ export function MeusResultados({ atletaId }: { atletaId: string }) {
 
   const itens = lista.data?.itens ?? [];
   const nivelInfo = NIVEIS_RESULTADO.find((n) => n.id === nivel);
-  // A orientação só aparece se a API a expuser ao atleta (hoje ela sai na autoavaliação).
-  const orientacao = auto.data?.indicadores.find(
-    (i) => i.indicadorId === nivelInfo?.indicadorId,
+  // O atleta não lê /parametros: a orientação dos indicadores de resultado vem na autoavaliação.
+  const orientacao = auto.data?.orientacoesResultados.find(
+    (o) => o.indicadorId === nivelInfo?.indicadorId,
   )?.orientacao;
 
   const mudarLinha = (chave: number, parte: Partial<Linha>, camposLimpos: string[] = []) =>

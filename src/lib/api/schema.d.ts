@@ -2468,7 +2468,7 @@ export interface paths {
         };
         /**
          * Atleta × treinador: a sugestão do atleta e a nota do treinador por indicador
-         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). `?ciclo=<id>`; sem ele, o ciclo aberto ou, não havendo, o último fechado. Traz os indicadores com autoavaliação ligada e os que já têm sugestão no ciclo. `diferenca` = nota do treinador − nota do atleta. `resumoPorPilar` (diferença média por pilar) só vem para o gestor. Cada indicador traz `evidencia` (obrigatoria|opcional) e `orientacao`, e a resposta traz `rubricas` (escala geral com `pilarId` nulo e a de cada pilar com rubrica própria), porque o atleta não lê GET /parametros.
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). `?ciclo=<id>`; sem ele, o ciclo aberto ou, não havendo, o último fechado. Traz os indicadores com autoavaliação ligada e os que já têm sugestão no ciclo. `diferenca` = nota do treinador − nota do atleta. `resumoPorPilar` (diferença média por pilar) só vem para o gestor. Cada indicador traz `evidencia` (obrigatoria|opcional) e `orientacao`, e a resposta traz `rubricas` (escala geral com `pilarId` nulo e a de cada pilar com rubrica própria) e `orientacoesResultados` (orientação dos indicadores de resultado, de nota calculada), porque o atleta não lê GET /parametros.
          */
         get: {
             parameters: {
@@ -2540,6 +2540,14 @@ export interface paths {
                                 } | null;
                                 /** @description Nota do treinador menos a do atleta; nulo se falta uma das duas */
                                 diferenca: number | null;
+                            }[];
+                            /** @description Orientação dos indicadores de resultado (nota calculada, sem autoavaliação), para a tela Meus resultados do atleta */
+                            orientacoesResultados: {
+                                /** @enum {string} */
+                                nivel: "mundial" | "continental" | "nacional";
+                                indicadorId: string;
+                                nome: string;
+                                orientacao: string | null;
                             }[];
                             /** @description Escala de 0 a 5: a geral (pilarId nulo) e a de cada pilar com rubrica própria. O atleta não lê GET /parametros, por isso a escala vem aqui */
                             rubricas: {

@@ -42,7 +42,13 @@ const resultado = (extra: Record<string, unknown> = {}) => ({
 });
 
 let enviados: unknown[] = [];
-let autoavaliacao: unknown = { ciclo: null, indicadores: [], rubricas: [], resumoPorPilar: null };
+let autoavaliacao: unknown = {
+  ciclo: null,
+  indicadores: [],
+  orientacoesResultados: [],
+  rubricas: [],
+  resumoPorPilar: null,
+};
 
 function montar() {
   GET.mockImplementation((caminho: string) => {
@@ -108,7 +114,13 @@ const enviar = (nome: RegExp | string = /^Enviar/) =>
 beforeEach(() => {
   vi.clearAllMocks();
   enviados = [];
-  autoavaliacao = { ciclo: null, indicadores: [], rubricas: [], resumoPorPilar: null };
+  autoavaliacao = {
+    ciclo: null,
+    indicadores: [],
+    orientacoesResultados: [],
+    rubricas: [],
+    resumoPorPilar: null,
+  };
   POST.mockImplementation((caminho: string) =>
     Promise.resolve(
       caminho === "/atletas/{id}/evidencias"
@@ -287,21 +299,25 @@ describe("Meus resultados (atleta)", () => {
     expect(within(lista).getByText("Motivo da recusa: Súmula ilegível")).toBeTruthy();
   });
 
-  it("mostra a orientação do indicador do nível, quando a API a entrega", async () => {
+  it("mostra a orientação do indicador do nível, vinda de orientacoesResultados", async () => {
     autoavaliacao = {
       ciclo: null,
       rubricas: [],
       resumoPorPilar: null,
-      indicadores: [
+      // Os indicadores de resultado têm nota calculada: não vêm em `indicadores`.
+      indicadores: [],
+      orientacoesResultados: [
         {
+          nivel: "mundial",
           indicadorId: "perf_mundial",
-          nome: "Resultados mundiais",
-          pilarId: "perf",
-          evidencia: "obrigatoria",
+          nome: "Resultados em Mundial e Youth World",
           orientacao: "Informe cada edição do Mundial com a súmula oficial.",
-          sugestao: null,
-          treinador: null,
-          diferenca: null,
+        },
+        {
+          nivel: "nacional",
+          indicadorId: "perf_nacional",
+          nome: "Resultados nacionais",
+          orientacao: null,
         },
       ],
     };

@@ -291,7 +291,13 @@ const ANEXOS = {
   cotaBytes: 200 * 1024 * 1024,
 };
 
-const SEM_AUTOAVALIACAO = { ciclo: null, indicadores: [], resumoPorPilar: null };
+const SEM_AUTOAVALIACAO = {
+  ciclo: null,
+  indicadores: [],
+  orientacoesResultados: [],
+  rubricas: [],
+  resumoPorPilar: null,
+};
 let autoavaliacao: unknown = SEM_AUTOAVALIACAO;
 let pesagens: unknown = { itens: [] };
 let resultadosApi: ({ status: string } & Record<string, unknown>)[] = [];
