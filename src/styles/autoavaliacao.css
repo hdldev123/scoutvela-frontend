@@ -1,0 +1,161 @@
+/* D9: autoavaliação do atleta, comparação atleta × treinador e pesagem informada pelo atleta. */
+.auto-pilar {
+  margin-top: 14px;
+}
+.auto-pilar h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.auto-linha {
+  margin-bottom: 8px;
+}
+.auto-linha > .campo-erro {
+  grid-column: 1 / -1;
+}
+.auto-enviado,
+.auto-treinador {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.auto-treinador {
+  padding: 6px 8px;
+  border-left: 3px solid var(--sea);
+  background: var(--sea-soft);
+  border-radius: 6px;
+}
+.auto-treinador > span {
+  flex: 1 1 100%;
+}
+.auto-treinador > .btn {
+  flex: 0 0 auto;
+}
+
+/* Comparação atleta × treinador (ficha). */
+.comp-tabela td.num,
+.comp-tabela th.num {
+  text-align: center;
+  white-space: nowrap;
+}
+.comp-just {
+  max-width: 28ch;
+  overflow-wrap: anywhere;
+}
+.comp-resumo {
+  list-style: none;
+  margin: 8px 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.88rem;
+}
+.comp-resumo li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+@media (width <= 640px) {
+  .comp-tabela {
+    display: block;
+  }
+  .comp-tabela thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .comp-tabela tbody,
+  .comp-tabela tr,
+  .comp-tabela th[scope="row"],
+  .comp-tabela td {
+    display: block;
+  }
+  .comp-tabela tr {
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+  }
+  .comp-tabela td {
+    padding: 2px 0;
+    border: 0;
+    text-align: left !important;
+  }
+  .comp-tabela th[scope="row"] {
+    padding: 2px 0;
+    border: 0;
+    text-align: left;
+  }
+  .comp-tabela td::before {
+    content: attr(data-rotulo) ": ";
+    font-weight: 600;
+  }
+  .comp-just {
+    max-width: none;
+  }
+}
+
+/* Sugestão do atleta na tela Lançar avaliação. */
+.aval-sug-atleta {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-left: 3px solid var(--sea);
+  background: var(--sea-soft);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 400;
+}
+.aval-sug-atleta .btn-row {
+  gap: 6px;
+}
+.aval-justificativa {
+  grid-column: 1 / -1;
+}
+.aval-justificativa textarea {
+  width: 100%;
+  min-height: 4.5rem;
+}
+
+/* Pesagem. */
+.pes-form {
+  display: grid;
+  gap: 10px;
+  max-width: 28rem;
+}
+.pes-lista {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.pes-lista li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.pes-peso {
+  font-family: var(--f-mono);
+  font-weight: 600;
+}
+.pes-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+.pes-motivo {
+  flex: 1 1 100%;
+  font-size: 0.84rem;
+}

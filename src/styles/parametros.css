@@ -146,3 +146,9 @@
   min-width: 0;
   flex: 1 1 200px;
 }
+
+.par-evid-auto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}

@@ -176,6 +176,7 @@ describe("TelaParametros", () => {
                   calculado: false,
                   evidencia: "obrigatoria" as const,
                   exigeAnexo: false,
+                  autoavaliacao: true,
                 },
                 {
                   id: "tec_1",
@@ -184,6 +185,7 @@ describe("TelaParametros", () => {
                   calculado: false,
                   evidencia: "opcional" as const,
                   exigeAnexo: false,
+                  autoavaliacao: true,
                 },
               ],
             }
@@ -198,6 +200,7 @@ describe("TelaParametros", () => {
                     calculado: true,
                     evidencia: "obrigatoria" as const,
                     exigeAnexo: true,
+                    autoavaliacao: false,
                   },
                 ],
               }
@@ -212,7 +215,7 @@ describe("TelaParametros", () => {
     renderizar();
     await screen.findByRole("tab", { name: "Evidência" });
     irPara("Evidência");
-    expect(screen.getByRole("button", { name: "Salvar evidência" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Salvar alterações" })).toBeDisabled();
     expect(screen.getByLabelText("Evidência de Pódio nacional")).toHaveValue("obrigatoria");
     expect(screen.getByLabelText("Evidência de Leitura de vento")).toHaveValue("opcional");
     // O peso só mostra que exige anexo, sem seletor.
@@ -221,12 +224,142 @@ describe("TelaParametros", () => {
     fireEvent.change(screen.getByLabelText("Evidência de Leitura de vento"), {
       target: { value: "obrigatoria" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar evidência" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
     await waitFor(() =>
       expect(PUT).toHaveBeenCalledWith("/parametros", {
         body: { indicadores: [{ id: "tec_1", evidencia: "obrigatoria" }] },
       }),
     );
+  });
+
+  describe("autoavaliação por indicador (D9)", () => {
+    const base = (indicadores: Record<string, unknown>[]): Parametros => ({
+      ...params,
+      pilares: params.pilares.map((p) =>
+        p.id === "perf" ? ({ ...p, indicadores } as unknown as typeof p) : p,
+      ),
+    });
+    const T = {
+      tipo: "T" as const,
+      calculado: false,
+      exigeAnexo: false,
+    };
+
+    function abrir(dados: Parametros) {
+      GET.mockImplementation(async (caminho: string) => ({
+        data: caminho === "/termos" ? [] : dados,
+        response: { status: 200 },
+      }));
+      PUT.mockResolvedValue({ data: dados, response: { status: 200 } });
+      renderizar();
+    }
+
+    it("liga e desliga, e desabilita em indicadores A e calculados", async () => {
+      abrir(
+        base([
+          {
+            ...T,
+            id: "tec_1",
+            nome: "Leitura de vento",
+            evidencia: "obrigatoria",
+            autoavaliacao: true,
+          },
+          {
+            ...T,
+            id: "amb_apoio",
+            nome: "Apoio do clube",
+            tipo: "A",
+            evidencia: "obrigatoria",
+            autoavaliacao: false,
+          },
+          {
+            ...T,
+            id: "cf_peso_kg",
+            nome: "Peso",
+            calculado: true,
+            exigeAnexo: true,
+            evidencia: "obrigatoria",
+            autoavaliacao: false,
+          },
+        ]),
+      );
+      await screen.findByRole("tab", { name: "Evidência" });
+      irPara("Evidência");
+      const vento = screen.getByRole("switch", { name: "Autoavaliação de Leitura de vento" });
+      expect(vento).toHaveAttribute("aria-checked", "true");
+      for (const nome of ["Apoio do clube", "Peso"]) {
+        const chave = screen.getByRole("switch", { name: `Autoavaliação de ${nome}` });
+        expect(chave).toHaveAttribute("aria-disabled", "true");
+        fireEvent.click(chave);
+        expect(chave).toHaveAttribute("aria-checked", "false");
+      }
+      expect(screen.getByRole("button", { name: "Salvar alterações" })).toBeDisabled();
+      fireEvent.click(vento);
+      expect(vento).toHaveAttribute("aria-checked", "false");
+      fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+      await waitFor(() =>
+        expect(PUT).toHaveBeenCalledWith("/parametros", {
+          body: { indicadores: [{ id: "tec_1", autoavaliacao: false }] },
+        }),
+      );
+    });
+
+    it("envia evidência e autoavaliação do mesmo indicador no mesmo item", async () => {
+      abrir(
+        base([
+          {
+            ...T,
+            id: "tec_1",
+            nome: "Leitura de vento",
+            evidencia: "opcional",
+            autoavaliacao: true,
+          },
+        ]),
+      );
+      await screen.findByRole("tab", { name: "Evidência" });
+      irPara("Evidência");
+      fireEvent.change(screen.getByLabelText("Evidência de Leitura de vento"), {
+        target: { value: "obrigatoria" },
+      });
+      fireEvent.click(screen.getByRole("switch", { name: "Autoavaliação de Leitura de vento" }));
+      fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+      await waitFor(() =>
+        expect(PUT).toHaveBeenCalledWith("/parametros", {
+          body: {
+            indicadores: [{ id: "tec_1", evidencia: "obrigatoria", autoavaliacao: false }],
+          },
+        }),
+      );
+    });
+
+    it("mostra o 400 de autoavaliacao junto do interruptor", async () => {
+      abrir(
+        base([
+          {
+            ...T,
+            id: "tec_1",
+            nome: "Leitura de vento",
+            evidencia: "opcional",
+            autoavaliacao: true,
+          },
+        ]),
+      );
+      PUT.mockResolvedValue({
+        error: {
+          erro: "requisicao_invalida",
+          mensagem: "Dados inválidos.",
+          campos: [
+            { campo: "indicadores.0.autoavaliacao", mensagem: "Indicador sem autoavaliação." },
+          ],
+        },
+        response: { status: 400 },
+      });
+      await screen.findByRole("tab", { name: "Evidência" });
+      irPara("Evidência");
+      fireEvent.click(screen.getByRole("switch", { name: "Autoavaliação de Leitura de vento" }));
+      fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+      expect(await screen.findByText("Indicador sem autoavaliação.")).toBeInTheDocument();
+    });
   });
 
   it("aceita vírgula e envia só a classe alterada", async () => {

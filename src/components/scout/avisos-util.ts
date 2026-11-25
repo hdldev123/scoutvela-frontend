@@ -62,6 +62,23 @@ export function fraseDoAviso(a: Aviso): string {
       if (status === "recusada") return `Sua sugestão foi recusada${por}`;
       return `Sua sugestão foi respondida${por}`;
     }
+    case "atleta_autoavaliou": {
+      const n = typeof ref["quantidade"] === "number" ? ref["quantidade"] : null;
+      if (n === null) return `${quem(a)} enviou a autoavaliação`;
+      return `${quem(a)} enviou a autoavaliação (${n} ${n === 1 ? "indicador" : "indicadores"})`;
+    }
+    case "autoavaliacao_corrigida": {
+      const por = a.criadoPor ? ` por ${a.criadoPor.nome}` : "";
+      return a.indicador
+        ? `Sua sugestão em ${a.indicador.nome} foi corrigida${por}`
+        : `Uma sugestão da sua autoavaliação foi corrigida${por}`;
+    }
+    case "atleta_enviou_pesagem":
+      return `${quem(a)} enviou o peso para validar`;
+    case "pesagem_validada":
+      return "Seu peso foi validado";
+    case "pesagem_recusada":
+      return "Seu peso foi recusado";
   }
 }
 
@@ -80,6 +97,10 @@ export function destinoDoAviso(a: Aviso): DestinoAviso | null {
       return { to: "/painel" };
     case "sugestao_respondida":
       return { to: "/sugestoes" };
+    case "autoavaliacao_corrigida":
+    case "pesagem_validada":
+    case "pesagem_recusada":
+      return { to: "/painel" };
     default:
       return a.atleta ? { to: "/atletas/$id", params: { id: a.atleta.id } } : null;
   }

@@ -26,7 +26,7 @@ vi.mock("@/components/scout/PaletaDeAtletas", () => ({ PaletaDeAtletas: () => nu
 
 import { PedirAjusteDialog } from "@/components/scout/PedirAjusteDialog";
 import { Shell } from "@/components/scout/Shell";
-import { fraseDoAviso } from "@/components/scout/avisos-util";
+import { destinoDoAviso, fraseDoAviso } from "@/components/scout/avisos-util";
 import type { Aviso } from "@/lib/api/avisos";
 
 type Me = Parameters<typeof Shell>[0]["me"];
@@ -311,6 +311,56 @@ describe("frases dos avisos", () => {
         aviso({ id: "x", tipo: "sugestao_respondida", referencia: { status: "recusada" } }),
       ),
     ).toBe("Sua sugestão foi recusada");
+  });
+});
+
+describe("frases dos avisos da autoavaliação e da pesagem (D9)", () => {
+  it("monta a frase de cada tipo novo a partir da referência", () => {
+    expect(
+      fraseDoAviso(aviso({ id: "a", tipo: "atleta_autoavaliou", referencia: { quantidade: 5 } })),
+    ).toBe("Helena Vasques enviou a autoavaliação (5 indicadores)");
+    expect(
+      fraseDoAviso(aviso({ id: "a", tipo: "atleta_autoavaliou", referencia: { quantidade: 1 } })),
+    ).toBe("Helena Vasques enviou a autoavaliação (1 indicador)");
+    expect(fraseDoAviso(aviso({ id: "a", tipo: "atleta_autoavaliou" }))).toBe(
+      "Helena Vasques enviou a autoavaliação",
+    );
+    expect(
+      fraseDoAviso(
+        aviso({
+          id: "b",
+          tipo: "autoavaliacao_corrigida",
+          referencia: { indicadorId: "tec_1" },
+          indicador: { id: "tec_1", nome: "Leitura de vento" },
+          criadoPor: { nome: "Ana Ribeiro", papel: "treinador" },
+        }),
+      ),
+    ).toBe("Sua sugestão em Leitura de vento foi corrigida por Ana Ribeiro");
+    expect(fraseDoAviso(aviso({ id: "b", tipo: "autoavaliacao_corrigida" }))).toBe(
+      "Uma sugestão da sua autoavaliação foi corrigida",
+    );
+    expect(fraseDoAviso(aviso({ id: "c", tipo: "atleta_enviou_pesagem" }))).toBe(
+      "Helena Vasques enviou o peso para validar",
+    );
+    expect(fraseDoAviso(aviso({ id: "d", tipo: "pesagem_validada" }))).toBe(
+      "Seu peso foi validado",
+    );
+    expect(fraseDoAviso(aviso({ id: "e", tipo: "pesagem_recusada" }))).toBe(
+      "Seu peso foi recusado",
+    );
+  });
+
+  it("leva cada aviso à tela certa", () => {
+    const ficha = { to: "/atletas/$id", params: { id: "a07" } };
+    expect(destinoDoAviso(aviso({ id: "a", tipo: "atleta_autoavaliou" }))).toEqual(ficha);
+    expect(destinoDoAviso(aviso({ id: "c", tipo: "atleta_enviou_pesagem" }))).toEqual(ficha);
+    for (const tipo of [
+      "autoavaliacao_corrigida",
+      "pesagem_validada",
+      "pesagem_recusada",
+    ] as const) {
+      expect(destinoDoAviso(aviso({ id: tipo, tipo }))).toEqual({ to: "/painel" });
+    }
   });
 });
 

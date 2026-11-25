@@ -1196,8 +1196,13 @@ export interface paths {
                                     evidencia: string | null;
                                     /** @description Link https de vídeo ou outro conteúdo externo da nota; nulo para o IBVAR */
                                     link: string | null;
-                                    /** @enum {string|null} */
-                                    origem: "avaliacao" | "resposta_confirmada" | "calculado" | null;
+                                    /**
+                                     * @description autoavaliacao_aprovada: o treinador manteve a nota sugerida pelo atleta. Para o IBVAR vem sempre `avaliacao` (nada de autoavaliação)
+                                     * @enum {string|null}
+                                     */
+                                    origem: "avaliacao" | "resposta_confirmada" | "autoavaliacao_aprovada" | "calculado" | null;
+                                    /** @description Justificativa do treinador ao corrigir a sugestão do atleta; sempre nula para o IBVAR */
+                                    justificativa: string | null;
                                     avaliador: {
                                         id: string;
                                         nome: string;
@@ -1205,6 +1210,7 @@ export interface paths {
                                     /** @description Instante ISO */
                                     lancadoEm: string | null;
                                     resposta: string | null;
+                                    /** @description Sugestão do atleta (resposta do questionário ou autoavaliação) ainda sem nota do treinador; nula para o IBVAR. O detalhe da autoavaliação vem em GET /atletas/:id/autoavaliacao */
                                     sugestaoPendente: {
                                         valor: number;
                                         lancadoEm: string;
@@ -1526,7 +1532,7 @@ export interface paths {
         };
         /**
          * Histórico de lançamentos de um indicador, do mais novo para o mais antigo
-         * @description Mesma matriz de acesso da ficha: gestor vê todos, treinador só os próprios atletas, atleta só a si. Inclui a sugestão do atleta ainda pendente (pendente: true, origem resposta_sugerida). cf_peso_kg (calculado) traz as pesagens, com a nota pela regra P3 atual. IBVAR: pilar sensível dá 403; nos demais, sem evidência, avaliador, anexo nem sugestão pendente. Atleta fora do acesso ou indicador inexistente: 404.
+         * @description Mesma matriz de acesso da ficha: gestor vê todos, treinador só os próprios atletas, atleta só a si. Inclui a sugestão do atleta ainda pendente (pendente: true, origem resposta_sugerida ou autoavaliacao) e a justificativa da nota do treinador. cf_peso_kg (calculado) traz as pesagens, com a nota pela regra P3 atual. IBVAR: pilar sensível dá 403; nos demais, sem evidência, avaliador, anexo, justificativa nem sugestão pendente (a aprovação aparece como `avaliacao`). Atleta fora do acesso ou indicador inexistente: 404.
          */
         get: {
             parameters: {
@@ -1555,7 +1561,9 @@ export interface paths {
                             /** @description Link https da nota; nulo para o IBVAR */
                             link: string | null;
                             /** @enum {string} */
-                            origem: "avaliacao" | "resposta_confirmada" | "resposta_sugerida" | "calculado";
+                            origem: "avaliacao" | "resposta_confirmada" | "resposta_sugerida" | "autoavaliacao" | "autoavaliacao_aprovada" | "calculado";
+                            /** @description Justificativa do treinador ao corrigir a sugestão; nula para o IBVAR */
+                            justificativa: string | null;
                             /** @description Sugestão do atleta aguardando o avaliador */
                             pendente: boolean;
                             avaliador: {
@@ -1821,6 +1829,8 @@ export interface paths {
                             link?: string;
                             /** Format: uuid */
                             anexoId?: string;
+                            /** @description Obrigatória quando o atleta sugeriu (autoavaliação) outra nota para o indicador no ciclo aberto; opcional nos demais. Vazio vale como ausente */
+                            justificativa?: string;
                         }[];
                         medida?: {
                             pesoKg?: number;
@@ -1864,6 +1874,20 @@ export interface paths {
                                 /** @enum {string} */
                                 statusGates: "apto" | "condicional" | "nao_prioritario";
                             };
+                            /** @description Sugestões do atleta (autoavaliação) no ciclo aberto, uma por indicador, para a tela mostrar ao lado da nota. Vazio sem sugestão ou sem ciclo aberto */
+                            sugestoesAtleta: {
+                                indicadorId: string;
+                                /** @description Nota sugerida pelo atleta, de 0 a 5 */
+                                valor: number;
+                                evidencia: string | null;
+                                link: string | null;
+                                anexo: {
+                                    id: string;
+                                    nomeArquivo: string;
+                                } | null;
+                                /** @description Instante ISO */
+                                em: string;
+                            }[];
                             /** @description Nota sugerida para perf_nacional pelos pontos do Ranking CBVela (regra PERF_PONTOS). Nula com a regra desligada. Não entra na prévia nem no score: o avaliador confirma lançando a nota. */
                             sugestaoPontos: {
                                 indicadorId: string;
@@ -1961,7 +1985,7 @@ export interface paths {
         put?: never;
         /**
          * Lança notas e/ou medida do atleta (série histórica: só insere)
-         * @description Origem da nota: resposta_confirmada se o atleta respondeu à pergunta do indicador, senão avaliacao. Indicador calculado (peso) ou tipo R é recusado.
+         * @description Origem da nota: se o atleta sugeriu a nota (autoavaliação) no ciclo aberto, nota igual grava `autoavaliacao_aprovada` e nota diferente grava a correção, com `justificativa` obrigatória (400 em `notas.N.justificativa`) e aviso `autoavaliacao_corrigida` ao atleta. Sem sugestão: resposta_confirmada se o atleta respondeu à pergunta do indicador, senão avaliacao (justificativa opcional). Indicador calculado (peso) ou tipo R é recusado.
          */
         post: {
             parameters: {
@@ -1985,6 +2009,8 @@ export interface paths {
                             link?: string;
                             /** Format: uuid */
                             anexoId?: string;
+                            /** @description Obrigatória quando o atleta sugeriu (autoavaliação) outra nota para o indicador no ciclo aberto; opcional nos demais. Vazio vale como ausente */
+                            justificativa?: string;
                         }[];
                         medida?: {
                             pesoKg?: number;
@@ -2254,6 +2280,746 @@ export interface paths {
                 };
             };
         };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/autoavaliacoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O atleta sugere a nota de seus indicadores (autoavaliação)
+         * @description Só o atleta, no próprio cadastro, com ciclo aberto (sem ciclo aberto: 409). Só indicadores com `autoavaliacao: true` em GET /parametros (outro: 400 em `notas.N.indicadorId`). A evidência segue a regra do indicador (`evidencia`; obrigatória ausente: 400 em `notas.N.evidencia`); `link` só https://; `anexoId` só de anexo do próprio atleta (400 em `notas.N.anexoId`). Grava em `avaliacoes` com origem `autoavaliacao`, sem avaliador. Pode reenviar: a sugestão mais recente do ciclo vale (a série só recebe inserções). A sugestão NUNCA entra no score, nos gates, no ranking nem no investimento: só a nota do treinador conta. Avisa o treinador (`atleta_autoavaliou`, `referencia: { quantidade }`). Auditoria `enviar_autoavaliacao` só com ids de indicador e contagens.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        notas: {
+                            indicadorId: string;
+                            valor: number;
+                            /** @description Texto da evidência. Obrigatório nos indicadores com evidência `obrigatoria` (GET /parametros); opcional nos demais. Vazio vale como ausente */
+                            evidencia?: string;
+                            /** @description Link de vídeo ou outro conteúdo externo da nota: só https://, até 500 caracteres. A API não acessa o endereço. Vazio vale como ausente */
+                            link?: string;
+                            /** Format: uuid */
+                            anexoId?: string;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cicloId: string;
+                            /** @description Quantidade de indicadores enviados */
+                            enviadas: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/autoavaliacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atleta × treinador: a sugestão do atleta e a nota do treinador por indicador
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). `?ciclo=<id>`; sem ele, o ciclo aberto ou, não havendo, o último fechado. Traz os indicadores com autoavaliação ligada e os que já têm sugestão no ciclo. `diferenca` = nota do treinador − nota do atleta. `resumoPorPilar` (diferença média por pilar) só vem para o gestor.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    ciclo?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ciclo: {
+                                id: string;
+                                nome: string;
+                                /** @enum {string} */
+                                status: "aberto" | "fechado";
+                            } | null;
+                            indicadores: {
+                                indicadorId: string;
+                                nome: string;
+                                pilarId: string;
+                                /** @description Última sugestão do atleta no ciclo */
+                                sugestao: {
+                                    /** @description Nota sugerida pelo atleta, de 0 a 5 */
+                                    valor: number;
+                                    evidencia: string | null;
+                                    /** @description Link https de vídeo ou outro conteúdo externo */
+                                    link: string | null;
+                                    anexo: {
+                                        id: string;
+                                        nomeArquivo: string;
+                                    } | null;
+                                    /** @description Instante ISO */
+                                    em: string;
+                                } | null;
+                                /** @description Última nota do treinador no ciclo */
+                                treinador: {
+                                    /** @description Nota do treinador (ou do gestor), de 0 a 5 */
+                                    valor: number;
+                                    /**
+                                     * @description autoavaliacao_aprovada: o treinador manteve a nota sugerida pelo atleta
+                                     * @enum {string}
+                                     */
+                                    origem: "avaliacao" | "resposta_confirmada" | "autoavaliacao_aprovada";
+                                    /** @description Obrigatória quando a nota difere da sugestão */
+                                    justificativa: string | null;
+                                    avaliador: {
+                                        nome: string;
+                                    } | null;
+                                    /** @description Instante ISO */
+                                    em: string;
+                                } | null;
+                                /** @description Nota do treinador menos a do atleta; nulo se falta uma das duas */
+                                diferenca: number | null;
+                            }[];
+                            /** @description Só para o gestor (nulo para treinador e atleta) */
+                            resumoPorPilar: {
+                                pilarId: string;
+                                nomeCurto: string;
+                                /** @description Média de (treinador − atleta) nos indicadores com as duas notas; nulo se não há */
+                                diferencaMedia: number | null;
+                            }[] | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/pesagens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O atleta informa o peso com a foto do visor da balança
+         * @description Só o atleta, no próprio cadastro completo. `anexoId` é o anexo do próprio atleta com categoria `balanca` (POST /atletas/:id/evidencias): inexistente, removido, de outro atleta ou de outra categoria dá 400 em `anexoId`. Peso de 30 a 160 kg. Só uma pesagem pendente por atleta: nova com uma pendente dá 409. O peso só entra no Class Fit e no G1 depois que o treinador ou o gestor valida (PUT /pesagens/:id/validacao). Avisa o treinador (`atleta_enviou_pesagem`, `referencia: { pesagemId }`). Auditoria `enviar_pesagem` sem o peso.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        pesoKg: number;
+                        /** Format: uuid */
+                        anexoId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Peso informado pelo atleta (dado sensível: o IBVAR nunca recebe) */
+                            pesoKg: number;
+                            /** @enum {string} */
+                            status: "pendente" | "validada" | "recusada";
+                            /** @description Instante ISO */
+                            enviadoEm: string;
+                            /** @description Motivo da recusa; nulo nas demais */
+                            motivo: string | null;
+                            /** @description Quem validou ou recusou */
+                            decididoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            decididoEm: string | null;
+                            /** @description Foto do visor da balança, enquanto a pesagem está pendente (GET /evidencias/:id/link). Nula depois da decisão: a foto é removida */
+                            anexoId: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pesagens/{id}/validacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Valida ou recusa a pesagem informada pelo atleta
+         * @description Gestor ou treinador do atleta (outro treinador e pesagem inexistente: 404; atleta e IBVAR: 403). `validar` grava o peso em `medidas_corporais` (medido_em = envio, registrado_por = quem validou, evidência "Pesagem informada pelo atleta e validada") na mesma transação; a partir daí o peso entra no Class Fit e no G1. `recusar` exige `motivo` (até 300 caracteres; 400 em `motivo`). Pesagem já decidida: 409. Nos dois casos, depois da gravação, a foto sai do Storage e o anexo fica marcado como removido, e o atleta recebe o aviso `pesagem_validada` ou `pesagem_recusada` (`referencia: { pesagemId }`). Auditoria `decidir_pesagem` sem peso nem motivo.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decisao: "validar" | "recusar";
+                        motivo?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Peso informado pelo atleta (dado sensível: o IBVAR nunca recebe) */
+                            pesoKg: number;
+                            /** @enum {string} */
+                            status: "pendente" | "validada" | "recusada";
+                            /** @description Instante ISO */
+                            enviadoEm: string;
+                            /** @description Motivo da recusa; nulo nas demais */
+                            motivo: string | null;
+                            /** @description Quem validou ou recusou */
+                            decididoPor: {
+                                id: string;
+                                nome: string;
+                            } | null;
+                            /** @description Instante ISO */
+                            decididoEm: string | null;
+                            /** @description Foto do visor da balança, enquanto a pesagem está pendente (GET /evidencias/:id/link). Nula depois da decisão: a foto é removida */
+                            anexoId: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/pesagens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pesagens informadas pelo atleta, da mais nova para a mais antiga
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403, o peso é dado sensível; outro atleta ou treinador: 404). Cada item traz status, peso, datas, motivo da recusa e quem decidiu. Só a pesagem validada vira medida e entra no Class Fit.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            itens: {
+                                id: string;
+                                /** @description Peso informado pelo atleta (dado sensível: o IBVAR nunca recebe) */
+                                pesoKg: number;
+                                /** @enum {string} */
+                                status: "pendente" | "validada" | "recusada";
+                                /** @description Instante ISO */
+                                enviadoEm: string;
+                                /** @description Motivo da recusa; nulo nas demais */
+                                motivo: string | null;
+                                /** @description Quem validou ou recusou */
+                                decididoPor: {
+                                    id: string;
+                                    nome: string;
+                                } | null;
+                                /** @description Instante ISO */
+                                decididoEm: string | null;
+                                /** @description Foto do visor da balança, enquanto a pesagem está pendente (GET /evidencias/:id/link). Nula depois da decisão: a foto é removida */
+                                anexoId: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -4429,6 +5195,8 @@ export interface paths {
                                     evidencia: "obrigatoria" | "opcional";
                                     /** @description A nota depende de arquivo anexado (ex.: foto da balança no peso) */
                                     exigeAnexo: boolean;
+                                    /** @description O atleta pode sugerir a nota deste indicador (POST /autoavaliacoes). O gestor muda em PUT /parametros (indicadores) */
+                                    autoavaliacao: boolean;
                                 }[];
                             }[];
                             faixas: {
@@ -4544,11 +5312,13 @@ export interface paths {
                         regras?: {
                             [key: string]: unknown;
                         };
-                        /** @description Regra de evidência por indicador (obrigatoria ou opcional) */
+                        /** @description Regra por indicador: `evidencia` (obrigatoria ou opcional) e/ou `autoavaliacao` (boolean). A auditoria guarda antes e depois */
                         indicadores?: {
                             id: string;
                             /** @enum {string} */
-                            evidencia: "obrigatoria" | "opcional";
+                            evidencia?: "obrigatoria" | "opcional";
+                            /** @description Liga ou desliga a autoavaliação do indicador (só tipo T não calculado pode ligar) */
+                            autoavaliacao?: boolean;
                         }[];
                         classes?: {
                             id: string;
@@ -4593,6 +5363,8 @@ export interface paths {
                                     evidencia: "obrigatoria" | "opcional";
                                     /** @description A nota depende de arquivo anexado (ex.: foto da balança no peso) */
                                     exigeAnexo: boolean;
+                                    /** @description O atleta pode sugerir a nota deste indicador (POST /autoavaliacoes). O gestor muda em PUT /parametros (indicadores) */
+                                    autoavaliacao: boolean;
                                 }[];
                             }[];
                             faixas: {
@@ -5791,7 +6563,7 @@ export interface paths {
         };
         /**
          * Exporta em JSON tudo o que o sistema guarda sobre o atleta (LGPD)
-         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados, decisões de gate, financeiro, pedidos de revisão (com o recurso, se houve) e pedidos do titular, telefone, validade do passaporte e aptidões conferidas, foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo) e plano individual (todas as versões). Só o atleta logado, só os próprios dados.
+         * @description Devolve como anexo (meus-dados-scout-vela.json): cadastro, consentimentos, notas com evidência e avaliador, respostas, medidas, resultados, decisões de gate, financeiro, pedidos de revisão (com o recurso, se houve) e pedidos do titular, telefone, validade do passaporte e aptidões conferidas, pesagens informadas, pedidos de ajuste recebidos, foto de perfil (tipo e link de 5 minutos), lista de evidências anexadas (metadados, sem o arquivo) e plano individual (todas as versões). Só o atleta logado, só os próprios dados.
          */
         get: {
             parameters: {
@@ -5852,6 +6624,14 @@ export interface paths {
                             }[];
                             /** @description Aptidão para a prática esportiva conferida pelo gestor (apto, quem conferiu e quando; sem arquivo) */
                             aptidoes: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Pesagens informadas pelo atleta: peso, situação (pendente, validada ou recusada), motivo da recusa, quem decidiu e quando (a foto da balança não é exportada e é apagada depois da decisão) */
+                            pesagens: {
+                                [key: string]: unknown;
+                            }[];
+                            /** @description Pedidos de ajuste recebidos do treinador ou do gestor: mensagem, indicador, quem pediu e quando */
+                            pedidosAjuste: {
                                 [key: string]: unknown;
                             }[];
                             /** @description Foto de perfil da conta do atleta (o caminho interno não é exportado) */
@@ -8236,7 +9016,7 @@ export interface paths {
                             itens: {
                                 id: string;
                                 /** @enum {string} */
-                                tipo: "atleta_respondeu" | "atleta_anexou" | "atleta_atualizou_perfil" | "atleta_completou_cadastro" | "pedido_ajuste" | "sugestao_respondida";
+                                tipo: "atleta_respondeu" | "atleta_anexou" | "atleta_atualizou_perfil" | "atleta_completou_cadastro" | "pedido_ajuste" | "sugestao_respondida" | "atleta_autoavaliou" | "autoavaliacao_corrigida" | "atleta_enviou_pesagem" | "pesagem_validada" | "pesagem_recusada";
                                 /** @description Instante ISO */
                                 criadoEm: string;
                                 /** @description Instante ISO; nulo = não lido */
@@ -8245,7 +9025,7 @@ export interface paths {
                                     id: string;
                                     nome: string;
                                 } | null;
-                                /** @description Só ids e nomes de campo: `{ indicadorId }`, `{ anexoId, categoria }`, `{ campos }`, `{ pedidoAjusteId }`, `{ sugestaoId, status }` */
+                                /** @description Só ids e nomes de campo: `{ indicadorId }`, `{ anexoId, categoria }`, `{ campos }`, `{ pedidoAjusteId }`, `{ sugestaoId, status }`, `{ quantidade }` (atleta_autoavaliou), `{ pesagemId }` (pesagens) */
                                 referencia: {
                                     [key: string]: unknown;
                                 };
