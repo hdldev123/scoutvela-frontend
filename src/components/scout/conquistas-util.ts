@@ -7,7 +7,12 @@ export const MAX_DESTAQUES = 3;
 /** 0 Jogos Olímpicos, 1 mundial, 2 continental, 3 demais, 4 conquista informada (sem nível). */
 function prioridade(c: ConquistaFicha): number {
   if (c.tipo !== "resultado") return 4;
-  if (/ol[ií]mpic|olympic/i.test(`${c.nivel ?? ""} ${c.evento ?? ""} ${c.titulo}`)) return 0;
+  if (
+    /\bolympic games\b|\bjogos ol[ií]mpicos\b/i.test(
+      `${c.nivel ?? ""} ${c.evento ?? ""} ${c.titulo}`,
+    )
+  )
+    return 0;
   const grupo = c.nivel ? grupoDoNivel(c.nivel) : "outros";
   return grupo === "mundial" ? 1 : grupo === "continental" ? 2 : 3;
 }
