@@ -1547,7 +1547,7 @@ describe("TelaFicha: resultados por evento (D10)", () => {
       .catch(() => null);
     const alvo = tabela ?? screen.getAllByRole("table")[0]!;
     expect(within(alvo).getByRole("columnheader", { name: "Situação" })).toBeInTheDocument();
-    expect(within(alvo).getByRole("columnheader", { name: "Edição" })).toBeInTheDocument();
+    expect(within(alvo).getByRole("columnheader", { name: "Data e edição" })).toBeInTheDocument();
     expect(within(alvo).getByText("Validado")).toBeInTheDocument();
     expect(within(alvo).getByText(/por Ana Ribeiro em/)).toBeInTheDocument();
     expect(within(alvo).getByText("Recusado")).toBeInTheDocument();
@@ -2230,6 +2230,24 @@ describe("TelaFicha: conquistas compactas (D20)", () => {
     ).toBeVisible();
   });
 
+  it("só os Jogos Olímpicos de verdade vêm antes dos mundiais, não as Olympic Classes", async () => {
+    const lista: Conq[] = [
+      podio(1, "Long Beach Olympic Classes Regatta", 2019, "internacional_aberto"),
+      podio(1, "San Pedro Olympic Classes Regatta", 2018, "internacional_aberto"),
+      podio(3, "Olympic Week", 2017, "internacional_aberto"),
+      podio(1, "Olympic Test Event", 2016, "internacional_aberto"),
+      podio(1, "Campeonato Europeu", 2022, "continental"),
+      podio(1, "Mundial 2021", 2021, "mundial"),
+      podio(2, "Tokyo 2020 Olympic Games Sailing Competition", 2021, "internacional_aberto"),
+    ];
+    montar("gestor", ficha({ conquistas: lista }));
+    const regiao = await screen.findByRole("region", { name: "Conquistas" });
+    const itens = within(regiao).getAllByRole("listitem");
+    expect(itens[0]).toHaveTextContent("Tokyo 2020 Olympic Games");
+    expect(itens[1]).toHaveTextContent("Mundial 2021");
+    expect(itens[2]).toHaveTextContent("Campeonato Europeu");
+  });
+
   it("o botão abre o diálogo com a lista completa e Esc fecha", async () => {
     montar("atleta", ficha({ conquistas: MUITAS }));
     const regiao = await screen.findByRole("region", { name: "Conquistas" });
@@ -2291,6 +2309,16 @@ describe("TelaFicha: histórico competitivo paginado e filtrado (D20)", () => {
     expect(screen.getByText("Mostrando 25 de 25")).toBeInTheDocument();
     expect(linhas()).toHaveLength(26);
     expect(screen.queryByRole("button", { name: /Mostrar/ })).toBeNull();
+  });
+
+  it("junta a edição sob a data e esconde Pts quando nenhuma linha visível tem pontos", async () => {
+    montar("gestor", ficha({ resultados: MUITOS }));
+    await screen.findByText("Mostrando 10 de 25");
+    const regiao = screen.getByRole("region", { name: /Tabela de histórico competitivo/ });
+    expect(within(regiao).getByRole("columnheader", { name: "Data e edição" })).toBeInTheDocument();
+    expect(within(regiao).queryByRole("columnheader", { name: "Edição" })).toBeNull();
+    expect(within(regiao).queryByRole("columnheader", { name: "Pts" })).toBeNull();
+    expect(within(linhas()[1]!).getByText("Edição 2026")).toBeInTheDocument();
   });
 
   it("filtra por nível com aria-pressed e volta para a primeira página", async () => {
