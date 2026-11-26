@@ -15,7 +15,7 @@ import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
 import { PesagensPendentes } from "./PesagensPendentes";
 import { ConquistasParaValidar } from "./ConquistasParaValidar";
 import { ResultadosParaValidar } from "./ResultadosParaValidar";
-import { AcoesResultadoWorldSailing } from "./ResultadoWorldSailing";
+import { HistoricoCompetitivo } from "./HistoricoCompetitivo";
 import { SecaoWorldSailing } from "./SecaoWorldSailing";
 import { PlanoIndividual } from "./PlanoIndividual";
 import { ResultadoDialog } from "./ResultadoDialog";
@@ -24,7 +24,6 @@ import { ComparacaoTurma } from "./ComparacaoTurma";
 import { SparkScore } from "./SparkScore";
 import { StatusPill } from "./StatusPill";
 import { fmt0, fmt1, fmtData, fmtInstante, rotuloCiclo } from "./formato";
-import { rotuloNivelHistorico } from "./niveis";
 import { textoDoStatus } from "./status-gate";
 import { seloApoio, seloAutonomia } from "./financeiro-util";
 import { ErroApi, mensagemDeErro } from "@/lib/api/cliente";
@@ -35,7 +34,7 @@ import {
   type LancamentoHistorico,
 } from "@/lib/api/consultas";
 import { atualizarGate } from "@/lib/api/mutacoes-ficha";
-import { INDICADORES_DE_RESULTADO, situacaoDoResultado } from "@/lib/api/resultados";
+import { INDICADORES_DE_RESULTADO } from "@/lib/api/resultados";
 import "@/styles/ficha.css";
 
 type Pilar = FichaAtleta["pilares"][number];
@@ -54,10 +53,6 @@ const SEM_EVIDENCIA = "Sem evidência registrada";
 const TEXTO_NAO_VE =
   "Este perfil não vê a ficha deste atleta. Treinador vê só os próprios atletas; o IBVAR vê só quem consentiu.";
 
-/** Aceita só links http(s) do resultado oficial. */
-const linkSeguro = (url: string | null): string | null =>
-  url && /^https?:\/\//i.test(url) ? url : null;
-
 const ORIGEM_LANCAMENTO: Record<LancamentoHistorico["origem"], string> = {
   avaliacao: "Avaliação",
   resposta_confirmada: "Resposta do atleta confirmada",
@@ -67,15 +62,7 @@ const ORIGEM_LANCAMENTO: Record<LancamentoHistorico["origem"], string> = {
   calculado: "Calculada pela pesagem",
 };
 const ORIGEM_RESULTADO = "Calculado pelo resultado validado";
-const rotuloFonte = (fonte: string, papel: string) =>
-  papel === "ibvar" ? "Lançado" : (FONTE_RESULTADO[fonte] ?? "Lançado");
 const ehResultado = (id: string) => INDICADORES_DE_RESULTADO.includes(id);
-const FONTE_RESULTADO: Record<string, string> = {
-  ranking_cbvela: "Ranking CBVela",
-  manual: "Lançado",
-  atleta: "Atleta",
-  world_sailing: "World Sailing",
-};
 
 /** Lançamentos do indicador, do mais novo para o mais antigo. Mostra só o que a API devolve ao papel. */
 function HistoricoDialog({
@@ -647,83 +634,12 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
             <p className="pts-total">
               <b>{fmt0(ficha.pontosCbvela)}</b> pts no Ranking CBVela
             </p>
-            <div
-              className="table-scroll"
-              tabIndex={0}
-              role="region"
-              aria-label="Tabela de histórico competitivo, role para ver todas as colunas"
-            >
-              <table className="data tabela-hist">
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Evento</th>
-                    <th className="r">Edição</th>
-                    <th className="r">Posição</th>
-                    <th className="r">Pts</th>
-                    <th>Fonte</th>
-                    {papel !== "ibvar" && <th>Situação</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {resultados.map((r) => {
-                    const link = linkSeguro(r.linkOficial);
-                    return (
-                      <tr key={r.id}>
-                        <td className="nw">{fmtData(r.data)}</td>
-                        <td>
-                          {r.evento}
-                          <small className="sub">{rotuloNivelHistorico(r.nivel)}</small>
-                        </td>
-                        <td className="r nw">{r.edicao}</td>
-                        <td className="r nw">
-                          {r.posicao}º{r.tamanhoFrota != null ? ` de ${r.tamanhoFrota}` : ""}
-                        </td>
-                        <td className="r num">
-                          {r.pontosCbvela == null ? "—" : fmt0(r.pontosCbvela)}
-                        </td>
-                        <td className="nw">
-                          {r.fonte === "ranking_cbvela" ? (
-                            <span className="pill st-info">Ranking CBVela</span>
-                          ) : link ? (
-                            <a
-                              className={`pill ${r.fonte === "world_sailing" ? "st-info" : "st-neutro"}`}
-                              href={link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label={`${rotuloFonte(r.fonte, papel)} + link oficial`}
-                            >
-                              {rotuloFonte(r.fonte, papel)}
-                              <i className="ph ph-arrow-square-out" aria-hidden="true" />
-                            </a>
-                          ) : (
-                            <span className="pill st-neutro">{rotuloFonte(r.fonte, papel)}</span>
-                          )}
-                        </td>
-                        {papel !== "ibvar" && (
-                          <td>
-                            <span className={`pill ${situacaoDoResultado(r).classe}`}>
-                              {situacaoDoResultado(r).rotulo}
-                            </span>
-                            {r.validadoPor && r.validadoEm && (
-                              <small className="sub">
-                                por {r.validadoPor.nome} em {fmtInstante(r.validadoEm)}
-                              </small>
-                            )}
-                            {r.status === "recusado" && r.motivo && (
-                              <small className="sub">Motivo: {r.motivo}</small>
-                            )}
-                            {podeLancar && (
-                              <AcoesResultadoWorldSailing atletaId={atleta.id} resultado={r} />
-                            )}
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <HistoricoCompetitivo
+              resultados={resultados}
+              papel={papel}
+              atletaId={atleta.id}
+              podeLancar={podeLancar}
+            />
             <p className="panel-dica">
               Os pontos do Ranking CBVela são só informação e não entram na nota. A nota dos
               indicadores de resultado sai dos resultados validados.

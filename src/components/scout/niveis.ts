@@ -23,3 +23,29 @@ const ROTULOS_HISTORICO: Record<string, string> = {
 };
 
 export const rotuloNivelHistorico = (nivel: string): string => ROTULOS_HISTORICO[nivel] ?? nivel;
+
+export type GrupoNivel = "mundial" | "continental" | "nacional" | "outros";
+
+export const GRUPOS_NIVEL: { valor: GrupoNivel; rotulo: string }[] = [
+  { valor: "mundial", rotulo: "Mundial" },
+  { valor: "continental", rotulo: "Continental" },
+  { valor: "nacional", rotulo: "Nacional" },
+  { valor: "outros", rotulo: "Outros" },
+];
+
+/**
+ * Grupo do filtro do histórico. A API pode devolver o código (`sul_americano`) ou o texto pronto
+ * ("Sul-Americano"), por isso o valor é normalizado. Outros: internacional aberto, estadual,
+ * regional e o que não for reconhecido.
+ */
+export function grupoDoNivel(nivel: string): GrupoNivel {
+  const n = nivel
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z]+/g, "_");
+  if (n === "mundial") return "mundial";
+  if (n === "continental" || n === "sul_americano") return "continental";
+  if (n === "brasileiro" || n === "nacional") return "nacional";
+  return "outros";
+}
