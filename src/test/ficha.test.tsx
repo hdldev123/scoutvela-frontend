@@ -699,7 +699,7 @@ describe("TelaFicha", () => {
         "brasileiro",
         "estadual",
         "regional",
-      ].map((nivel, i) => ({ ...base.resultados[0]!, nivel, evento: `Evento ${i}` })),
+      ].map((nivel, i) => ({ ...base.resultados[0]!, id: `n${i}`, nivel, evento: `Evento ${i}` })),
     };
     montar("atleta", f);
     for (const rotulo of [
@@ -711,7 +711,11 @@ describe("TelaFicha", () => {
       "Estadual",
       "Regional",
     ]) {
-      expect(await screen.findByText(rotulo)).toBeInTheDocument();
+      expect(
+        await within(
+          await screen.findByRole("region", { name: /Tabela de histórico competitivo/ }),
+        ).findByText(rotulo),
+      ).toBeInTheDocument();
     }
   });
 
@@ -994,7 +998,8 @@ describe("TelaFicha", () => {
 
   it("histórico competitivo mostra a fonte e só liga links http(s)", async () => {
     montar("gestor", ficha());
-    expect(await screen.findByText("Ranking CBVela")).toBeInTheDocument();
+    const tabela = await screen.findByRole("region", { name: /Tabela de histórico competitivo/ });
+    expect(within(tabela).getByText("Ranking CBVela")).toBeInTheDocument();
     const link = screen.getByRole("link", { name: "Lançado + link oficial" });
     expect(link).toHaveAttribute("href", "https://oficial.exemplo.com/r");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
@@ -1542,7 +1547,7 @@ describe("TelaFicha: resultados por evento (D10)", () => {
       .catch(() => null);
     const alvo = tabela ?? screen.getAllByRole("table")[0]!;
     expect(within(alvo).getByRole("columnheader", { name: "Situação" })).toBeInTheDocument();
-    expect(within(alvo).getByRole("columnheader", { name: "Edição" })).toBeInTheDocument();
+    expect(within(alvo).getByRole("columnheader", { name: "Data e edição" })).toBeInTheDocument();
     expect(within(alvo).getByText("Validado")).toBeInTheDocument();
     expect(within(alvo).getByText(/por Ana Ribeiro em/)).toBeInTheDocument();
     expect(within(alvo).getByText("Recusado")).toBeInTheDocument();
@@ -2178,5 +2183,352 @@ describe("TelaFicha: World Sailing (D19)", () => {
     const linha = (await screen.findByText("Sailing World Championships (ILCA 6)")).closest("tr")!;
     expect(within(linha).getByText("Vigente")).toBeInTheDocument();
     expect(within(linha).queryByRole("button")).toBeNull();
+  });
+});
+
+describe("TelaFicha: conquistas compactas (D20)", () => {
+  type Conq = FichaAtleta["conquistas"][number];
+  const podio = (posicao: number, titulo: string, ano: number, nivel: string): Conq => ({
+    tipo: "resultado",
+    titulo,
+    ano,
+    evento: titulo,
+    nivel,
+    posicao,
+  });
+  const MUITAS: Conq[] = [
+    podio(1, "Regata local A", 2026, "estadual"),
+    podio(1, "Regata local B", 2025, "estadual"),
+    podio(2, "Campeonato Continental", 2024, "continental"),
+    podio(3, "Campeonato Mundial", 2023, "mundial"),
+    podio(2, "Jogos Olímpicos de Paris", 2024, "mundial"),
+    podio(1, "Copa Brasil", 2022, "brasileiro"),
+    { tipo: "manual", titulo: "Campeão da Semana de Vela", ano: 2021 },
+  ];
+
+  beforeEach(() => {
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
+    resultadosApi = [];
+    conquistasApi = { automaticas: [], manuais: [] };
+    GET.mockReset();
+  });
+
+  it("com mais de 3 mostra o resumo por colocação, 3 destaques por nível e o botão", async () => {
+    montar("gestor", ficha({ conquistas: MUITAS }));
+    const regiao = await screen.findByRole("region", { name: "Conquistas" });
+    expect(
+      within(regiao).getByText(/3× 1º · 2× 2º · 1× 3º · 1× conquista informada/),
+    ).toBeVisible();
+    const itens = within(regiao).getAllByRole("listitem");
+    expect(itens).toHaveLength(3);
+    expect(itens[0]).toHaveTextContent("Jogos Olímpicos de Paris");
+    expect(itens[1]).toHaveTextContent("Campeonato Mundial");
+    expect(itens[2]).toHaveTextContent("Campeonato Continental");
+    expect(
+      within(regiao).getByRole("button", { name: "Ver todas as conquistas (7)" }),
+    ).toBeVisible();
+  });
+
+  it("só os Jogos Olímpicos de verdade vêm antes dos mundiais, não as Olympic Classes", async () => {
+    const lista: Conq[] = [
+      podio(1, "Long Beach Olympic Classes Regatta", 2019, "internacional_aberto"),
+      podio(1, "San Pedro Olympic Classes Regatta", 2018, "internacional_aberto"),
+      podio(3, "Olympic Week", 2017, "internacional_aberto"),
+      podio(1, "Olympic Test Event", 2016, "internacional_aberto"),
+      podio(1, "Campeonato Europeu", 2022, "continental"),
+      podio(1, "Mundial 2021", 2021, "mundial"),
+      podio(2, "Tokyo 2020 Olympic Games Sailing Competition", 2021, "internacional_aberto"),
+    ];
+    montar("gestor", ficha({ conquistas: lista }));
+    const regiao = await screen.findByRole("region", { name: "Conquistas" });
+    const itens = within(regiao).getAllByRole("listitem");
+    expect(itens[0]).toHaveTextContent("Tokyo 2020 Olympic Games");
+    expect(itens[1]).toHaveTextContent("Mundial 2021");
+    expect(itens[2]).toHaveTextContent("Campeonato Europeu");
+  });
+
+  it("o botão abre o diálogo com a lista completa e Esc fecha", async () => {
+    montar("atleta", ficha({ conquistas: MUITAS }));
+    const regiao = await screen.findByRole("region", { name: "Conquistas" });
+    fireEvent.click(within(regiao).getByRole("button", { name: /Ver todas as conquistas/ }));
+    const dialogo = await screen.findByRole("dialog");
+    expect(within(dialogo).getAllByRole("listitem")).toHaveLength(7);
+    expect(within(dialogo).getByText(/Regata local A/)).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("com 3 ou menos mostra a lista inteira, sem resumo nem botão", async () => {
+    montar("gestor", ficha({ conquistas: MUITAS.slice(0, 3) }));
+    const regiao = await screen.findByRole("region", { name: "Conquistas" });
+    expect(within(regiao).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(regiao).queryByRole("button")).toBeNull();
+    expect(within(regiao).queryByText(/\d× 1º/)).toBeNull();
+  });
+});
+
+describe("TelaFicha: histórico competitivo paginado e filtrado (D20)", () => {
+  const nivelDe = ["mundial", "continental", "brasileiro", "estadual"];
+  const MUITOS = Array.from({ length: 25 }, (_, i) => ({
+    ...RES_BASE,
+    id: `h${i}`,
+    data: `2026-${String(12 - Math.floor(i / 2)).padStart(2, "0")}-${i % 2 ? "05" : "20"}`,
+    nivel: nivelDe[i % 4]!,
+    evento: `Evento ${String(i).padStart(2, "0")}`,
+    edicao: 2026,
+    posicao: 3,
+    tamanhoFrota: null,
+    internacional: false,
+    pontosCbvela: null,
+    fonte: (i % 5 === 0 ? "world_sailing" : "atleta") as "world_sailing" | "atleta",
+    linkOficial: null,
+  }));
+  const linhas = () =>
+    within(screen.getByRole("region", { name: /Tabela de histórico competitivo/ })).getAllByRole(
+      "row",
+    );
+
+  beforeEach(() => {
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
+    resultadosApi = [];
+    conquistasApi = { automaticas: [], manuais: [] };
+    GET.mockReset();
+  });
+
+  it("mostra os 10 mais recentes e a contagem; Mostrar mais soma 10; Mostrar todos abre tudo", async () => {
+    montar("gestor", ficha({ resultados: MUITOS }));
+    expect(await screen.findByText("Mostrando 10 de 25")).toBeInTheDocument();
+    expect(linhas()).toHaveLength(11); // cabeçalho + 10
+    // O mais recente é o de data 2026-12-20 (i = 0).
+    expect(linhas()[1]).toHaveTextContent("Evento 00");
+    fireEvent.click(screen.getByRole("button", { name: "Mostrar mais (10 de 15)" }));
+    expect(screen.getByText("Mostrando 20 de 25")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Mostrar todos" }));
+    expect(screen.getByText("Mostrando 25 de 25")).toBeInTheDocument();
+    expect(linhas()).toHaveLength(26);
+    expect(screen.queryByRole("button", { name: /Mostrar/ })).toBeNull();
+  });
+
+  it("junta a edição sob a data e esconde Pts quando nenhuma linha visível tem pontos", async () => {
+    montar("gestor", ficha({ resultados: MUITOS }));
+    await screen.findByText("Mostrando 10 de 25");
+    const regiao = screen.getByRole("region", { name: /Tabela de histórico competitivo/ });
+    expect(within(regiao).getByRole("columnheader", { name: "Data e edição" })).toBeInTheDocument();
+    expect(within(regiao).queryByRole("columnheader", { name: "Edição" })).toBeNull();
+    expect(within(regiao).queryByRole("columnheader", { name: "Pts" })).toBeNull();
+    expect(within(linhas()[1]!).getByText("Edição 2026")).toBeInTheDocument();
+  });
+
+  it("filtra por nível com aria-pressed e volta para a primeira página", async () => {
+    montar("gestor", ficha({ resultados: MUITOS }));
+    await screen.findByText("Mostrando 10 de 25");
+    const grupo = screen.getByRole("group", { name: "Filtrar por nível" });
+    expect(within(grupo).getByRole("button", { name: "Todos" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.click(within(grupo).getByRole("button", { name: "Nacional" }));
+    expect(within(grupo).getByRole("button", { name: "Nacional" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(within(grupo).getByRole("button", { name: "Todos" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    // i % 4 === 2 entre 0 e 24: 6 resultados.
+    expect(screen.getByText("Mostrando 6 de 6 (25 no total)")).toBeInTheDocument();
+    expect(linhas()).toHaveLength(7);
+  });
+
+  it("filtra por fonte e mostra o estado vazio quando a combinação não acha nada", async () => {
+    montar("gestor", ficha({ resultados: MUITOS }));
+    await screen.findByText("Mostrando 10 de 25");
+    fireEvent.change(screen.getByLabelText("Fonte"), { target: { value: "world_sailing" } });
+    expect(screen.getByText("Mostrando 5 de 5 (25 no total)")).toBeInTheDocument();
+    // World Sailing: i = 0, 5, 10, 15, 20. Só i = 10 é nacional (10 % 4 = 2).
+    fireEvent.click(screen.getByRole("button", { name: "Nacional" }));
+    expect(screen.getByText(/Mostrando 1 de 1/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Fonte"), { target: { value: "manual" } });
+    expect(screen.getByText("Nenhum resultado com esse filtro.")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Tabela de histórico/ })).toBeNull();
+  });
+
+  it("o IBVAR não tem o filtro de fonte, que revelaria a origem do lançamento", async () => {
+    montar("ibvar", ficha({ resultados: MUITOS, classFit: null }));
+    await screen.findByText("Mostrando 10 de 25");
+    expect(screen.queryByLabelText("Fonte")).toBeNull();
+    expect(screen.getByRole("group", { name: "Filtrar por nível" })).toBeInTheDocument();
+  });
+});
+
+describe("TelaFicha: Class Fit sem medida por papel (D20)", () => {
+  beforeEach(() => {
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
+    resultadosApi = [];
+    conquistasApi = { automaticas: [], manuais: [] };
+    GET.mockReset();
+  });
+  const PESO = /Peso e medidas são dado sensível/;
+
+  it("IBVAR mantém o texto do cadeado", async () => {
+    montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
+    expect(await screen.findByText(PESO)).toBeInTheDocument();
+  });
+
+  it("atleta é orientado a informar o peso no painel, com link", async () => {
+    montar("atleta", ficha({ classFit: null }));
+    expect(await screen.findByText(/Ainda não há peso validado/)).toHaveTextContent(
+      "Informe seu peso com a foto da balança no seu painel; o treinador valida.",
+    );
+    expect(screen.getByRole("link", { name: "painel" })).toHaveAttribute("href", "/painel");
+    expect(screen.queryByText(PESO)).toBeNull();
+  });
+
+  it.each(["gestor", "treinador"])("%s vê que falta medida validada", async (papel) => {
+    montar(papel, ficha({ classFit: null }));
+    expect(
+      await screen.findByText("Ainda não há medida validada para este atleta."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(PESO)).toBeNull();
+  });
+});
+
+describe("TelaFicha: sugestão de medida da World Sailing (D20)", () => {
+  const SUGESTAO = { pesoKg: 67, alturaCm: 178, informadoEm: "2026-10-15", podeDecidir: true };
+  const secao = (medidaSugerida: unknown) => ({
+    perfilUrl: "https://www.sailing.org/sailor/?ref=BRAHV07",
+    importacaoAtiva: true,
+    ultimaImportacao: null,
+    ranking: [],
+    medidaSugerida,
+  });
+  const MEDIDA = "/atletas/{id}/world-sailing/medida";
+
+  beforeEach(() => {
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
+    resultadosApi = [];
+    conquistasApi = { automaticas: [], manuais: [] };
+    GET.mockReset();
+    POST.mockReset();
+    toastFn.mockReset();
+    toastFn.success.mockReset();
+    toastFn.error.mockReset();
+  });
+
+  it("gestor vê os valores, a data e os botões, sem Class Fit anterior", async () => {
+    wsApi = secao(SUGESTAO);
+    montar("gestor", ficha({ classFit: null }));
+    const bloco = await screen.findByRole("region", { name: "Sugestão da World Sailing" });
+    expect(bloco).toHaveTextContent(
+      "Informado na World Sailing em 15/10/2026: 67,0 kg · 178 cm (autodeclarado)",
+    );
+    expect(
+      within(bloco).getByText(/vira medida validada e entra no Class Fit e no gate G1/),
+    ).toBeVisible();
+    expect(within(bloco).getByRole("button", { name: "Usar como medida" })).toBeVisible();
+    expect(within(bloco).getByRole("button", { name: "Dispensar" })).toBeVisible();
+  });
+
+  it("com Class Fit anterior o bloco leva o título de comparação; só os valores que vierem", async () => {
+    wsApi = secao({ ...SUGESTAO, alturaCm: null, informadoEm: null });
+    montar("treinador", ficha());
+    const bloco = await screen.findByRole("region", { name: "Medida informada na World Sailing" });
+    expect(bloco).toHaveTextContent("Informado na World Sailing sem data: 67,0 kg (autodeclarado)");
+    expect(bloco).not.toHaveTextContent("cm");
+  });
+
+  it("atleta vê o bloco sem botões e a espera pelo treinador", async () => {
+    wsApi = secao({ ...SUGESTAO, podeDecidir: false });
+    montar("atleta", ficha());
+    const bloco = await screen.findByRole("region", { name: "Medida informada na World Sailing" });
+    expect(within(bloco).getByText("Aguardando o treinador confirmar.")).toBeVisible();
+    expect(within(bloco).queryByRole("button")).toBeNull();
+  });
+
+  it("sem sugestão pendente não mostra o bloco", async () => {
+    wsApi = secao(null);
+    montar("gestor", ficha());
+    await screen.findByRole("heading", { name: "Class Fit" });
+    await screen.findByText(/Última atualização/).catch(() => null);
+    expect(
+      screen.queryByRole("region", {
+        name: /Sugestão da World Sailing|Medida informada na World Sailing/,
+      }),
+    ).toBeNull();
+  });
+
+  it("o IBVAR não consulta a seção nem vê o bloco", async () => {
+    wsApi = secao(SUGESTAO);
+    montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
+    await screen.findByText(/Peso e medidas são dado sensível/);
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/world-sailing", expect.anything());
+    expect(
+      screen.queryByRole("region", {
+        name: /Sugestão da World Sailing|Medida informada na World Sailing/,
+      }),
+    ).toBeNull();
+  });
+
+  it("usar pede confirmação, envia a decisão e mostra o toast", async () => {
+    wsApi = secao(SUGESTAO);
+    POST.mockResolvedValue({ data: { decisao: "usar", medidaId: 5 }, response: { status: 200 } });
+    montar("gestor", ficha({ classFit: null }));
+    fireEvent.click(await screen.findByRole("button", { name: "Usar como medida" }));
+    expect(POST).not.toHaveBeenCalled();
+    const dialogo = await screen.findByRole("dialog");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Usar como medida" }));
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith(MEDIDA, {
+        params: { path: { id: "a07" } },
+        body: { decisao: "usar" },
+      }),
+    );
+    await waitFor(() =>
+      expect(toastFn.success).toHaveBeenCalledWith("Medida da World Sailing registrada."),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("dispensar envia a decisão e mostra o toast", async () => {
+    wsApi = secao(SUGESTAO);
+    POST.mockResolvedValue({
+      data: { decisao: "dispensar", medidaId: null },
+      response: { status: 200 },
+    });
+    montar("treinador", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: "Dispensar" }));
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", { name: "Dispensar" }),
+    );
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith(MEDIDA, {
+        params: { path: { id: "a07" } },
+        body: { decisao: "dispensar" },
+      }),
+    );
+    await waitFor(() => expect(toastFn.success).toHaveBeenCalledWith("Sugestão dispensada."));
+  });
+
+  it("409 mostra a mensagem da API e fecha o diálogo", async () => {
+    wsApi = secao(SUGESTAO);
+    const msg =
+      "Não há medida sugerida pela World Sailing para decidir. Ela pode já ter sido decidida.";
+    POST.mockResolvedValue({
+      error: { erro: "requisicao_invalida", mensagem: msg },
+      response: { status: 409 },
+    });
+    montar("gestor", ficha({ classFit: null }));
+    fireEvent.click(await screen.findByRole("button", { name: "Usar como medida" }));
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", { name: "Usar como medida" }),
+    );
+    await waitFor(() => expect(toastFn.error).toHaveBeenCalledWith(msg));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(toastFn.success).not.toHaveBeenCalled();
   });
 });
