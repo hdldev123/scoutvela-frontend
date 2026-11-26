@@ -8945,7 +8945,7 @@ export interface paths {
                             }[];
                             /** @description Dados importados da World Sailing (D19). Os resultados de regata importados estão em resultados (fonte world_sailing) */
                             worldSailing: {
-                                /** @description Perfil importado da World Sailing como sugestão: nome, gênero, nascimento, foto, bio, quando importou e quando decidiu sobre foto e bio */
+                                /** @description Perfil importado da World Sailing como sugestão: nome, gênero, nascimento, foto, bio, peso e altura autodeclarados, quando importou e quando decidiu sobre foto, bio e medida */
                                 sugestao: {
                                     [key: string]: unknown;
                                 } | null;
@@ -12160,7 +12160,7 @@ export interface paths {
         };
         /**
          * Seção World Sailing da ficha: link do perfil, última busca e histórico de ranking
-         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). `perfilUrl` leva ao perfil público do atleta na World Sailing. `ultimaImportacao`: quando e como terminou a última busca (nulo se nunca houve). `importacaoAtiva`: falso com a integração desligada (o front esconde o botão de atualizar). `ranking`: o histórico de ranking importado (só informação, não entra na nota), do mais recente para o mais antigo. Os resultados de regata importados ficam em GET /atletas/:id/resultados (`fonte: world_sailing`).
+         * @description Gestor, treinador dos próprios atletas e o próprio atleta (IBVAR: 403; outro atleta ou treinador: 404). `perfilUrl` leva ao perfil público do atleta na World Sailing. `ultimaImportacao`: quando e como terminou a última busca (nulo se nunca houve). `importacaoAtiva`: falso com a integração desligada (o front esconde o botão de atualizar). `ranking`: o histórico de ranking importado (só informação, não entra na nota), do mais recente para o mais antigo. Os resultados de regata importados ficam em GET /atletas/:id/resultados (`fonte: world_sailing`). `medidaSugerida` (D20): peso e altura autodeclarados no perfil, oferecidos como sugestão de medida enquanto não houver decisão (ou se o velejador atualizou o perfil depois dela); nulo sem pendência. `podeDecidir` é verdadeiro para o gestor e o treinador do atleta, e falso para o atleta (ele vê, mas não decide). É dado sensível: o IBVAR recebe 403 na rota inteira. Quem decide usa POST /atletas/:id/world-sailing/medida.
          */
         get: {
             parameters: {
@@ -12198,6 +12198,16 @@ export interface paths {
                                 posicao: number;
                                 pontos: number | null;
                             }[];
+                            medidaSugerida: {
+                                /** @description Peso autodeclarado no perfil (30 a 160 kg) */
+                                pesoKg: number | null;
+                                /** @description Altura autodeclarada no perfil (120 a 230 cm) */
+                                alturaCm: number | null;
+                                /** @description AAAA-MM-DD: quando o velejador atualizou o perfil na World Sailing */
+                                informadoEm: string | null;
+                                /** @description Gestor e treinador do atleta: true; atleta: false */
+                                podeDecidir: boolean;
+                            } | null;
                         };
                     };
                 };
@@ -12359,6 +12369,144 @@ export interface paths {
                 };
                 /** @description Default Response */
                 429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atletas/{id}/world-sailing/medida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Usa ou dispensa o peso e a altura do perfil World Sailing como medida
+         * @description Gestor, ou treinador dos próprios atletas (outro treinador e atleta inexistente: 404; atleta e IBVAR: 403; atleta anonimizado: 409). Decide sobre a `medidaSugerida` de GET /atletas/:id/world-sailing; sem sugestão pendente: 409. `usar` grava o peso e a altura que existirem em `medidas_corporais` como medida validada (`medido_em` = data de atualização do perfil às 12:00 UTC, ou agora se não houver; evidência "Perfil World Sailing (autodeclarado), atualizado em DD/MM/AAAA"; `registrado_por` = quem decidiu) na mesma transação: a partir daí vale no Class Fit, no G1 e na altura da ficha, pela ordem de `medido_em` como qualquer outra medida. `dispensar` só registra a decisão. Se o velejador atualizar o perfil depois (data diferente), a sugestão é oferecida de novo. Auditoria `usar_medida_world_sailing` ou `dispensar_medida_world_sailing`, só com ids e a decisão (nunca peso nem altura).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decisao: "usar" | "dispensar";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            decisao: "usar" | "dispensar";
+                            /** @description Identificador da medida criada; nulo ao dispensar */
+                            medidaId: number | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            erro: "nao_autenticado" | "sem_acesso" | "nao_encontrado" | "requisicao_invalida" | "erro_interno" | "limite_excedido" | "mfa_obrigatorio" | "servico_indisponivel" | "evidencia_removida" | "cota_excedida";
+                            mensagem: string;
+                            campos?: {
+                                campo: string;
+                                mensagem: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
