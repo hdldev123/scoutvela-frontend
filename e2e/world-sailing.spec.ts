@@ -176,8 +176,16 @@ test("gestor usa a medida sugerida da World Sailing e ela entra no Class Fit", a
   await dialogo.getByRole("button", { name: "Usar como medida" }).click();
   await expect(page.getByText("Medida da World Sailing registrada.")).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  // A sugestão foi decidida: o bloco some e o peso validado aparece no medidor do Class Fit.
+  // A sugestão foi decidida: o bloco some e não volta ao recarregar. O Davi Moretto do seed já tem
+  // uma pesagem validada de novembro, mais recente que a medida do perfil (15/10): pela ordem de
+  // `medido_em`, a de novembro continua no medidor (o back cobre essa precedência nos testes de API).
   await expect(bloco).toHaveCount(0);
-  const classFit = page.locator("section.ordem-classfit");
-  await expect(classFit.getByRole("img", { name: /71,5/ }).first()).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 2, name: "World Sailing" })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  await expect(
+    page.getByRole("region", {
+      name: /Sugestão da World Sailing|Medida informada na World Sailing/,
+    }),
+  ).toHaveCount(0);
 });
