@@ -490,6 +490,26 @@ function MedidorAltura({
   );
 }
 
+/** Cartão Class Fit sem medida: o IBVAR nunca vê o dado; para os outros papéis, falta a medida validada. */
+function ClassFitSemMedida({ papel }: { papel: string }) {
+  if (papel === "ibvar") {
+    return (
+      <div className="lock">
+        Peso e medidas são dado sensível. O IBVAR vê só o resultado do gate G1.
+      </div>
+    );
+  }
+  if (papel === "atleta") {
+    return (
+      <p className="classfit-vazio">
+        Ainda não há peso validado. Informe seu peso com a foto da balança no seu{" "}
+        <Link to="/painel">painel</Link>; o treinador valida.
+      </p>
+    );
+  }
+  return <p className="classfit-vazio">Ainda não há medida validada para este atleta.</p>;
+}
+
 function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
   const queryClient = useQueryClient();
   const [abertos, setAbertos] = useState<Record<string, boolean>>({});
@@ -689,9 +709,7 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
                 </p>
               </>
             ) : (
-              <div className="lock">
-                Peso e medidas são dado sensível. O IBVAR vê só o resultado do gate G1.
-              </div>
+              <ClassFitSemMedida papel={papel} />
             )}
           </section>
           {podeLancar && <PesagensPendentes atletaId={atleta.id} />}
