@@ -156,3 +156,28 @@ test("atualizar de novo logo depois mostra o limite da API ou nada novo", async 
     page.getByText(/já foi consultada para este atleta há pouco|nada novo desde a última busca/),
   ).toBeVisible();
 });
+
+// D20: o simulador traz peso e altura autodeclarados para BRASPT08 (71,5 kg, 176 cm, "atualizado em
+// 15/10/2026"). O teste fica por último de propósito: "Usar como medida" muda o Class Fit da ficha
+// compartilhada, e os testes acima dependem do estado anterior.
+test("gestor usa a medida sugerida da World Sailing e ela entra no Class Fit", async ({ page }) => {
+  await entrar(page, "gestor");
+  await abrirFicha(page);
+  const bloco = page.getByRole("region", {
+    name: /Sugestão da World Sailing|Medida informada na World Sailing/,
+  });
+  await expect(bloco).toContainText(
+    "Informado na World Sailing em 15/10/2026: 71,5 kg · 176 cm (autodeclarado)",
+  );
+  await varrer(page, "bloco de medida da World Sailing");
+  await bloco.getByRole("button", { name: "Usar como medida" }).click();
+  const dialogo = page.getByRole("dialog");
+  await expect(dialogo).toBeVisible();
+  await dialogo.getByRole("button", { name: "Usar como medida" }).click();
+  await expect(page.getByText("Medida da World Sailing registrada.")).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // A sugestão foi decidida: o bloco some e o peso validado aparece no medidor do Class Fit.
+  await expect(bloco).toHaveCount(0);
+  const classFit = page.locator("section.ordem-classfit");
+  await expect(classFit.getByRole("img", { name: /71,5/ }).first()).toBeVisible();
+});
