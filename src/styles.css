@@ -3178,12 +3178,12 @@
 
 /* Cabeçalho */
 .scout .athlete-head {
-  align-items: center;
+  align-items: flex-start;
   gap: 16px 32px;
 }
 .scout .athlete-id {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
   min-width: 0;
   flex: 1 1 24rem;
@@ -3259,6 +3259,17 @@
 @media (width > 1180px) {
   .scout .ficha-grid {
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  }
+}
+/* De 1181 a 1500 px (ex.: notebook de 1366 px, com o menu lateral) a coluna dos pilares e do
+   histórico fica mais larga, para o nome do evento não quebrar em várias linhas. */
+@media (1180px < width <= 1500px) {
+  .scout main.wrap:has(.ficha-grid) {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .scout .ficha-grid {
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
   }
 }
 

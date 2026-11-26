@@ -1,24 +1,8 @@
 import { Avatar } from "./Avatar";
+import { ConquistasResumo } from "./ConquistasResumo";
 import { LinkWsId } from "./LinkWsId";
 import { fmtInstante } from "./formato";
-import type { ConquistaFicha } from "@/lib/api/conquistas";
 import type { FichaAtleta } from "@/lib/api/consultas";
-
-const ROTULO_PODIO: Record<number, string> = { 1: "1º lugar", 2: "2º lugar", 3: "3º lugar" };
-
-/** Medalha ou troféu com o texto ao lado: o ícone é decorativo e a posição não depende dele. */
-function ItemConquista({ c }: { c: ConquistaFicha }) {
-  const podio = c.tipo === "resultado" && c.posicao ? ROTULO_PODIO[c.posicao] : null;
-  return (
-    <li className="cartao-conquista">
-      <i className={`ph-fill ${podio ? "ph-medal" : "ph-trophy"}`} aria-hidden="true" />
-      <span className={`pill ${podio ? "st-apto" : "st-info"}`}>{podio ?? "Conquista"}</span>
-      <span className="cartao-conquista-texto">
-        {c.titulo} <span className="muted">· {c.ano}</span>
-      </span>
-    </li>
-  );
-}
 
 /**
  * Cartão de perfil no topo da ficha: foto (ou iniciais), nome, identificação, mini bio e
@@ -87,18 +71,7 @@ export function CartaoPerfil({ ficha }: { ficha: FichaAtleta }) {
           )}
         </ul>
         {atleta.bio && <p className="cartao-bio">{atleta.bio}</p>}
-        {conquistas.length > 0 && (
-          <section className="cartao-conquistas" aria-labelledby="cartao-conquistas-t">
-            <h2 id="cartao-conquistas-t" className="cartao-subtitulo">
-              Conquistas
-            </h2>
-            <ul>
-              {conquistas.map((c, i) => (
-                <ItemConquista key={`${c.tipo}-${c.ano}-${c.titulo}-${i}`} c={c} />
-              ))}
-            </ul>
-          </section>
-        )}
+        <ConquistasResumo conquistas={conquistas} nome={atleta.nome} />
       </div>
     </div>
   );

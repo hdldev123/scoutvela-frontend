@@ -150,3 +150,98 @@
 .cartao-conquista-texto {
   overflow-wrap: anywhere;
 }
+
+/* Conquistas compactas no cabeçalho (D20). */
+.cartao-conquistas-resumo {
+  margin: 0 0 8px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cartao-conquistas > .btn {
+  margin-top: 8px;
+}
+.cartao-conquistas ul.cartao-conquistas-todas {
+  display: grid;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Histórico competitivo paginado e filtrado (D20). */
+.hist-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+.hist-grupo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hist-chip {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.hist-chip[aria-pressed="true"] {
+  background: var(--sea);
+  border-color: var(--sea);
+  color: var(--sea-ink);
+  font-weight: 600;
+}
+.hist-chip:focus-visible,
+.hist-fonte select:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+}
+.hist-fonte {
+  display: grid;
+  gap: 2px;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}
+.hist-fonte select {
+  min-height: 32px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+.hist-contagem {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}
+.hist-vazio {
+  margin: 12px 0;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--ink-2);
+  text-align: center;
+}
+.hist-mais {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Class Fit sem medida (D20). */
+.classfit-vazio {
+  margin: 0;
+  color: var(--ink-2);
+}
+.classfit-vazio a {
+  color: var(--sea);
+  text-decoration: underline;
+}
