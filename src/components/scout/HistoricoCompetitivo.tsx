@@ -61,6 +61,8 @@ export function HistoricoCompetitivo({
   );
   const lista = filtrados.slice(0, visiveis);
   const restantes = filtrados.length - lista.length;
+  // Os resultados da World Sailing não têm pontos: sem nenhum valor visível, a coluna some.
+  const temPontos = lista.some((r) => r.pontosCbvela != null);
   const ibvar = papel === "ibvar";
   const filtrando = nivel !== "todos" || fonte !== "todas";
 
@@ -119,11 +121,10 @@ export function HistoricoCompetitivo({
           <table className="data tabela-hist">
             <thead>
               <tr>
-                <th>Data</th>
-                <th>Evento</th>
-                <th className="r">Edição</th>
+                <th>Data e edição</th>
+                <th className="col-evento">Evento</th>
                 <th className="r">Posição</th>
-                <th className="r">Pts</th>
+                {temPontos && <th className="r">Pts</th>}
                 <th>Fonte</th>
                 {!ibvar && <th>Situação</th>}
               </tr>
@@ -133,16 +134,22 @@ export function HistoricoCompetitivo({
                 const link = linkSeguro(r.linkOficial);
                 return (
                   <tr key={r.id}>
-                    <td className="nw">{fmtData(r.data)}</td>
-                    <td>
+                    <td className="nw">
+                      {fmtData(r.data)}
+                      <small className="sub">Edição {r.edicao}</small>
+                    </td>
+                    <td className="col-evento">
                       {r.evento}
                       <small className="sub">{rotuloNivelHistorico(r.nivel)}</small>
                     </td>
-                    <td className="r nw">{r.edicao}</td>
                     <td className="r nw">
                       {r.posicao}º{r.tamanhoFrota != null ? ` de ${r.tamanhoFrota}` : ""}
                     </td>
-                    <td className="r num">{r.pontosCbvela == null ? "—" : fmt0(r.pontosCbvela)}</td>
+                    {temPontos && (
+                      <td className="r num">
+                        {r.pontosCbvela == null ? "—" : fmt0(r.pontosCbvela)}
+                      </td>
+                    )}
                     <td className="nw">
                       {r.fonte === "ranking_cbvela" ? (
                         <span className="pill st-info">Ranking CBVela</span>

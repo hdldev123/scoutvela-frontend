@@ -3375,8 +3375,9 @@
 .scout .tabela-hist td {
   vertical-align: middle;
 }
-.scout .tabela-hist td:nth-child(2) {
-  min-width: 9rem;
+.scout .tabela-hist .col-evento {
+  min-width: 11rem;
+  width: 100%;
 }
 .scout .tabela-hist th,
 .scout .tabela-hist td {
@@ -3388,6 +3389,15 @@
   margin-top: 2px;
   font-size: 0.75rem;
   color: var(--ink-2);
+}
+.scout .tabela-hist td .btn.sm {
+  min-height: 24px;
+  padding: 2px 8px;
+  font-size: 12px;
+  margin-top: 4px;
+}
+.scout .tabela-hist td .pill {
+  font-size: 11.5px;
 }
 .scout .tabela-hist a.pill {
   text-decoration: none;
