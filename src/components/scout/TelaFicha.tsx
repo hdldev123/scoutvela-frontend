@@ -12,6 +12,7 @@ import { FinanceiroDialog } from "./FinanceiroDialog";
 import { GaugeClassFit } from "./GaugeClassFit";
 import { PedirAjusteDialog } from "./PedirAjusteDialog";
 import { PedirRevisaoDialog } from "./PedirRevisaoDialog";
+import { MedidaWorldSailing } from "./MedidaWorldSailing";
 import { PesagensPendentes } from "./PesagensPendentes";
 import { ConquistasParaValidar } from "./ConquistasParaValidar";
 import { ResultadosParaValidar } from "./ResultadosParaValidar";
@@ -710,6 +711,9 @@ function Conteudo({ ficha, papel }: { ficha: FichaAtleta; papel: string }) {
               </>
             ) : (
               <ClassFitSemMedida papel={papel} />
+            )}
+            {papel !== "ibvar" && (
+              <MedidaWorldSailing atletaId={atleta.id} comMedida={classFit != null} />
             )}
           </section>
           {podeLancar && <PesagensPendentes atletaId={atleta.id} />}

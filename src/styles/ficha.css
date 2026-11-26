@@ -245,3 +245,18 @@
   color: var(--sea);
   text-decoration: underline;
 }
+
+/* Sugestão de medida da World Sailing no Class Fit (D20). */
+.medida-ws {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.medida-ws-titulo {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.medida-ws-valores {
+  margin: 0 0 8px;
+}

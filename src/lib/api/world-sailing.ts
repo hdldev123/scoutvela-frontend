@@ -48,6 +48,33 @@ export function useAtualizarWorldSailing(atletaId: string) {
   });
 }
 
+export type MedidaSugerida = NonNullable<SecaoWorldSailing["medidaSugerida"]>;
+export type DecisaoMedida =
+  paths["/atletas/{id}/world-sailing/medida"]["post"]["requestBody"]["content"]["application/json"]["decisao"];
+
+/** `POST /atletas/{id}/world-sailing/medida` (D20): gestor e treinador usam ou dispensam a sugestão. */
+export function useDecidirMedidaWorldSailing(atletaId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (decisao: DecisaoMedida) => {
+      const { data, error, response } = await api.POST("/atletas/{id}/world-sailing/medida", {
+        params: { path: { id: atletaId } },
+        body: { decisao },
+      });
+      if (error || !data) throw paraErroApi(response.status, error);
+      return data;
+    },
+    // Refaz a ficha (Class Fit, G1, score) e a seção World Sailing, que é filha da mesma chave.
+    onSettled: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["atleta", atletaId] }),
+        qc.invalidateQueries({ queryKey: ["ranking"] }),
+        qc.invalidateQueries({ queryKey: ["investimento"] }),
+      ]);
+    },
+  });
+}
+
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
 /** Frase do resultado de uma busca (cadastro e botão "Atualizar"). */
