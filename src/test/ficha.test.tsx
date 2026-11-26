@@ -2396,3 +2396,139 @@ describe("TelaFicha: Class Fit sem medida por papel (D20)", () => {
     expect(screen.queryByText(PESO)).toBeNull();
   });
 });
+
+describe("TelaFicha: sugestão de medida da World Sailing (D20)", () => {
+  const SUGESTAO = { pesoKg: 67, alturaCm: 178, informadoEm: "2026-10-15", podeDecidir: true };
+  const secao = (medidaSugerida: unknown) => ({
+    perfilUrl: "https://www.sailing.org/sailor/?ref=BRAHV07",
+    importacaoAtiva: true,
+    ultimaImportacao: null,
+    ranking: [],
+    medidaSugerida,
+  });
+  const MEDIDA = "/atletas/{id}/world-sailing/medida";
+
+  beforeEach(() => {
+    autoavaliacao = SEM_AUTOAVALIACAO;
+    pesagens = { itens: [] };
+    resultadosApi = [];
+    conquistasApi = { automaticas: [], manuais: [] };
+    GET.mockReset();
+    POST.mockReset();
+    toastFn.mockReset();
+    toastFn.success.mockReset();
+    toastFn.error.mockReset();
+  });
+
+  it("gestor vê os valores, a data e os botões, sem Class Fit anterior", async () => {
+    wsApi = secao(SUGESTAO);
+    montar("gestor", ficha({ classFit: null }));
+    const bloco = await screen.findByRole("region", { name: "Sugestão da World Sailing" });
+    expect(bloco).toHaveTextContent(
+      "Informado na World Sailing em 15/10/2026: 67,0 kg · 178 cm (autodeclarado)",
+    );
+    expect(
+      within(bloco).getByText(/vira medida validada e entra no Class Fit e no gate G1/),
+    ).toBeVisible();
+    expect(within(bloco).getByRole("button", { name: "Usar como medida" })).toBeVisible();
+    expect(within(bloco).getByRole("button", { name: "Dispensar" })).toBeVisible();
+  });
+
+  it("com Class Fit anterior o bloco leva o título de comparação; só os valores que vierem", async () => {
+    wsApi = secao({ ...SUGESTAO, alturaCm: null, informadoEm: null });
+    montar("treinador", ficha());
+    const bloco = await screen.findByRole("region", { name: "Medida informada na World Sailing" });
+    expect(bloco).toHaveTextContent("Informado na World Sailing sem data: 67,0 kg (autodeclarado)");
+    expect(bloco).not.toHaveTextContent("cm");
+  });
+
+  it("atleta vê o bloco sem botões e a espera pelo treinador", async () => {
+    wsApi = secao({ ...SUGESTAO, podeDecidir: false });
+    montar("atleta", ficha());
+    const bloco = await screen.findByRole("region", { name: "Medida informada na World Sailing" });
+    expect(within(bloco).getByText("Aguardando o treinador confirmar.")).toBeVisible();
+    expect(within(bloco).queryByRole("button")).toBeNull();
+  });
+
+  it("sem sugestão pendente não mostra o bloco", async () => {
+    wsApi = secao(null);
+    montar("gestor", ficha());
+    await screen.findByRole("heading", { name: "Class Fit" });
+    await screen.findByText(/Última atualização/).catch(() => null);
+    expect(
+      screen.queryByRole("region", {
+        name: /Sugestão da World Sailing|Medida informada na World Sailing/,
+      }),
+    ).toBeNull();
+  });
+
+  it("o IBVAR não consulta a seção nem vê o bloco", async () => {
+    wsApi = secao(SUGESTAO);
+    montar("ibvar", ficha({ classFit: null, financeiro: { perfilSuporte: "D" } }));
+    await screen.findByText(/Peso e medidas são dado sensível/);
+    expect(GET).not.toHaveBeenCalledWith("/atletas/{id}/world-sailing", expect.anything());
+    expect(
+      screen.queryByRole("region", {
+        name: /Sugestão da World Sailing|Medida informada na World Sailing/,
+      }),
+    ).toBeNull();
+  });
+
+  it("usar pede confirmação, envia a decisão e mostra o toast", async () => {
+    wsApi = secao(SUGESTAO);
+    POST.mockResolvedValue({ data: { decisao: "usar", medidaId: 5 }, response: { status: 200 } });
+    montar("gestor", ficha({ classFit: null }));
+    fireEvent.click(await screen.findByRole("button", { name: "Usar como medida" }));
+    expect(POST).not.toHaveBeenCalled();
+    const dialogo = await screen.findByRole("dialog");
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Usar como medida" }));
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith(MEDIDA, {
+        params: { path: { id: "a07" } },
+        body: { decisao: "usar" },
+      }),
+    );
+    await waitFor(() =>
+      expect(toastFn.success).toHaveBeenCalledWith("Medida da World Sailing registrada."),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("dispensar envia a decisão e mostra o toast", async () => {
+    wsApi = secao(SUGESTAO);
+    POST.mockResolvedValue({
+      data: { decisao: "dispensar", medidaId: null },
+      response: { status: 200 },
+    });
+    montar("treinador", ficha());
+    fireEvent.click(await screen.findByRole("button", { name: "Dispensar" }));
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", { name: "Dispensar" }),
+    );
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith(MEDIDA, {
+        params: { path: { id: "a07" } },
+        body: { decisao: "dispensar" },
+      }),
+    );
+    await waitFor(() => expect(toastFn.success).toHaveBeenCalledWith("Sugestão dispensada."));
+  });
+
+  it("409 mostra a mensagem da API e fecha o diálogo", async () => {
+    wsApi = secao(SUGESTAO);
+    const msg =
+      "Não há medida sugerida pela World Sailing para decidir. Ela pode já ter sido decidida.";
+    POST.mockResolvedValue({
+      error: { erro: "requisicao_invalida", mensagem: msg },
+      response: { status: 409 },
+    });
+    montar("gestor", ficha({ classFit: null }));
+    fireEvent.click(await screen.findByRole("button", { name: "Usar como medida" }));
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", { name: "Usar como medida" }),
+    );
+    await waitFor(() => expect(toastFn.error).toHaveBeenCalledWith(msg));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(toastFn.success).not.toHaveBeenCalled();
+  });
+});
